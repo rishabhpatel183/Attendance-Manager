@@ -5,28 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Attendance Manager</title>
 
-  <!-- PWA & Mobile Web Capabilities for Apple iOS & Android -->
+  <!-- PWA & Mobile Capabilities -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0f172a">
+  <meta name="theme-color" content="#0b0f19">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Attendance">
-  <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="icon" type="image/png" href="icon-192.png">
 
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-  <!-- Top Navigation Header -->
+  <!-- Top Glassmorphism App Header -->
   <header class="app-header">
-    <div>
-      <div class="brand-title">🎓 Attendance</div>
-      <div id="headerStatus" class="brand-sub">Checking schedule...</div>
+    <div class="brand-wrapper">
+      <div class="brand-icon-box">🎓</div>
+      <div>
+        <div class="brand-title">Attendance</div>
+        <div id="headerStatus" class="brand-sub">Checking schedule...</div>
+      </div>
     </div>
     <div class="header-actions">
-      <button id="btnNotifyPermission" class="btn-icon" title="Enable Notifications">🔔</button>
-      <button id="btnQuickTestPrompt" class="btn-icon" title="Test Pop-up Alert">⚡</button>
+      <button id="btnNotifyPermission" class="btn-icon-round" title="Enable Notifications">🔔</button>
+      <button id="btnQuickTestPrompt" class="btn-icon-round" title="Test Pop-up Alert">⚡</button>
     </div>
   </header>
 
@@ -35,34 +38,47 @@
 
     <!-- TAB 1: DASHBOARD -->
     <section id="tab-dashboard" class="tab-pane active">
-      <!-- Hero Stat Card -->
+      <!-- Modern Hero Gauge Card -->
       <div class="hero-card">
-        <div class="hero-top">
-          <span class="hero-label">Overall Attendance</span>
-          <span id="targetBadge" class="hero-label">Target: 75%</span>
+        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Overall Attendance</span>
+          <span id="targetBadge" style="font-size: 0.75rem; font-weight: 700; color: var(--accent-cyan); background: rgba(56, 189, 248, 0.12); padding: 3px 8px; border-radius: 6px;">Goal: 75%</span>
         </div>
-        <div class="hero-percentage-row">
-          <span id="overallPercentage" class="hero-pct">0.0%</span>
+
+        <!-- Circular Progress Meter -->
+        <div class="gauge-wrapper">
+          <svg class="gauge-svg" viewBox="0 0 170 170">
+            <circle class="gauge-bg" cx="85" cy="85" r="70"></circle>
+            <circle id="gaugeProgressCircle" class="gauge-progress" cx="85" cy="85" r="70"></circle>
+          </svg>
+          <div class="gauge-center-content">
+            <span id="overallPercentage" class="gauge-pct">0.0%</span>
+            <span class="gauge-target-label">Attended</span>
+          </div>
         </div>
-        <div id="attendanceAdvice" class="advice-badge advice-safe">
-          Loading advice...
+
+        <!-- Smart Bunk / Shortage Advisor -->
+        <div id="attendanceAdvice" class="advisor-banner advisor-safe">
+          Loading status...
         </div>
-        <div class="stat-grid">
-          <div class="stat-item">
-            <div id="statAttended" class="stat-num" style="color: var(--color-present)">0</div>
-            <div class="stat-lbl">Attended</div>
+
+        <!-- 4 Key Stat Tiles -->
+        <div class="stat-tiles-row">
+          <div class="stat-tile">
+            <div id="statAttended" class="tile-number" style="color: var(--color-present)">0</div>
+            <div class="tile-label">Attended</div>
           </div>
-          <div class="stat-item">
-            <div id="statTotal" class="stat-num">0</div>
-            <div class="stat-lbl">Held</div>
+          <div class="stat-tile">
+            <div id="statTotal" class="tile-number">0</div>
+            <div class="tile-label">Total</div>
           </div>
-          <div class="stat-item">
-            <div id="statAbsent" class="stat-num" style="color: var(--color-absent)">0</div>
-            <div class="stat-lbl">Missed</div>
+          <div class="stat-tile">
+            <div id="statAbsent" class="tile-number" style="color: var(--color-absent)">0</div>
+            <div class="tile-label">Missed</div>
           </div>
-          <div class="stat-item">
-            <div id="statCancelled" class="stat-num" style="color: var(--text-muted)">0</div>
-            <div class="stat-lbl">Cancelled</div>
+          <div class="stat-tile">
+            <div id="statCancelled" class="tile-number" style="color: var(--text-muted)">0</div>
+            <div class="tile-label">Free</div>
           </div>
         </div>
       </div>
@@ -72,7 +88,7 @@
         <h2 class="section-title">Subject Breakdown</h2>
       </div>
       <div id="subjectListContainer">
-        <!-- Injected via JavaScript -->
+        <!-- Injected via app.js -->
       </div>
     </section>
 
@@ -80,37 +96,37 @@
     <section id="tab-timetable" class="tab-pane">
       <div class="section-header">
         <h2 class="section-title">Weekly Schedule</h2>
-        <button id="btnAddLecture" class="btn-sm btn-blue">+ Add Lecture</button>
+        <button id="btnAddLecture" class="btn-chip btn-chip-blue">+ Add Lecture</button>
       </div>
 
-      <!-- Day Horizontal Scroller -->
-      <div class="day-scroller" id="dayScroller">
-        <div class="day-pill active" data-day="Monday">Monday</div>
-        <div class="day-pill" data-day="Tuesday">Tuesday</div>
-        <div class="day-pill" data-day="Wednesday">Wednesday</div>
-        <div class="day-pill" data-day="Thursday">Thursday</div>
-        <div class="day-pill" data-day="Friday">Friday</div>
-        <div class="day-pill" data-day="Saturday" id="satPill">Saturday</div>
+      <!-- Day Segmented Horizontal Scroller -->
+      <div class="day-scroll-bar" id="dayScroller">
+        <div class="day-chip active" data-day="Monday">Monday</div>
+        <div class="day-chip" data-day="Tuesday">Tuesday</div>
+        <div class="day-chip" data-day="Wednesday">Wednesday</div>
+        <div class="day-chip" data-day="Thursday">Thursday</div>
+        <div class="day-chip" data-day="Friday">Friday</div>
+        <div class="day-chip" data-day="Saturday" id="satPill" style="display: none;">Saturday</div>
       </div>
 
       <div id="timetableListContainer">
-        <!-- Injected via JavaScript -->
+        <!-- Injected via app.js -->
       </div>
     </section>
 
     <!-- TAB 3: HISTORY & CORRECTIONS -->
     <section id="tab-history" class="tab-pane">
       <div class="section-header">
-        <h2 class="section-title">History & Corrections</h2>
-        <button id="btnAddManualRecord" class="btn-sm btn-blue">+ Add Past Entry</button>
+        <h2 class="section-title">Attendance History</h2>
+        <button id="btnAddManualRecord" class="btn-chip btn-chip-blue">+ Add Past Entry</button>
       </div>
 
       <!-- Filter Controls -->
-      <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-        <select id="filterSubject" class="form-select" style="flex: 1;">
+      <div class="filter-bar-row">
+        <select id="filterSubject" class="form-select-sm">
           <option value="All">All Subjects</option>
         </select>
-        <select id="filterStatus" class="form-select" style="width: 120px;">
+        <select id="filterStatus" class="form-select-sm" style="max-width: 140px;">
           <option value="All">All Status</option>
           <option value="present">Present</option>
           <option value="absent">Absent</option>
@@ -119,126 +135,129 @@
       </div>
 
       <div id="historyListContainer">
-        <!-- Injected via JavaScript -->
+        <!-- Injected via app.js -->
       </div>
     </section>
 
     <!-- TAB 4: SETTINGS -->
     <section id="tab-settings" class="tab-pane">
       <div class="section-header">
-        <h2 class="section-title">App Settings</h2>
+        <h2 class="section-title">App Preferences</h2>
       </div>
 
       <div class="subject-card">
-        <div class="form-group">
-          <label class="form-label" for="settingTarget">Target Attendance Percentage (%)</label>
-          <input type="number" id="settingTarget" class="form-input" min="50" max="100" value="75">
+        <div class="form-field">
+          <label class="form-label-text" for="settingTarget">Minimum Target Percentage (%)</label>
+          <input type="number" id="settingTarget" class="form-input-box" min="50" max="100" value="75">
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Options</label>
-          <label style="display: flex; align-items: center; gap: 10px; font-size: 0.9rem; margin-bottom: 10px;">
-            <input type="checkbox" id="settingIncludeSat">
+        <div class="form-field" style="margin-top: 10px;">
+          <label class="form-label-text">Preferences</label>
+          <label style="display: flex; align-items: center; gap: 12px; font-size: 0.9rem; margin-bottom: 12px; cursor: pointer;">
+            <input type="checkbox" id="settingIncludeSat" style="width: 18px; height: 18px; accent-color: var(--accent-blue);">
             Include Saturday in weekly schedule
           </label>
-          <label style="display: flex; align-items: center; gap: 10px; font-size: 0.9rem; margin-bottom: 10px;">
-            <input type="checkbox" id="settingSound" checked>
-            Play audio chime & vibration on alert
+          <label style="display: flex; align-items: center; gap: 12px; font-size: 0.9rem; cursor: pointer;">
+            <input type="checkbox" id="settingSound" checked style="width: 18px; height: 18px; accent-color: var(--accent-blue);">
+            Sound chime and vibration on lecture alerts
           </label>
         </div>
 
-        <button id="btnSaveSettings" class="btn-primary">Save Settings</button>
+        <button id="btnSaveSettings" class="btn-cta-primary">Save Preferences</button>
       </div>
 
-      <!-- Native Calendar Sync Card -->
+      <!-- Phone Calendar Sync Card -->
       <div class="subject-card" style="margin-top: 14px;">
-        <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 6px;">📅 Phone Calendar Sync</h3>
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">
-          Download your timetable as an <code>.ics</code> calendar file to sync alarms directly with Apple Calendar (iPhone) or Google Calendar (Android).
+        <h3 style="font-size: 0.95rem; font-weight: 800; color: #fff; margin-bottom: 4px;">📅 Phone Calendar Sync</h3>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px;">
+          Export your schedule to set automatic alarms in Apple Calendar or Google Calendar.
         </p>
-        <button id="btnExportCalendar" class="btn-sm btn-blue" style="width: 100%; padding: 10px;">Download Timetable (.ics Calendar)</button>
+        <button id="btnExportCalendar" class="btn-chip btn-chip-blue" style="width: 100%; justify-content: center; padding: 12px;">Download Timetable (.ics Calendar)</button>
       </div>
 
       <!-- Backup / Restore -->
       <div class="subject-card" style="margin-top: 14px;">
-        <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 6px;">💾 Data Backup & Restore</h3>
+        <h3 style="font-size: 0.95rem; font-weight: 800; color: #fff; margin-bottom: 4px;">💾 Data Backup</h3>
         <div style="display: flex; gap: 8px;">
-          <button id="btnExportJSON" class="btn-sm btn-blue" style="flex: 1; padding: 10px;">Export Backup</button>
-          <button id="btnResetData" class="btn-sm btn-red" style="padding: 10px;">Reset</button>
+          <button id="btnExportJSON" class="btn-chip btn-chip-blue" style="flex: 1; justify-content: center; padding: 10px;">Export JSON</button>
+          <button id="btnResetData" class="btn-chip btn-chip-red" style="padding: 10px;">Reset</button>
         </div>
       </div>
     </section>
 
   </main>
 
-  <!-- Bottom Navigation -->
-  <nav class="bottom-nav">
-    <button class="nav-item active" data-tab="dashboard">
-      <span class="nav-icon">📊</span>
+  <!-- Modern Mobile Bottom Navigation Dock -->
+  <nav class="bottom-nav-dock">
+    <button class="nav-tab-btn active" data-tab="dashboard">
+      <span class="nav-tab-icon">📊</span>
       <span>Dashboard</span>
     </button>
-    <button class="nav-item" data-tab="timetable">
-      <span class="nav-icon">📅</span>
-      <span>Timetable</span>
+    <button class="nav-tab-btn" data-tab="timetable">
+      <span class="nav-tab-icon">📅</span>
+      <span>Schedule</span>
     </button>
-    <button class="nav-item" data-tab="history">
-      <span class="nav-icon">📝</span>
+    <button class="nav-tab-btn" data-tab="history">
+      <span class="nav-tab-icon">📝</span>
       <span>History</span>
     </button>
-    <button class="nav-item" data-tab="settings">
-      <span class="nav-icon">⚙️</span>
+    <button class="nav-tab-btn" data-tab="settings">
+      <span class="nav-tab-icon">⚙️</span>
       <span>Settings</span>
     </button>
   </nav>
 
-  <!-- ================= MODALS ================= -->
+  <!-- ================= BOTTOM SHEET MODALS ================= -->
 
-  <!-- End-of-Lecture Alert Pop-up Modal -->
+  <!-- Lecture End Alert Modal (Bottom Sheet) -->
   <div id="modalLecturePrompt" class="modal-overlay">
-    <div class="modal-content prompt-box">
-      <span class="prompt-badge">🔔 LECTURE FINISHED</span>
-      <h2 id="promptSubject" class="prompt-title">Mathematics</h2>
-      <p id="promptTimeRoom" class="prompt-subtitle">10:00 - 11:00 • Room 101</p>
+    <div class="bottom-sheet prompt-sheet">
+      <div class="sheet-handle"></div>
+      <span class="prompt-tag">🔔 LECTURE FINISHED</span>
+      <h2 id="promptSubject" class="prompt-subject-name">Mathematics</h2>
+      <p id="promptTimeRoom" class="prompt-meta-text">10:00 - 11:00 • Room 101</p>
 
-      <p style="font-size: 0.95rem; font-weight: 700; margin-bottom: 16px;">
+      <p style="font-size: 0.95rem; font-weight: 800; margin-bottom: 18px; color: #fff;">
         Were you present or absent today?
       </p>
 
+      <!-- Action Choice Buttons -->
       <div id="promptActionView">
-        <div class="prompt-actions-grid">
-          <button id="btnPromptPresent" class="btn-prompt-present">✅ Present</button>
-          <button id="btnPromptAbsent" class="btn-prompt-absent">❌ Absent</button>
+        <div class="prompt-grid-btns">
+          <button id="btnPromptPresent" class="btn-touch-present">✅ Present</button>
+          <button id="btnPromptAbsent" class="btn-touch-absent">❌ Absent</button>
         </div>
-        <div class="prompt-secondary-row">
-          <button id="btnPromptCancel" class="btn-prompt-sec">⚪ Class Cancelled</button>
-          <button id="btnPromptSnooze" class="btn-prompt-sec">⏱ Snooze 5m</button>
+        <div class="prompt-sub-row">
+          <button id="btnPromptCancel" class="btn-prompt-link">⚪ Cancelled / Free</button>
+          <button id="btnPromptSnooze" class="btn-prompt-link">⏱ Snooze 5m</button>
         </div>
       </div>
 
       <!-- Undo Confirmation view -->
       <div id="promptUndoView" style="display: none;">
-        <div class="undo-box">
-          <div id="undoStatusText" class="undo-title">Marked as Present!</div>
-          <div class="undo-sub">Mistaken click? Tap Undo below.</div>
-          <button id="btnPromptUndo" class="btn-undo">↩️ Undo (Correction)</button>
+        <div class="undo-callout">
+          <div id="undoStatusText" class="undo-title-text">Marked as Present!</div>
+          <div class="undo-note-text">Mistaken click? Tap Undo to revert immediately.</div>
+          <button id="btnPromptUndo" class="btn-revert-action">↩️ Undo (Correction)</button>
         </div>
-        <button id="btnPromptDone" class="btn-primary" style="margin-top: 12px;">Done</button>
+        <button id="btnPromptDone" class="btn-cta-primary" style="margin-top: 14px;">Done</button>
       </div>
     </div>
   </div>
 
-  <!-- Add/Edit Lecture Modal -->
+  <!-- Add/Edit Lecture Sheet -->
   <div id="modalLectureEditor" class="modal-overlay">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 id="modalLectureTitle" class="modal-title">Add Lecture</h3>
-        <button class="btn-close" onclick="closeModal('modalLectureEditor')">&times;</button>
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="modal-title-bar">
+        <h3 id="modalLectureTitle" class="modal-heading">Add Lecture Slot</h3>
+        <button class="btn-close-modal" onclick="closeModal('modalLectureEditor')">&times;</button>
       </div>
       <form id="formLecture">
         <input type="hidden" id="lecEditId">
-        <div class="form-group">
-          <label class="form-label" for="lecDay">Day of Week</label>
-          <select id="lecDay" class="form-select">
+        <div class="form-field">
+          <label class="form-label-text" for="lecDay">Day of Week</label>
+          <select id="lecDay" class="form-select-box">
             <option value="Monday">Monday</option>
             <option value="Tuesday">Tuesday</option>
             <option value="Wednesday">Wednesday</option>
@@ -247,65 +266,66 @@
             <option value="Saturday">Saturday</option>
           </select>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="lecSubject">Subject Name</label>
-          <input type="text" id="lecSubject" class="form-input" placeholder="e.g. Operating Systems" required>
+        <div class="form-field">
+          <label class="form-label-text" for="lecSubject">Subject Name</label>
+          <input type="text" id="lecSubject" class="form-input-box" placeholder="e.g. Operating Systems" required>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-          <div class="form-group">
-            <label class="form-label" for="lecStartTime">Start Time</label>
-            <input type="time" id="lecStartTime" class="form-input" required>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-field">
+            <label class="form-label-text" for="lecStartTime">Start Time</label>
+            <input type="time" id="lecStartTime" class="form-input-box" required>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="lecEndTime">End Time</label>
-            <input type="time" id="lecEndTime" class="form-input" required>
+          <div class="form-field">
+            <label class="form-label-text" for="lecEndTime">End Time</label>
+            <input type="time" id="lecEndTime" class="form-input-box" required>
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="lecRoom">Room / Teacher (Optional)</label>
-          <input type="text" id="lecRoom" class="form-input" placeholder="e.g. Room 204">
+        <div class="form-field">
+          <label class="form-label-text" for="lecRoom">Room / Teacher (Optional)</label>
+          <input type="text" id="lecRoom" class="form-input-box" placeholder="e.g. Room 204">
         </div>
-        <button type="submit" class="btn-primary">Save Lecture</button>
+        <button type="submit" class="btn-cta-primary">Save Lecture Slot</button>
       </form>
     </div>
   </div>
 
-  <!-- Add/Edit History Record Modal -->
+  <!-- Add/Edit History Record Sheet -->
   <div id="modalRecordEditor" class="modal-overlay">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 id="modalRecordTitle" class="modal-title">Edit Attendance</h3>
-        <button class="btn-close" onclick="closeModal('modalRecordEditor')">&times;</button>
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="modal-title-bar">
+        <h3 id="modalRecordTitle" class="modal-heading">Edit Attendance Record</h3>
+        <button class="btn-close-modal" onclick="closeModal('modalRecordEditor')">&times;</button>
       </div>
       <form id="formRecord">
         <input type="hidden" id="recEditId">
-        <div class="form-group">
-          <label class="form-label" for="recSubject">Subject</label>
-          <input type="text" id="recSubject" class="form-input" placeholder="Subject Name" required>
+        <div class="form-field">
+          <label class="form-label-text" for="recSubject">Subject</label>
+          <input type="text" id="recSubject" class="form-input-box" placeholder="Subject Name" required>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="recStatus">Status</label>
-          <select id="recStatus" class="form-select">
+        <div class="form-field">
+          <label class="form-label-text" for="recStatus">Status</label>
+          <select id="recStatus" class="form-select-box">
             <option value="present">Present (Attended)</option>
             <option value="absent">Absent (Missed)</option>
             <option value="cancelled">Class Cancelled</option>
           </select>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-          <div class="form-group">
-            <label class="form-label" for="recDate">Date</label>
-            <input type="date" id="recDate" class="form-input" required>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-field">
+            <label class="form-label-text" for="recDate">Date</label>
+            <input type="date" id="recDate" class="form-input-box" required>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="recTime">Time</label>
-            <input type="time" id="recTime" class="form-input" required>
+          <div class="form-field">
+            <label class="form-label-text" for="recTime">Time</label>
+            <input type="time" id="recTime" class="form-input-box" required>
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="recNotes">Notes / Reason (Optional)</label>
-          <input type="text" id="recNotes" class="form-input" placeholder="e.g. Reason for absence">
+        <div class="form-field">
+          <label class="form-label-text" for="recNotes">Notes / Reason (Optional)</label>
+          <input type="text" id="recNotes" class="form-input-box" placeholder="e.g. Doctor appointment">
         </div>
-        <button type="submit" class="btn-primary">Save Record</button>
+        <button type="submit" class="btn-cta-primary">Save Attendance</button>
       </form>
     </div>
   </div>

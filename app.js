@@ -1,9 +1,8 @@
 /**
- * Attendance Manager - Mobile Progressive Web App (PWA)
- * Supports Apple iOS (iPhone/iPad) & Android
+ * Attendance Manager - Modern Mobile Native App Engine
  */
 
-const STORAGE_KEY = 'attendance_app_data_v2';
+const STORAGE_KEY = 'attendance_app_data_v3';
 
 const DEFAULT_STATE = {
   settings: {
@@ -54,15 +53,20 @@ const DEFAULT_STATE = {
   promptedHistory: {}
 };
 
-// State Manager
 class AppState {
   constructor() {
     this.data = this.load();
-    this.activeDay = 'Monday';
+    this.activeDay = this.getTodayName();
     this.activePrompt = null;
     this.lastRecordedId = null;
     this.undoTimeout = null;
     this.snoozeQueue = {};
+  }
+
+  getTodayName() {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const d = days[new Date().getDay()];
+    return (d === 'Sunday') ? 'Monday' : d;
   }
 
   load() {
@@ -78,7 +82,7 @@ class AppState {
         };
       }
     } catch (e) {
-      console.warn('Error loading localStorage data:', e);
+      console.warn('Error loading localStorage:', e);
     }
     return JSON.parse(JSON.stringify(DEFAULT_STATE));
   }
@@ -238,7 +242,7 @@ class AppState {
 
 const state = new AppState();
 
-// Audio Synth Chime for Mobile (Web Audio API)
+// Web Audio API Synthesizer chime for alerts
 function playNotificationChime() {
   if (!state.data.settings.soundEnabled) return;
   try {
@@ -255,30 +259,18 @@ function playNotificationChime() {
       osc.start(ctx.currentTime + start);
       osc.stop(ctx.currentTime + start + duration);
     };
-    playTone(587.33, 0, 0.2); // D5
-    playTone(880.00, 0.15, 0.35); // A5
+    playTone(587.33, 0, 0.18); // D5
+    playTone(880.00, 0.12, 0.32); // A5
   } catch (e) {
-    console.log('AudioContext not allowed or not supported yet');
+    console.log('Audio chime not ready yet');
   }
 
-  // Haptic feedback for Android/supported devices
   if ('vibrate' in navigator) {
     navigator.vibrate([200, 100, 200]);
   }
 }
 
-// Push / Web Notification
-function triggerSystemNotification(subject, timeStr) {
-  if ('Notification' in window && Notification.permission === 'granted') {
-    new Notification('⏰ Lecture Finished: ' + subject, {
-      body: `Did you attend ${subject} (${timeStr})? Tap to mark attendance!`,
-      icon: 'icon.svg',
-      badge: 'icon.svg'
-    });
-  }
-}
-
-// Lecture End Scheduler
+// Background Time Monitor for Lecture End Alerts
 function checkLectureTimes() {
   const now = new Date();
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -295,18 +287,14 @@ function checkLectureTimes() {
     if (!lec.endTime) return;
 
     const promptKey = `${todayStr}_${lec.id}`;
-
-    // Skip if currently prompted or snoozed
     if (state.snoozeQueue[promptKey] && now < state.snoozeQueue[promptKey]) return;
     if (state.data.promptedHistory[promptKey]) return;
 
-    // Check if lecture ended within last 4 hours
     const [h, m] = lec.endTime.split(':').map(Number);
     const endMinutes = h * 60 + m;
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
     if (currentMinutes >= endMinutes && (currentMinutes - endMinutes) <= 240) {
-      // Check if already logged
       const alreadyLogged = state.data.records.some(r => r.date === todayStr && r.subject.toLowerCase() === lec.subject.toLowerCase());
       if (!alreadyLogged) {
         state.data.promptedHistory[promptKey] = now.toISOString();
@@ -332,54 +320,68 @@ function updateUpcomingBanner() {
     if (next) {
       banner.textContent = `⏰ Next: ${next.subject} (Ends ${next.endTime})`;
     } else {
-      banner.textContent = `🎉 All lectures done for today!`;
+      banner.textContent = `🎉 All lectures finished for today!`;
     }
   }
 }
 
-// Open Lecture Prompt Modal
+// Trigger Bottom Sheet Prompt
 function triggerLecturePrompt(lec, dateStr, promptKey) {
   state.activePrompt = { lecture: lec, date: dateStr, promptKey };
   document.getElementById('promptSubject').textContent = lec.subject;
-  document.getElementById('promptTimeRoom').textContent = `${lec.startTime} - ${lec.endTime} • ${lec.room || 'No Room'}`;
+  document.getElementById('promptTimeRoom').textContent = `${lec.startTime} - ${lec.endTime} • ${lec.room || 'No Room Specified'}`;
 
-  // Reset to prompt action buttons view
   document.getElementById('promptActionView').style.display = 'block';
   document.getElementById('promptUndoView').style.display = 'none';
 
   openModal('modalLecturePrompt');
   playNotificationChime();
-  triggerSystemNotification(lec.subject, `${lec.startTime} - ${lec.endTime}`);
+
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('⏰ Lecture Finished: ' + lec.subject, {
+      body: `Did you attend ${lec.subject} (${lec.startTime} - ${lec.endTime})? Tap to mark attendance.`,
+      icon: 'icon-192.png'
+    });
+  }
 }
 
-// UI Rendering
+// UI Rendering Functions
 function renderDashboard() {
   const stats = state.calculateStats();
   const overall = stats.overall;
   const target = stats.targetPercentage;
 
   document.getElementById('overallPercentage').textContent = `${overall.pct.toFixed(1)}%`;
-  document.getElementById('targetBadge').textContent = `Target: ${target.toFixed(0)}%`;
+  document.getElementById('targetBadge').textContent = `Goal: ${target.toFixed(0)}%`;
   document.getElementById('statAttended').textContent = overall.attended;
   document.getElementById('statTotal').textContent = overall.total;
   document.getElementById('statAbsent').textContent = overall.absent;
   document.getElementById('statCancelled').textContent = overall.cancelled;
 
+  // Animate SVG circular progress gauge
+  const circle = document.getElementById('gaugeProgressCircle');
+  const circumference = 440; // 2 * pi * 70 = 439.82
+  const offset = circumference * (1 - Math.min(100, Math.max(0, overall.pct)) / 100);
+  circle.style.strokeDashoffset = offset;
+
   const pctElem = document.getElementById('overallPercentage');
   const adviceElem = document.getElementById('attendanceAdvice');
 
   if (overall.pct >= target) {
+    circle.style.stroke = 'var(--color-present)';
     pctElem.style.color = 'var(--color-present)';
-    adviceElem.className = 'advice-badge advice-safe';
-    adviceElem.textContent = `🟢 SAFE ZONE: You can safely miss ${overall.canBunk} class(es) and remain above ${target.toFixed(0)}%`;
+    adviceElem.className = 'advisor-banner advisor-safe';
+    adviceElem.innerHTML = `<span>🟢</span> Safe Zone: You can safely miss <b>${overall.canBunk}</b> class(es) and remain above ${target.toFixed(0)}%`;
   } else if (overall.pct >= (target - 10)) {
+    circle.style.stroke = 'var(--color-warn)';
     pctElem.style.color = 'var(--color-warn)';
-    adviceElem.className = 'advice-badge advice-warn';
-    adviceElem.textContent = `🟡 WARNING: You must attend ${overall.needAttend} consecutive class(es) to hit ${target.toFixed(0)}%`;
+    adviceElem.className = 'advisor-banner advisor-warn';
+    adviceElem.innerHTML = `<span>🟡</span> Warning: You must attend <b>${overall.needAttend}</b> consecutive class(es) to hit ${target.toFixed(0)}%`;
   } else {
+    circle.style.stroke = 'var(--color-absent)';
     pctElem.style.color = 'var(--color-absent)';
-    adviceElem.className = 'advice-badge advice-danger';
-    adviceElem.textContent = `🔴 SHORTAGE ALERT: You must attend ${overall.needAttend} consecutive class(es) to hit ${target.toFixed(0)}%`;
+    adviceElem.className = 'advisor-banner advisor-danger';
+    adviceElem.innerHTML = `<span>🔴</span> Shortage Alert: You must attend <b>${overall.needAttend}</b> consecutive class(es) to hit ${target.toFixed(0)}%`;
   }
 
   // Subject List
@@ -388,7 +390,7 @@ function renderDashboard() {
 
   const subList = Object.values(stats.subjects);
   if (subList.length === 0) {
-    container.innerHTML = `<div style="text-align:center; padding: 24px; color: var(--text-muted);">No subjects found. Add classes in the Timetable tab!</div>`;
+    container.innerHTML = `<div style="text-align:center; padding: 24px; color: var(--text-muted);">No subjects found. Add classes in the Schedule tab!</div>`;
     return;
   }
 
@@ -397,25 +399,25 @@ function renderDashboard() {
     card.className = 'subject-card';
 
     let badgeColor = 'var(--color-present)';
-    let note = `Can bunk: ${sub.canBunk}`;
+    let note = `Safe to bunk: ${sub.canBunk}`;
     if (sub.pct < target) {
       badgeColor = sub.pct < (target - 10) ? 'var(--color-absent)' : 'var(--color-warn)';
       note = `Must attend: ${sub.needAttend}`;
     }
 
     card.innerHTML = `
-      <div class="sub-top">
-        <span class="sub-name">${sub.subject}</span>
-        <span class="sub-badge" style="background: ${badgeColor};">${sub.pct.toFixed(1)}%</span>
+      <div class="sub-header-row">
+        <span class="sub-title">${sub.subject}</span>
+        <span class="sub-pct-chip" style="background: ${badgeColor};">${sub.pct.toFixed(1)}%</span>
       </div>
-      <div class="sub-progress-bar">
-        <div class="sub-progress-fill" style="width: ${Math.min(100, sub.pct)}%; background: ${badgeColor};"></div>
+      <div class="progress-track">
+        <div class="progress-fill" style="width: ${Math.min(100, sub.pct)}%; background: ${badgeColor};"></div>
       </div>
-      <div class="sub-bottom">
-        <span class="sub-metrics">Attended: ${sub.attended}/${sub.total} • ${note}</span>
-        <div class="sub-actions">
-          <button class="btn-sm btn-green" onclick="quickAddAttendance('${sub.subject}', 'present')">+ Present</button>
-          <button class="btn-sm btn-red" onclick="quickAddAttendance('${sub.subject}', 'absent')">+ Absent</button>
+      <div class="sub-footer-row">
+        <span class="sub-stat-text">${sub.attended}/${sub.total} Classes • ${note}</span>
+        <div class="sub-btn-group">
+          <button class="btn-chip btn-chip-green" onclick="quickAddAttendance('${sub.subject}', 'present')">+ Present</button>
+          <button class="btn-chip btn-chip-red" onclick="quickAddAttendance('${sub.subject}', 'absent')">+ Absent</button>
         </div>
       </div>
     `;
@@ -436,38 +438,37 @@ function renderTimetable() {
   const container = document.getElementById('timetableListContainer');
   container.innerHTML = '';
 
-  // Update day pill active classes
-  document.querySelectorAll('.day-pill').forEach(pill => {
-    pill.classList.toggle('active', pill.dataset.day === day);
+  document.querySelectorAll('.day-chip').forEach(chip => {
+    chip.classList.toggle('active', chip.dataset.day === day);
   });
 
   if (list.length === 0) {
     container.innerHTML = `
-      <div style="text-align: center; padding: 30px; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color); color: var(--text-muted);">
-        No lectures scheduled for ${day}.<br>Tap <b>+ Add Lecture</b> above to set your classes!
+      <div style="text-align: center; padding: 36px 20px; background: var(--bg-card); border-radius: 18px; border: 1px solid var(--border-subtle); color: var(--text-muted);">
+        No lectures scheduled for <b>${day}</b>.<br><span style="font-size: 0.8rem; margin-top: 6px; display: inline-block;">Tap <b>+ Add Lecture</b> above to add your classes.</span>
       </div>
     `;
     return;
   }
 
   list.forEach(lec => {
-    const item = document.createElement('div');
-    item.className = 'lecture-item';
-    item.innerHTML = `
-      <div class="lecture-time-badge">
-        <div class="lec-start">${lec.startTime}</div>
-        <div class="lec-end">${lec.endTime}</div>
+    const row = document.createElement('div');
+    row.className = 'timetable-row';
+    row.innerHTML = `
+      <div class="time-badge">
+        <div class="time-start">${lec.startTime}</div>
+        <div class="time-end">${lec.endTime}</div>
       </div>
-      <div class="lecture-info">
-        <div class="lec-title">${lec.subject}</div>
-        <div class="lec-room">📍 ${lec.room || 'No Room Specified'}</div>
+      <div class="lec-details">
+        <div class="lec-name">${lec.subject}</div>
+        <div class="lec-meta">📍 ${lec.room || 'No Room Specified'}</div>
       </div>
-      <div class="lecture-item-actions">
-        <button class="btn-sm btn-blue" onclick="openEditLecture('${lec.id}')">✏️</button>
-        <button class="btn-sm btn-red" onclick="deleteLectureSlot('${lec.id}')">🗑️</button>
+      <div class="lec-row-actions">
+        <button class="btn-chip btn-chip-blue" onclick="openEditLecture('${lec.id}')">✏️</button>
+        <button class="btn-chip btn-chip-red" onclick="deleteLectureSlot('${lec.id}')">🗑️</button>
       </div>
     `;
-    container.appendChild(item);
+    container.appendChild(row);
   });
 }
 
@@ -478,7 +479,6 @@ function renderHistory() {
   const subFilter = document.getElementById('filterSubject').value;
   const statusFilter = document.getElementById('filterStatus').value;
 
-  // Populate subject filter dropdown
   const filterSelect = document.getElementById('filterSubject');
   const currentVal = filterSelect.value;
   filterSelect.innerHTML = '<option value="All">All Subjects</option>';
@@ -505,23 +505,23 @@ function renderHistory() {
 
   records.forEach(r => {
     const row = document.createElement('div');
-    row.className = 'history-row';
+    row.className = 'history-card-row';
 
-    let tagClass = 'tag-present';
-    let tagText = 'PRESENT';
-    if (r.status === 'absent') { tagClass = 'tag-absent'; tagText = 'ABSENT'; }
-    else if (r.status === 'cancelled') { tagClass = 'tag-cancelled'; tagText = 'CANCELLED'; }
+    let badgeClass = 'badge-present';
+    let badgeText = 'PRESENT';
+    if (r.status === 'absent') { badgeClass = 'badge-absent'; badgeText = 'ABSENT'; }
+    else if (r.status === 'cancelled') { badgeClass = 'badge-cancelled'; badgeText = 'CANCELLED'; }
 
     row.innerHTML = `
-      <div class="hist-meta">
-        <div class="hist-sub">${r.subject}</div>
-        <div class="hist-date">📅 ${r.date} ${r.time} ${r.notes ? '• ' + r.notes : ''}</div>
+      <div class="hist-left">
+        <div class="hist-subject-name">${r.subject}</div>
+        <div class="hist-timestamp">📅 ${r.date} ${r.time} ${r.notes ? '• ' + r.notes : ''}</div>
       </div>
-      <div class="hist-actions">
-        <span class="status-tag ${tagClass}">${tagText}</span>
-        <button class="btn-toggle-status" onclick="toggleRecord('${r.id}')" title="1-Tap Toggle between Present and Absent">🔄</button>
-        <button class="btn-sm btn-blue" onclick="openEditRecord('${r.id}')">✏️</button>
-        <button class="btn-sm btn-red" onclick="deleteRecordItem('${r.id}')">🗑️</button>
+      <div class="hist-right-actions">
+        <span class="status-badge ${badgeClass}">${badgeText}</span>
+        <button class="btn-toggle-quick" onclick="toggleRecord('${r.id}')" title="1-Tap Toggle between Present and Absent">🔄 Toggle</button>
+        <button class="btn-chip btn-chip-blue" onclick="openEditRecord('${r.id}')">✏️</button>
+        <button class="btn-chip btn-chip-red" onclick="deleteRecordItem('${r.id}')">🗑️</button>
       </div>
     `;
     container.appendChild(row);
@@ -561,7 +561,7 @@ function closeModal(modalId) {
   if (modal) modal.classList.remove('open');
 }
 
-// Lecture Add/Edit Dialog
+// Dialog Handlers
 function openAddLecture() {
   document.getElementById('modalLectureTitle').textContent = 'Add Lecture Slot';
   document.getElementById('lecEditId').value = '';
@@ -592,7 +592,6 @@ function openEditLecture(id) {
   openModal('modalLectureEditor');
 }
 
-// Attendance Record Add/Edit Dialog
 function openAddManualRecord() {
   document.getElementById('modalRecordTitle').textContent = 'Add Past Attendance';
   document.getElementById('recEditId').value = '';
@@ -617,7 +616,7 @@ function openEditRecord(id) {
   openModal('modalRecordEditor');
 }
 
-// Prompt Modal Logic (Present / Absent / Cancel / Undo)
+// Prompt Modal Logic
 function handlePromptChoice(status) {
   if (!state.activePrompt) return;
 
@@ -628,14 +627,12 @@ function handlePromptChoice(status) {
   renderDashboard();
   renderHistory();
 
-  // Show Undo view
   document.getElementById('promptActionView').style.display = 'none';
   document.getElementById('promptUndoView').style.display = 'block';
 
-  const label = status === 'present' ? 'PRESENT (Attended) ✅' : (status === 'absent' ? 'ABSENT (Missed) ❌' : 'CANCELLED ⚪');
+  const label = status === 'present' ? 'PRESENT ✅' : (status === 'absent' ? 'ABSENT ❌' : 'CANCELLED ⚪');
   document.getElementById('undoStatusText').textContent = `Marked as: ${label}`;
 
-  // Auto-close after 5 seconds if left untouched
   if (state.undoTimeout) clearTimeout(state.undoTimeout);
   state.undoTimeout = setTimeout(() => {
     closeModal('modalLecturePrompt');
@@ -650,7 +647,6 @@ function handlePromptUndo() {
     renderDashboard();
     renderHistory();
   }
-  // Restore action buttons
   document.getElementById('promptActionView').style.display = 'block';
   document.getElementById('promptUndoView').style.display = 'none';
 }
@@ -663,7 +659,7 @@ function handlePromptSnooze() {
   closeModal('modalLecturePrompt');
 }
 
-// Calendar .ics Export Generator (For Apple Calendar & Google Calendar Alarms)
+// Calendar Export
 function exportToCalendarICS() {
   let icsContent = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Attendance Manager//EN\r\nCALSCALE:GREGORIAN\r\n";
   const dayMap = { Monday: 'MO', Tuesday: 'TU', Wednesday: 'WE', Thursday: 'TH', Friday: 'FR', Saturday: 'SA' };
@@ -682,7 +678,6 @@ function exportToCalendarICS() {
       icsContent += `RRULE:FREQ=WEEKLY;BYDAY=${byDay}\r\n`;
       icsContent += `DTSTART:20261102T${sh}${sm}00\r\n`;
       icsContent += `DTEND:20261102T${eh}${em}00\r\n`;
-      // Trigger alarm at end of lecture
       icsContent += "BEGIN:VALARM\r\nTRIGGER:PT0M\r\nACTION:DISPLAY\r\nDESCRIPTION:Class ended! Mark attendance now.\r\nEND:VALARM\r\n";
       icsContent += "END:VEVENT\r\n";
     });
@@ -698,12 +693,11 @@ function exportToCalendarICS() {
   URL.revokeObjectURL(url);
 }
 
-// Event Listeners Initialization
+// Initialization
 document.addEventListener('DOMContentLoaded', () => {
-  // Navigation Tabs
-  document.querySelectorAll('.nav-item').forEach(btn => {
+  document.querySelectorAll('.nav-tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
 
       btn.classList.add('active');
@@ -716,15 +710,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Day Scroller
-  document.querySelectorAll('.day-pill').forEach(pill => {
-    pill.addEventListener('click', () => {
-      state.activeDay = pill.dataset.day;
+  document.querySelectorAll('.day-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      state.activeDay = chip.dataset.day;
       renderTimetable();
     });
   });
 
-  // Notification Permission Request
   document.getElementById('btnNotifyPermission').addEventListener('click', () => {
     if ('Notification' in window) {
       Notification.requestPermission().then(permission => {
@@ -732,7 +724,7 @@ document.addEventListener('DOMContentLoaded', () => {
           alert('🔔 Notifications enabled! You will receive alerts at lecture end times.');
           playNotificationChime();
         } else {
-          alert('Notifications were blocked. Please enable them in your phone browser site settings.');
+          alert('Notifications were blocked. Please enable them in your phone site settings.');
         }
       });
     } else {
@@ -740,7 +732,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Quick Test Prompt
   document.getElementById('btnQuickTestPrompt').addEventListener('click', () => {
     const testLec = {
       id: 'test-demo',
@@ -752,7 +743,6 @@ document.addEventListener('DOMContentLoaded', () => {
     triggerLecturePrompt(testLec, new Date().toISOString().split('T')[0], 'test_prompt');
   });
 
-  // Prompt Buttons
   document.getElementById('btnPromptPresent').addEventListener('click', () => handlePromptChoice('present'));
   document.getElementById('btnPromptAbsent').addEventListener('click', () => handlePromptChoice('absent'));
   document.getElementById('btnPromptCancel').addEventListener('click', () => handlePromptChoice('cancelled'));
@@ -760,7 +750,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnPromptUndo').addEventListener('click', handlePromptUndo);
   document.getElementById('btnPromptDone').addEventListener('click', () => closeModal('modalLecturePrompt'));
 
-  // Add Lecture Button
   document.getElementById('btnAddLecture').addEventListener('click', openAddLecture);
   document.getElementById('formLecture').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -781,7 +770,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUpcomingBanner();
   });
 
-  // Add Manual Record Button
   document.getElementById('btnAddManualRecord').addEventListener('click', openAddManualRecord);
   document.getElementById('formRecord').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -800,11 +788,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderDashboard();
   });
 
-  // History Filters
   document.getElementById('filterSubject').addEventListener('change', renderHistory);
   document.getElementById('filterStatus').addEventListener('change', renderHistory);
 
-  // Settings
   document.getElementById('settingTarget').value = state.data.settings.targetPercentage;
   document.getElementById('settingIncludeSat').checked = state.data.settings.includeSaturday;
   document.getElementById('settingSound').checked = state.data.settings.soundEnabled;
@@ -816,13 +802,11 @@ document.addEventListener('DOMContentLoaded', () => {
     state.save();
     document.getElementById('satPill').style.display = state.data.settings.includeSaturday ? 'block' : 'none';
     renderDashboard();
-    alert('Settings saved successfully!');
+    alert('Preferences saved successfully!');
   });
 
-  // Export Calendar
   document.getElementById('btnExportCalendar').addEventListener('click', exportToCalendarICS);
 
-  // Backup & Reset
   document.getElementById('btnExportJSON').addEventListener('click', () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.data, null, 2));
     const dl = document.createElement('a');
@@ -838,17 +822,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Initial Render
   renderDashboard();
   renderTimetable();
   renderHistory();
   updateUpcomingBanner();
 
-  // Register Service Worker for PWA
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration error:', err));
   }
 
-  // Periodic Clock Check (every 5 seconds)
   setInterval(checkLectureTimes, 5000);
 });
