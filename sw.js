@@ -1,4 +1,4 @@
-const CACHE_NAME = 'attendance-v10-live';
+const CACHE_NAME = 'attendance-v11-live';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

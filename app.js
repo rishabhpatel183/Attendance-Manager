@@ -1026,7 +1026,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isIOS) {
           alert('🍏 On iPhone: Tap the Share button at the bottom of Safari, then tap "Add to Home Screen" (➕).');
         } else {
-          alert('🤖 On Android: Tap the 3 dots menu in Chrome, then tap "Install app" (or click the 📥 APK button to download the APK directly!).');
+          alert('🤖 Direct Install (Zero Warnings):\n\n1. In Chrome, tap the 3 dots (⋮) at top right.\n2. Tap "Install app" (or "Add to Home screen").\n\nThis installs the verified app directly onto your phone with ZERO security alerts or APK warnings!');
         }
       }
     });
