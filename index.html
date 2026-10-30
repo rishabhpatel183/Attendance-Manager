@@ -49,6 +49,7 @@
         <button id="btnInstallPwa" class="btn-install-pwa">
           <span>📲</span> Install
         </button>
+        <button class="btn-banner-close" id="btnDismissBanner" title="Dismiss" aria-label="Close banner">&times;</button>
       </div>
     </div>
 
@@ -66,18 +67,20 @@
       </div>
 
       <!-- Overall Summary Row -->
-      <div id="overallSummaryContainer" class="overall-summary-row">
+      <div id="overallSummaryContainer" class="overall-summary-row" style="display: none;">
         <span>Overall Attendance:</span>
         <span id="overallSummaryText" class="overall-highlight">No records till now</span>
       </div>
 
-      <!-- Subject Breakdown Section -->
-      <div class="section-header">
-        <h2 class="section-title">Subject Breakdown</h2>
-        <button id="btnDashAddLec" class="btn-chip btn-chip-blue">+ Add Lecture</button>
-      </div>
-      <div id="subjectListContainer">
-        <!-- Injected via app.js -->
+      <!-- Subject Breakdown Section (Hidden when no subjects exist) -->
+      <div id="subjectBreakdownSection" style="display: none;">
+        <div class="section-header">
+          <h2 class="section-title">Subject Breakdown</h2>
+          <button id="btnDashAddLec" class="btn-chip btn-chip-blue">+ Add Lecture</button>
+        </div>
+        <div id="subjectListContainer">
+          <!-- Injected via app.js -->
+        </div>
       </div>
     </section>
 

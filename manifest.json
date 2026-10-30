@@ -3,12 +3,12 @@
   "name": "Attendance Manager",
   "short_name": "Attendance",
   "description": "Smart college attendance manager with automated lecture end pop-ups, safe bunk calculator, and mistake correction.",
-  "start_url": "./index.html",
+  "start_url": "./index.html?mode=standalone",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "categories": ["education", "productivity"],
   "icons": [
     {

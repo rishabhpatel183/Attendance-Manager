@@ -2,7 +2,7 @@
  * Attendance Manager - Upcoming Class Focus & Thinkable Safe-Bunk Calculator
  */
 
-const STORAGE_KEY = 'attendance_bunk_predictor_v7';
+const STORAGE_KEY = 'attendance_pure_clean_v8';
 
 // 100% Clean Default State with NO pre-filled subjects
 const DEFAULT_STATE = {
@@ -64,13 +64,17 @@ class AppState {
     }
   }
 
+  // Dashboard subjects strictly derive from active timetable schedule!
   getUniqueSubjects() {
     const subs = new Set();
     Object.values(this.data.timetable).forEach(list => {
-      list.forEach(item => { if (item.subject) subs.add(item.subject); });
+      list.forEach(item => {
+        if (item && item.subject && item.subject.trim()) {
+          subs.add(item.subject.trim());
+        }
+      });
     });
-    this.data.records.forEach(r => { if (r.subject) subs.add(r.subject); });
-    return Array.from(subs).sort();
+    return Array.from(subs).sort((a, b) => a.localeCompare(b));
   }
 
   calculateStats() {
@@ -78,15 +82,16 @@ class AppState {
     const overall = { attended: 0, absent: 0, cancelled: 0, total: 0, pct: null, canBunk: 0, needAttend: 0, hasRecords: false };
     const subjects = {};
 
-    this.getUniqueSubjects().forEach(s => {
+    const uniqueSubs = this.getUniqueSubjects();
+    uniqueSubs.forEach(s => {
       subjects[s] = { subject: s, attended: 0, absent: 0, cancelled: 0, total: 0, pct: null, canBunk: 0, needAttend: 0, hasRecords: false };
     });
 
     this.data.records.forEach(r => {
-      const s = r.subject || 'Unknown';
-      if (!subjects[s]) {
-        subjects[s] = { subject: s, attended: 0, absent: 0, cancelled: 0, total: 0, pct: null, canBunk: 0, needAttend: 0, hasRecords: false };
-      }
+      const s = (r.subject || '').trim();
+      // Only process records for subjects currently active in the schedule
+      if (!subjects[s]) return;
+
       const st = (r.status || '').toLowerCase();
       if (st === 'present') {
         overall.attended++;
@@ -289,10 +294,30 @@ class AppState {
   }
 
   deleteLecture(id) {
+    let removedSubject = null;
     Object.keys(this.data.timetable).forEach(d => {
+      const found = this.data.timetable[d].find(l => l.id === id);
+      if (found) removedSubject = found.subject;
       this.data.timetable[d] = this.data.timetable[d].filter(l => l.id !== id);
     });
+
+    if (removedSubject) {
+      const subjectLower = removedSubject.trim().toLowerCase();
+      // Check if this subject is still in any other timetable slot
+      const stillInTimetable = Object.values(this.data.timetable).some(list =>
+        list.some(l => l.subject && l.subject.trim().toLowerCase() === subjectLower)
+      );
+
+      if (!stillInTimetable) {
+        // Completely remove records for this deleted subject so it disappears from dashboard
+        this.data.records = this.data.records.filter(r =>
+          r.subject && r.subject.trim().toLowerCase() !== subjectLower
+        );
+      }
+    }
+
     this.save();
+    return removedSubject;
   }
 }
 
@@ -464,15 +489,43 @@ function handlePromptSnooze() {
 
 // UI Rendering Functions
 function renderDashboard() {
+  const uniqueSubs = state.getUniqueSubjects();
+  const heroContainer = document.getElementById('heroFocusContainer');
+  const lastContainer = document.getElementById('lastUpdatedContainer');
+  const overallContainer = document.getElementById('overallSummaryContainer');
+  const overallSummaryText = document.getElementById('overallSummaryText');
+  const breakdownSection = document.getElementById('subjectBreakdownSection');
+  const subContainer = document.getElementById('subjectListContainer');
+
+  // CASE 1: NO subjects added to schedule yet!
+  if (uniqueSubs.length === 0) {
+    if (overallContainer) overallContainer.style.display = 'none';
+    if (breakdownSection) breakdownSection.style.display = 'none';
+    if (lastContainer) lastContainer.innerHTML = '';
+    if (subContainer) subContainer.innerHTML = '';
+
+    heroContainer.innerHTML = `
+      <div class="empty-state-box" style="margin-top: 10px; padding: 32px 18px;">
+        <div class="empty-state-icon" style="font-size: 2.5rem;">🎓</div>
+        <div class="empty-state-title" style="font-size: 1.15rem; margin-bottom: 6px;">No Subjects Added Yet</div>
+        <div class="empty-state-sub" style="font-size: 0.82rem; max-width: 300px; margin: 0 auto 18px auto; color: var(--text-muted); line-height: 1.4;">
+          Add your lectures in the Schedule tab to start tracking your attendance and predicting safe bunks.
+        </div>
+        <button class="btn-cta-primary" style="max-width: 220px; margin: 0 auto; display: block;" onclick="openAddLecture()">+ Add Your First Lecture</button>
+      </div>
+    `;
+    return;
+  }
+
+  // CASE 2: Subjects ARE added to schedule!
+  if (overallContainer) overallContainer.style.display = 'flex';
+  if (breakdownSection) breakdownSection.style.display = 'block';
+
   const stats = state.calculateStats();
   const overall = stats.overall;
   const target = stats.targetPercentage;
   const upcomingData = state.getUpcomingLectureDetails();
   const lastRecord = state.getLastUpdatedRecord();
-
-  const heroContainer = document.getElementById('heroFocusContainer');
-  const lastContainer = document.getElementById('lastUpdatedContainer');
-  const overallSummaryText = document.getElementById('overallSummaryText');
 
   // 1. Overall Summary Text (NEVER 100% when no records exist!)
   if (!overall.hasRecords) {
@@ -490,7 +543,7 @@ function renderDashboard() {
     const isSafe = pred.canBunk;
 
     const currentScoreHtml = pred.hasRecords 
-      ? `<span class="sub-current-val" style="color: ${pred.currentPct >= target ? 'var(--color-present)' : 'var(--color-absent)'}">${pred.currentPct.toFixed(1)}%</span>`
+      ? `<span class="sub-current-val" style="color: ${pred.currentPct >= target ? 'var(--color-present)' : 'var(--color-absent)'}">${pred.currentPct.toFixed(1)}% (${pred.attended}/${pred.total})</span>`
       : `<span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">No records till now</span>`;
 
     const impactChipsHtml = pred.hasRecords ? `
@@ -504,7 +557,18 @@ function renderDashboard() {
           <div style="font-size: 0.95rem; font-weight: 900; color: var(--color-present);">${pred.attendPct}%</div>
         </div>
       </div>
-    ` : '';
+    ` : `
+      <div class="bunk-impact-row">
+        <div class="impact-chip">
+          <div style="color: var(--text-muted); font-size: 0.7rem;">IF YOU BUNK</div>
+          <div style="font-size: 0.95rem; font-weight: 900; color: var(--color-absent);">0.0%</div>
+        </div>
+        <div class="impact-chip">
+          <div style="color: var(--text-muted); font-size: 0.7rem;">IF YOU ATTEND</div>
+          <div style="font-size: 0.95rem; font-weight: 900; color: var(--color-present);">100.0%</div>
+        </div>
+      </div>
+    `;
 
     heroContainer.innerHTML = `
       <div class="upcoming-hero-card">
@@ -532,17 +596,16 @@ function renderDashboard() {
   } else {
     // If no upcoming classes found in timetable
     heroContainer.innerHTML = `
-      <div class="empty-state-box">
-        <div class="empty-state-icon">📚</div>
-        <div class="empty-state-title">No Lectures in Schedule</div>
-        <div class="empty-state-sub">Add your lectures to see upcoming class attendance and safe-bunk predictions.</div>
-        <button class="btn-chip btn-chip-blue" style="margin: 0 auto; padding: 12px 24px;" onclick="openAddLecture()">+ Add Your First Lecture</button>
+      <div class="empty-state-box" style="padding: 18px 16px;">
+        <div class="empty-state-icon" style="font-size: 1.6rem; margin-bottom: 4px;">📅</div>
+        <div class="empty-state-title" style="font-size: 0.95rem;">All classes done for today!</div>
+        <div class="empty-state-sub" style="margin-bottom: 0;">Check your Schedule tab for upcoming days.</div>
       </div>
     `;
   }
 
-  // 3. Last Class Updated Strip
-  if (lastRecord) {
+  // 3. Last Class Updated Strip (Only if last record belongs to an active subject)
+  if (lastRecord && uniqueSubs.includes(lastRecord.subject)) {
     const isPres = lastRecord.status === 'present';
     const stIcon = isPres ? '✅' : (lastRecord.status === 'absent' ? '❌' : '⚪');
     const stColor = isPres ? 'var(--color-present)' : (lastRecord.status === 'absent' ? 'var(--color-absent)' : 'var(--text-muted)');
@@ -565,18 +628,8 @@ function renderDashboard() {
   }
 
   // 4. Subject Cards List
-  const container = document.getElementById('subjectListContainer');
-  container.innerHTML = '';
-
+  subContainer.innerHTML = '';
   const subList = Object.values(stats.subjects);
-  if (subList.length === 0) {
-    container.innerHTML = `
-      <div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 0.85rem;">
-        No subjects registered yet. Tap <b>+ Add Lecture</b> to create subjects!
-      </div>
-    `;
-    return;
-  }
 
   subList.forEach(sub => {
     const card = document.createElement('div');
@@ -767,11 +820,12 @@ function deleteRecordItem(id) {
 }
 
 function deleteLectureSlot(id) {
-  state.deleteLecture(id);
+  const removedSubject = state.deleteLecture(id);
   renderTimetable();
   updateUpcomingBanner();
   renderDashboard();
-  showBottomToast(`Removed lecture slot`, 'Dismiss', hideBottomToast);
+  renderHistory();
+  showBottomToast(removedSubject ? `Removed ${removedSubject} from schedule & dashboard` : `Removed lecture slot`, 'Dismiss', hideBottomToast);
 }
 
 // Modal Helpers
@@ -874,6 +928,39 @@ function exportToCalendarICS() {
   URL.revokeObjectURL(url);
 }
 
+// Standalone / App Mode Detection to hide "Get the Mobile App" banner in app
+function checkAppMode() {
+  const isStandalone = 
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.matchMedia('(display-mode: fullscreen)').matches ||
+    window.matchMedia('(display-mode: minimal-ui)').matches ||
+    window.matchMedia('(display-mode: window-controls-overlay)').matches ||
+    window.navigator.standalone === true ||
+    document.referrer.includes('android-app://') ||
+    window.location.search.includes('mode=standalone') ||
+    window.location.search.includes('source=pwa') ||
+    localStorage.getItem('app_installed_mode') === 'true' ||
+    localStorage.getItem('dismiss_install_banner') === 'true';
+
+  const banner = document.getElementById('downloadBanner');
+  if (banner) {
+    if (isStandalone) {
+      banner.style.display = 'none';
+      if (window.location.search.includes('mode=standalone') || window.navigator.standalone) {
+        localStorage.setItem('app_installed_mode', 'true');
+      }
+    } else {
+      banner.style.display = 'flex';
+    }
+  }
+}
+
+function dismissAppBanner() {
+  const banner = document.getElementById('downloadBanner');
+  if (banner) banner.style.display = 'none';
+  localStorage.setItem('dismiss_install_banner', 'true');
+}
+
 // PWA Install Prompt Capture
 let deferredInstallPrompt = null;
 window.addEventListener('beforeinstallprompt', (e) => {
@@ -885,6 +972,20 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
+  // Check standalone mode immediately
+  checkAppMode();
+
+  const btnDismiss = document.getElementById('btnDismissBanner');
+  if (btnDismiss) btnDismiss.addEventListener('click', dismissAppBanner);
+
+  const btnApk = document.getElementById('btnDownloadApkLink');
+  if (btnApk) {
+    btnApk.addEventListener('click', () => {
+      localStorage.setItem('dismiss_install_banner', 'true');
+      setTimeout(checkAppMode, 300);
+    });
+  }
+
   // Navigation
   document.querySelectorAll('.nav-tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
