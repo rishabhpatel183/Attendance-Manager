@@ -1,8 +1,8 @@
 /**
- * Attendance Manager - Clean State, OLED Black Edition
+ * Attendance Manager - Clean State, OLED Black Edition, Floating Bottom Toast Undo
  */
 
-const STORAGE_KEY = 'attendance_clean_black_v5';
+const STORAGE_KEY = 'attendance_clean_black_v6';
 
 // 100% Clean Default State with NO pre-filled subjects
 const DEFAULT_STATE = {
@@ -29,8 +29,6 @@ class AppState {
     this.data = this.load();
     this.activeDay = this.getTodayName();
     this.activePrompt = null;
-    this.lastRecordedId = null;
-    this.undoTimeout = null;
     this.snoozeQueue = {};
   }
 
@@ -159,12 +157,16 @@ class AppState {
       else if (rec.status === 'absent') rec.status = 'present';
       else rec.status = 'present';
       this.save();
+      return rec;
     }
+    return null;
   }
 
   deleteRecord(id) {
+    const rec = this.data.records.find(r => r.id === id);
     this.data.records = this.data.records.filter(r => r.id !== id);
     this.save();
+    return rec;
   }
 
   updateRecord(id, subject, status, dateStr, timeStr, notes) {
@@ -212,6 +214,42 @@ class AppState {
 }
 
 const state = new AppState();
+
+// Bottom Floating Toast (Small, Unobtrusive Undo / Redo at bottom)
+let toastTimer = null;
+function showBottomToast(message, actionText, actionCallback) {
+  const toastContainer = document.getElementById('bottomToast');
+  const msgElem = document.getElementById('toastMessage');
+  const btnAction = document.getElementById('btnToastUndo');
+
+  if (!toastContainer || !msgElem || !btnAction) return;
+
+  if (toastTimer) clearTimeout(toastTimer);
+
+  msgElem.textContent = message;
+  btnAction.textContent = actionText;
+
+  // Replace button clone to clean old listeners
+  const newBtn = btnAction.cloneNode(true);
+  btnAction.parentNode.replaceChild(newBtn, btnAction);
+
+  newBtn.addEventListener('click', () => {
+    if (actionCallback) actionCallback();
+  });
+
+  toastContainer.classList.add('active');
+
+  // Auto-hide after 4.5 seconds
+  toastTimer = setTimeout(() => {
+    toastContainer.classList.remove('active');
+  }, 4500);
+}
+
+function hideBottomToast() {
+  const toastContainer = document.getElementById('bottomToast');
+  if (toastContainer) toastContainer.classList.remove('active');
+  if (toastTimer) clearTimeout(toastTimer);
+}
 
 // Web Audio API Synthesizer chime for alerts
 function playNotificationChime() {
@@ -304,9 +342,6 @@ function triggerLecturePrompt(lec, dateStr, promptKey) {
   document.getElementById('promptSubject').textContent = lec.subject;
   document.getElementById('promptTimeRoom').textContent = `${lec.startTime} - ${lec.endTime} • ${lec.room || 'No Room Specified'}`;
 
-  document.getElementById('promptActionView').style.display = 'block';
-  document.getElementById('promptUndoView').style.display = 'none';
-
   openModal('modalLecturePrompt');
   playNotificationChime();
 
@@ -316,6 +351,46 @@ function triggerLecturePrompt(lec, dateStr, promptKey) {
       icon: 'icon-192.png'
     });
   }
+}
+
+// Prompt Choice Handler: Closes immediately and shows small bottom toast undo!
+function handlePromptChoice(status) {
+  if (!state.activePrompt) return;
+
+  const lec = state.activePrompt.lecture;
+  const rec = state.addRecord(lec.subject, status, state.activePrompt.date, lec.endTime);
+
+  // Close the popup modal immediately (No taking over the middle of screen!)
+  closeModal('modalLecturePrompt');
+
+  renderDashboard();
+  renderHistory();
+
+  const label = status === 'present' ? 'Present ✅' : (status === 'absent' ? 'Absent ❌' : 'Cancelled ⚪');
+  
+  // Show clean floating bottom toast
+  showBottomToast(`Marked ${lec.subject} as ${label}`, '↩️ Undo', () => {
+    // Undo logic
+    state.deleteRecord(rec.id);
+    renderDashboard();
+    renderHistory();
+    // Offer redo option in bottom toast
+    showBottomToast(`Undone: ${lec.subject}`, '↪️ Redo', () => {
+      state.addRecord(lec.subject, status, rec.date, rec.time);
+      renderDashboard();
+      renderHistory();
+      hideBottomToast();
+    });
+  });
+}
+
+function handlePromptSnooze() {
+  if (state.activePrompt) {
+    const key = state.activePrompt.promptKey;
+    state.snoozeQueue[key] = new Date(Date.now() + 5 * 60 * 1000);
+  }
+  closeModal('modalLecturePrompt');
+  showBottomToast(`Snoozed for 5 minutes ⏱`, 'Dismiss', hideBottomToast);
 }
 
 // UI Rendering Functions
@@ -413,10 +488,17 @@ function renderDashboard() {
 }
 
 function quickAddAttendance(subject, status) {
-  state.addRecord(subject, status);
+  const rec = state.addRecord(subject, status);
   renderDashboard();
   renderHistory();
   updateUpcomingBanner();
+
+  const label = status === 'present' ? 'Present ✅' : 'Absent ❌';
+  showBottomToast(`Marked ${subject} as ${label}`, '↩️ Undo', () => {
+    state.deleteRecord(rec.id);
+    renderDashboard();
+    renderHistory();
+  });
 }
 
 function renderTimetable() {
@@ -526,25 +608,37 @@ function renderHistory() {
 }
 
 function toggleRecord(id) {
-  state.toggleRecordStatus(id);
+  const updated = state.toggleRecordStatus(id);
   renderDashboard();
   renderHistory();
+  if (updated) {
+    const label = updated.status === 'present' ? 'Present ✅' : 'Absent ❌';
+    showBottomToast(`Switched ${updated.subject} to ${label}`, '↩️ Revert', () => {
+      state.toggleRecordStatus(id);
+      renderDashboard();
+      renderHistory();
+    });
+  }
 }
 
 function deleteRecordItem(id) {
-  if (confirm('Delete this attendance entry?')) {
-    state.deleteRecord(id);
-    renderDashboard();
-    renderHistory();
+  const deleted = state.deleteRecord(id);
+  renderDashboard();
+  renderHistory();
+  if (deleted) {
+    showBottomToast(`Deleted record for ${deleted.subject}`, '↩️ Undo', () => {
+      state.addRecord(deleted.subject, deleted.status, deleted.date, deleted.time, deleted.notes);
+      renderDashboard();
+      renderHistory();
+    });
   }
 }
 
 function deleteLectureSlot(id) {
-  if (confirm('Remove this lecture slot from schedule?')) {
-    state.deleteLecture(id);
-    renderTimetable();
-    updateUpcomingBanner();
-  }
+  state.deleteLecture(id);
+  renderTimetable();
+  updateUpcomingBanner();
+  showBottomToast(`Removed lecture slot`, 'Dismiss', hideBottomToast);
 }
 
 // Modal Helpers
@@ -611,49 +705,6 @@ function openEditRecord(id) {
   document.getElementById('recTime').value = r.time;
   document.getElementById('recNotes').value = r.notes || '';
   openModal('modalRecordEditor');
-}
-
-// Prompt Modal Logic
-function handlePromptChoice(status) {
-  if (!state.activePrompt) return;
-
-  const lec = state.activePrompt.lecture;
-  const rec = state.addRecord(lec.subject, status, state.activePrompt.date, lec.endTime);
-  state.lastRecordedId = rec.id;
-
-  renderDashboard();
-  renderHistory();
-
-  document.getElementById('promptActionView').style.display = 'none';
-  document.getElementById('promptUndoView').style.display = 'block';
-
-  const label = status === 'present' ? 'PRESENT ✅' : (status === 'absent' ? 'ABSENT ❌' : 'CANCELLED ⚪');
-  document.getElementById('undoStatusText').textContent = `Marked as: ${label}`;
-
-  if (state.undoTimeout) clearTimeout(state.undoTimeout);
-  state.undoTimeout = setTimeout(() => {
-    closeModal('modalLecturePrompt');
-  }, 5000);
-}
-
-function handlePromptUndo() {
-  if (state.undoTimeout) clearTimeout(state.undoTimeout);
-  if (state.lastRecordedId) {
-    state.deleteRecord(state.lastRecordedId);
-    state.lastRecordedId = null;
-    renderDashboard();
-    renderHistory();
-  }
-  document.getElementById('promptActionView').style.display = 'block';
-  document.getElementById('promptUndoView').style.display = 'none';
-}
-
-function handlePromptSnooze() {
-  if (state.activePrompt) {
-    const key = state.activePrompt.promptKey;
-    state.snoozeQueue[key] = new Date(Date.now() + 5 * 60 * 1000);
-  }
-  closeModal('modalLecturePrompt');
 }
 
 // Calendar Export
@@ -738,7 +789,6 @@ document.addEventListener('DOMContentLoaded', () => {
           deferredInstallPrompt = null;
         });
       } else {
-        // Fallback instructions
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
         if (isIOS) {
           alert('🍏 On iPhone: Tap the Share button at the bottom of Safari, then tap "Add to Home Screen" (➕).');
@@ -749,7 +799,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Permission
+  // Notification Permission
   document.getElementById('btnNotifyPermission').addEventListener('click', () => {
     if ('Notification' in window) {
       Notification.requestPermission().then(permission => {
@@ -768,7 +818,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnQuickTestPrompt').addEventListener('click', () => {
     const testLec = {
       id: 'test-demo',
-      subject: 'Sample Class',
+      subject: 'Sample Lecture',
       startTime: '10:00',
       endTime: '11:00',
       room: 'Room 101'
@@ -776,13 +826,11 @@ document.addEventListener('DOMContentLoaded', () => {
     triggerLecturePrompt(testLec, new Date().toISOString().split('T')[0], 'test_prompt');
   });
 
-  // Prompt Buttons
+  // Prompt Buttons (1 tap -> instantly logs and closes!)
   document.getElementById('btnPromptPresent').addEventListener('click', () => handlePromptChoice('present'));
   document.getElementById('btnPromptAbsent').addEventListener('click', () => handlePromptChoice('absent'));
   document.getElementById('btnPromptCancel').addEventListener('click', () => handlePromptChoice('cancelled'));
   document.getElementById('btnPromptSnooze').addEventListener('click', handlePromptSnooze);
-  document.getElementById('btnPromptUndo').addEventListener('click', handlePromptUndo);
-  document.getElementById('btnPromptDone').addEventListener('click', () => closeModal('modalLecturePrompt'));
 
   // Form Lecture
   document.getElementById('btnAddLecture').addEventListener('click', openAddLecture);
@@ -803,6 +851,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTimetable();
     renderDashboard();
     updateUpcomingBanner();
+    showBottomToast(`Saved lecture: ${sub}`, 'Dismiss', hideBottomToast);
   });
 
   // Form Record
@@ -822,6 +871,7 @@ document.addEventListener('DOMContentLoaded', () => {
     closeModal('modalRecordEditor');
     renderHistory();
     renderDashboard();
+    showBottomToast(`Saved record for ${sub}`, 'Dismiss', hideBottomToast);
   });
 
   document.getElementById('filterSubject').addEventListener('change', renderHistory);
@@ -838,7 +888,7 @@ document.addEventListener('DOMContentLoaded', () => {
     state.save();
     document.getElementById('satPill').style.display = state.data.settings.includeSaturday ? 'block' : 'none';
     renderDashboard();
-    alert('Preferences saved successfully!');
+    showBottomToast('Preferences saved successfully!', 'Dismiss', hideBottomToast);
   });
 
   document.getElementById('btnExportCalendar').addEventListener('click', exportToCalendarICS);

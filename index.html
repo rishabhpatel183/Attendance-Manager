@@ -235,6 +235,14 @@
     </button>
   </nav>
 
+  <!-- Floating Bottom Toast for Small Unobtrusive Undo / Redo -->
+  <div id="bottomToast" class="bottom-toast-container">
+    <div class="bottom-toast-pill">
+      <span id="toastMessage" class="toast-msg-text">Marked Mathematics as Present</span>
+      <button id="btnToastUndo" class="btn-toast-undo">↩️ Undo</button>
+    </div>
+  </div>
+
   <!-- ================= BOTTOM SHEET MODALS ================= -->
 
   <!-- Lecture End Alert Modal (Bottom Sheet) -->
@@ -259,16 +267,6 @@
           <button id="btnPromptCancel" class="btn-prompt-link">⚪ Cancelled / Free</button>
           <button id="btnPromptSnooze" class="btn-prompt-link">⏱ Snooze 5m</button>
         </div>
-      </div>
-
-      <!-- Undo Confirmation view -->
-      <div id="promptUndoView" style="display: none;">
-        <div class="undo-callout">
-          <div id="undoStatusText" class="undo-title-text">Marked as Present!</div>
-          <div class="undo-note-text">Mistaken click? Tap Undo to revert immediately.</div>
-          <button id="btnPromptUndo" class="btn-revert-action">↩️ Undo (Correction)</button>
-        </div>
-        <button id="btnPromptDone" class="btn-cta-primary" style="margin-top: 14px;">Done</button>
       </div>
     </div>
   </div>
