@@ -1,11 +1,13 @@
-const CACHE_NAME = 'attendance-manager-v1';
+const CACHE_NAME = 'attendance-manager-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './styles.css',
   './app.js',
   './manifest.json',
-  './icon.svg'
+  './icon-192.png',
+  './icon-512.png',
+  './screenshot-1.png'
 ];
 
 self.addEventListener('install', (event) => {
