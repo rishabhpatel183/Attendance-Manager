@@ -1,9 +1,10 @@
 /**
- * Attendance Manager - Modern Mobile Native App Engine
+ * Attendance Manager - Clean State, OLED Black Edition
  */
 
-const STORAGE_KEY = 'attendance_app_data_v3';
+const STORAGE_KEY = 'attendance_clean_black_v5';
 
+// 100% Clean Default State with NO pre-filled subjects
 const DEFAULT_STATE = {
   settings: {
     targetPercentage: 75,
@@ -12,44 +13,14 @@ const DEFAULT_STATE = {
     snoozeMinutes: 5
   },
   timetable: {
-    Monday: [
-      { id: 'mon-1', subject: 'Mathematics', startTime: '09:00', endTime: '10:00', room: 'Room 101' },
-      { id: 'mon-2', subject: 'Data Structures', startTime: '10:15', endTime: '11:15', room: 'Lab 2' },
-      { id: 'mon-3', subject: 'Digital Electronics', startTime: '11:30', endTime: '12:30', room: 'Room 204' }
-    ],
-    Tuesday: [
-      { id: 'tue-1', subject: 'Operating Systems', startTime: '09:00', endTime: '10:00', room: 'Room 102' },
-      { id: 'tue-2', subject: 'Mathematics', startTime: '10:15', endTime: '11:15', room: 'Room 101' },
-      { id: 'tue-3', subject: 'Data Structures Lab', startTime: '13:30', endTime: '15:30', room: 'Lab 1' }
-    ],
-    Wednesday: [
-      { id: 'wed-1', subject: 'Computer Networks', startTime: '09:00', endTime: '10:00', room: 'Room 103' },
-      { id: 'wed-2', subject: 'Operating Systems', startTime: '10:15', endTime: '11:15', room: 'Room 102' },
-      { id: 'wed-3', subject: 'Data Structures', startTime: '11:30', endTime: '12:30', room: 'Lab 2' }
-    ],
-    Thursday: [
-      { id: 'thu-1', subject: 'Digital Electronics', startTime: '09:00', endTime: '10:00', room: 'Room 204' },
-      { id: 'thu-2', subject: 'Computer Networks', startTime: '10:15', endTime: '11:15', room: 'Room 103' },
-      { id: 'thu-3', subject: 'Mathematics', startTime: '11:30', endTime: '12:30', room: 'Room 101' }
-    ],
-    Friday: [
-      { id: 'fri-1', subject: 'Data Structures', startTime: '09:00', endTime: '10:00', room: 'Lab 2' },
-      { id: 'fri-2', subject: 'Operating Systems Lab', startTime: '10:15', endTime: '12:15', room: 'Lab 3' },
-      { id: 'fri-3', subject: 'Computer Networks', startTime: '13:30', endTime: '14:30', room: 'Room 103' }
-    ],
+    Monday: [],
+    Tuesday: [],
+    Wednesday: [],
+    Thursday: [],
+    Friday: [],
     Saturday: []
   },
-  records: [
-    { id: 'rec-1', date: '2026-10-26', time: '10:00', subject: 'Mathematics', status: 'present', notes: '' },
-    { id: 'rec-2', date: '2026-10-26', time: '11:15', subject: 'Data Structures', status: 'present', notes: '' },
-    { id: 'rec-3', date: '2026-10-26', time: '12:30', subject: 'Digital Electronics', status: 'absent', notes: 'Doctor checkup' },
-    { id: 'rec-4', date: '2026-10-27', time: '10:00', subject: 'Operating Systems', status: 'present', notes: '' },
-    { id: 'rec-5', date: '2026-10-27', time: '11:15', subject: 'Mathematics', status: 'present', notes: '' },
-    { id: 'rec-6', date: '2026-10-28', time: '10:00', subject: 'Computer Networks', status: 'present', notes: '' },
-    { id: 'rec-7', date: '2026-10-28', time: '11:15', subject: 'Operating Systems', status: 'present', notes: '' },
-    { id: 'rec-8', date: '2026-10-29', time: '10:00', subject: 'Digital Electronics', status: 'present', notes: '' },
-    { id: 'rec-9', date: '2026-10-29', time: '11:15', subject: 'Computer Networks', status: 'absent', notes: 'Overslept' }
-  ],
+  records: [],
   promptedHistory: {}
 };
 
@@ -252,7 +223,7 @@ function playNotificationChime() {
       const gain = ctx.createGain();
       osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
-      gain.gain.setValueAtTime(0.2, ctx.currentTime + start);
+      gain.gain.setValueAtTime(0.25, ctx.currentTime + start);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration);
       osc.connect(gain);
       gain.connect(ctx.destination);
@@ -319,8 +290,10 @@ function updateUpcomingBanner() {
   if (banner) {
     if (next) {
       banner.textContent = `⏰ Next: ${next.subject} (Ends ${next.endTime})`;
+    } else if (timetableToday.length > 0) {
+      banner.textContent = `🎉 All lectures done for today!`;
     } else {
-      banner.textContent = `🎉 All lectures finished for today!`;
+      banner.textContent = `No lectures scheduled today`;
     }
   }
 }
@@ -350,8 +323,9 @@ function renderDashboard() {
   const stats = state.calculateStats();
   const overall = stats.overall;
   const target = stats.targetPercentage;
+  const hasSubjects = state.getUniqueSubjects().length > 0;
 
-  document.getElementById('overallPercentage').textContent = `${overall.pct.toFixed(1)}%`;
+  document.getElementById('overallPercentage').textContent = hasSubjects ? `${overall.pct.toFixed(1)}%` : `100%`;
   document.getElementById('targetBadge').textContent = `Goal: ${target.toFixed(0)}%`;
   document.getElementById('statAttended').textContent = overall.attended;
   document.getElementById('statTotal').textContent = overall.total;
@@ -361,13 +335,19 @@ function renderDashboard() {
   // Animate SVG circular progress gauge
   const circle = document.getElementById('gaugeProgressCircle');
   const circumference = 440; // 2 * pi * 70 = 439.82
-  const offset = circumference * (1 - Math.min(100, Math.max(0, overall.pct)) / 100);
+  const pctToUse = hasSubjects ? overall.pct : 100;
+  const offset = circumference * (1 - Math.min(100, Math.max(0, pctToUse)) / 100);
   circle.style.strokeDashoffset = offset;
 
   const pctElem = document.getElementById('overallPercentage');
   const adviceElem = document.getElementById('attendanceAdvice');
 
-  if (overall.pct >= target) {
+  if (!hasSubjects) {
+    circle.style.stroke = 'var(--color-present)';
+    pctElem.style.color = 'var(--color-present)';
+    adviceElem.className = 'advisor-banner advisor-safe';
+    adviceElem.innerHTML = `<span>✨</span> Tap <b>+ Add Lecture</b> below to start tracking your attendance`;
+  } else if (overall.pct >= target) {
     circle.style.stroke = 'var(--color-present)';
     pctElem.style.color = 'var(--color-present)';
     adviceElem.className = 'advisor-banner advisor-safe';
@@ -390,7 +370,14 @@ function renderDashboard() {
 
   const subList = Object.values(stats.subjects);
   if (subList.length === 0) {
-    container.innerHTML = `<div style="text-align:center; padding: 24px; color: var(--text-muted);">No subjects found. Add classes in the Schedule tab!</div>`;
+    container.innerHTML = `
+      <div class="empty-state-box">
+        <div class="empty-state-icon">📚</div>
+        <div class="empty-state-title">No Subjects Added Yet</div>
+        <div class="empty-state-sub">Add your subjects and weekly class timings to get automatic attendance pop-ups at the end of each lecture.</div>
+        <button class="btn-chip btn-chip-blue" style="margin: 0 auto; padding: 12px 24px; font-size: 0.95rem;" onclick="openAddLecture()">+ Add Your First Lecture</button>
+      </div>
+    `;
     return;
   }
 
@@ -444,8 +431,11 @@ function renderTimetable() {
 
   if (list.length === 0) {
     container.innerHTML = `
-      <div style="text-align: center; padding: 36px 20px; background: var(--bg-card); border-radius: 18px; border: 1px solid var(--border-subtle); color: var(--text-muted);">
-        No lectures scheduled for <b>${day}</b>.<br><span style="font-size: 0.8rem; margin-top: 6px; display: inline-block;">Tap <b>+ Add Lecture</b> above to add your classes.</span>
+      <div class="empty-state-box">
+        <div class="empty-state-icon">📅</div>
+        <div class="empty-state-title">No Lectures for ${day}</div>
+        <div class="empty-state-sub">Tap below to add classes scheduled on this day.</div>
+        <button class="btn-chip btn-chip-blue" style="margin: 0 auto; padding: 10px 20px;" onclick="openAddLecture()">+ Add Lecture for ${day}</button>
       </div>
     `;
     return;
@@ -499,7 +489,14 @@ function renderHistory() {
   }
 
   if (records.length === 0) {
-    container.innerHTML = `<div style="text-align:center; padding: 24px; color: var(--text-muted);">No attendance records found.</div>`;
+    container.innerHTML = `
+      <div class="empty-state-box">
+        <div class="empty-state-icon">📝</div>
+        <div class="empty-state-title">No Attendance Records Yet</div>
+        <div class="empty-state-sub">As your lectures finish, pop-ups will record your attendance here. You can also add past entries manually.</div>
+        <button class="btn-chip btn-chip-blue" style="margin: 0 auto; padding: 10px 20px;" onclick="openAddManualRecord()">+ Add Past Entry</button>
+      </div>
+    `;
     return;
   }
 
@@ -693,8 +690,18 @@ function exportToCalendarICS() {
   URL.revokeObjectURL(url);
 }
 
+// PWA Install Prompt Capture
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const btn = document.getElementById('btnInstallPwa');
+  if (btn) btn.style.display = 'inline-flex';
+});
+
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
+  // Navigation
   document.querySelectorAll('.nav-tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
@@ -717,6 +724,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Direct "+ Add Lecture" button from Dashboard
+  const dashAddBtn = document.getElementById('btnDashAddLec');
+  if (dashAddBtn) dashAddBtn.addEventListener('click', openAddLecture);
+
+  // Install PWA Button Click
+  const btnInstall = document.getElementById('btnInstallPwa');
+  if (btnInstall) {
+    btnInstall.addEventListener('click', () => {
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        deferredInstallPrompt.userChoice.then(() => {
+          deferredInstallPrompt = null;
+        });
+      } else {
+        // Fallback instructions
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        if (isIOS) {
+          alert('🍏 On iPhone: Tap the Share button at the bottom of Safari, then tap "Add to Home Screen" (➕).');
+        } else {
+          alert('🤖 On Android: Tap the 3 dots menu in Chrome, then tap "Install app" (or click the 📥 APK button to download the APK directly!).');
+        }
+      }
+    });
+  }
+
+  // Permission
   document.getElementById('btnNotifyPermission').addEventListener('click', () => {
     if ('Notification' in window) {
       Notification.requestPermission().then(permission => {
@@ -735,14 +768,15 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnQuickTestPrompt').addEventListener('click', () => {
     const testLec = {
       id: 'test-demo',
-      subject: 'Data Structures & Algorithms',
+      subject: 'Sample Class',
       startTime: '10:00',
       endTime: '11:00',
-      room: 'Computer Lab 2'
+      room: 'Room 101'
     };
     triggerLecturePrompt(testLec, new Date().toISOString().split('T')[0], 'test_prompt');
   });
 
+  // Prompt Buttons
   document.getElementById('btnPromptPresent').addEventListener('click', () => handlePromptChoice('present'));
   document.getElementById('btnPromptAbsent').addEventListener('click', () => handlePromptChoice('absent'));
   document.getElementById('btnPromptCancel').addEventListener('click', () => handlePromptChoice('cancelled'));
@@ -750,6 +784,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnPromptUndo').addEventListener('click', handlePromptUndo);
   document.getElementById('btnPromptDone').addEventListener('click', () => closeModal('modalLecturePrompt'));
 
+  // Form Lecture
   document.getElementById('btnAddLecture').addEventListener('click', openAddLecture);
   document.getElementById('formLecture').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -770,6 +805,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUpcomingBanner();
   });
 
+  // Form Record
   document.getElementById('btnAddManualRecord').addEventListener('click', openAddManualRecord);
   document.getElementById('formRecord').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -816,7 +852,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('btnResetData').addEventListener('click', () => {
-    if (confirm('Reset all data to default samples?')) {
+    if (confirm('Clear all attendance data and timetable?')) {
       localStorage.removeItem(STORAGE_KEY);
       location.reload();
     }
@@ -828,7 +864,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateUpcomingBanner();
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration error:', err));
+    navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error:', err));
   }
 
   setInterval(checkLectureTimes, 5000);

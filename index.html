@@ -7,7 +7,7 @@
 
   <!-- PWA & Mobile Capabilities -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0b0f19">
+  <meta name="theme-color" content="#000000">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Attendance">
@@ -24,7 +24,7 @@
       <div class="brand-icon-box">🎓</div>
       <div>
         <div class="brand-title">Attendance</div>
-        <div id="headerStatus" class="brand-sub">Checking schedule...</div>
+        <div id="headerStatus" class="brand-sub">No lectures today</div>
       </div>
     </div>
     <div class="header-actions">
@@ -35,6 +35,22 @@
 
   <!-- Main View Container -->
   <main class="main-container">
+
+    <!-- Direct Download / Install App Banner -->
+    <div id="downloadBanner" class="install-banner">
+      <div class="install-info">
+        <div class="install-title">📱 Get the Mobile App</div>
+        <div class="install-sub">Download APK or Install to Home Screen</div>
+      </div>
+      <div class="install-btns">
+        <a href="Attendance-Manager.apk" download="Attendance-Manager.apk" class="btn-download-apk" id="btnDownloadApkLink">
+          <span>📥</span> APK
+        </a>
+        <button id="btnInstallPwa" class="btn-install-pwa">
+          <span>📲</span> Install
+        </button>
+      </div>
+    </div>
 
     <!-- TAB 1: DASHBOARD -->
     <section id="tab-dashboard" class="tab-pane active">
@@ -52,14 +68,14 @@
             <circle id="gaugeProgressCircle" class="gauge-progress" cx="85" cy="85" r="70"></circle>
           </svg>
           <div class="gauge-center-content">
-            <span id="overallPercentage" class="gauge-pct">0.0%</span>
+            <span id="overallPercentage" class="gauge-pct">100%</span>
             <span class="gauge-target-label">Attended</span>
           </div>
         </div>
 
         <!-- Smart Bunk / Shortage Advisor -->
         <div id="attendanceAdvice" class="advisor-banner advisor-safe">
-          Loading status...
+          Add your subjects to start tracking
         </div>
 
         <!-- 4 Key Stat Tiles -->
@@ -86,6 +102,7 @@
       <!-- Subject Breakdown Section -->
       <div class="section-header">
         <h2 class="section-title">Subject Breakdown</h2>
+        <button id="btnDashAddLec" class="btn-chip btn-chip-blue">+ Add Lecture</button>
       </div>
       <div id="subjectListContainer">
         <!-- Injected via app.js -->
@@ -175,12 +192,23 @@
         <button id="btnExportCalendar" class="btn-chip btn-chip-blue" style="width: 100%; justify-content: center; padding: 12px;">Download Timetable (.ics Calendar)</button>
       </div>
 
+      <!-- Direct APK Download in Settings -->
+      <div class="subject-card" style="margin-top: 14px;">
+        <h3 style="font-size: 0.95rem; font-weight: 800; color: #fff; margin-bottom: 4px;">📱 Download Android APK</h3>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px;">
+          Download the standalone APK installation file directly to your phone.
+        </p>
+        <a href="Attendance-Manager.apk" download="Attendance-Manager.apk" class="btn-download-apk" style="width: 100%; justify-content: center; padding: 12px; font-size: 0.9rem;">
+          📥 Download Attendance-Manager.apk
+        </a>
+      </div>
+
       <!-- Backup / Restore -->
       <div class="subject-card" style="margin-top: 14px;">
         <h3 style="font-size: 0.95rem; font-weight: 800; color: #fff; margin-bottom: 4px;">💾 Data Backup</h3>
         <div style="display: flex; gap: 8px;">
           <button id="btnExportJSON" class="btn-chip btn-chip-blue" style="flex: 1; justify-content: center; padding: 10px;">Export JSON</button>
-          <button id="btnResetData" class="btn-chip btn-chip-red" style="padding: 10px;">Reset</button>
+          <button id="btnResetData" class="btn-chip btn-chip-red" style="padding: 10px;">Clear All Data</button>
         </div>
       </div>
     </section>
@@ -214,7 +242,7 @@
     <div class="bottom-sheet prompt-sheet">
       <div class="sheet-handle"></div>
       <span class="prompt-tag">🔔 LECTURE FINISHED</span>
-      <h2 id="promptSubject" class="prompt-subject-name">Mathematics</h2>
+      <h2 id="promptSubject" class="prompt-subject-name">Subject Name</h2>
       <p id="promptTimeRoom" class="prompt-meta-text">10:00 - 11:00 • Room 101</p>
 
       <p style="font-size: 0.95rem; font-weight: 800; margin-bottom: 18px; color: #fff;">
@@ -268,16 +296,16 @@
         </div>
         <div class="form-field">
           <label class="form-label-text" for="lecSubject">Subject Name</label>
-          <input type="text" id="lecSubject" class="form-input-box" placeholder="e.g. Operating Systems" required>
+          <input type="text" id="lecSubject" class="form-input-box" placeholder="e.g. Mathematics" required>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
           <div class="form-field">
             <label class="form-label-text" for="lecStartTime">Start Time</label>
-            <input type="time" id="lecStartTime" class="form-input-box" required>
+            <input type="time" id="lecStartTime" class="form-input-box" required value="10:00">
           </div>
           <div class="form-field">
             <label class="form-label-text" for="lecEndTime">End Time</label>
-            <input type="time" id="lecEndTime" class="form-input-box" required>
+            <input type="time" id="lecEndTime" class="form-input-box" required value="11:00">
           </div>
         </div>
         <div class="form-field">

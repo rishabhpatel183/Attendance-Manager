@@ -1,4 +1,4 @@
-const CACHE_NAME = 'attendance-manager-v2';
+const CACHE_NAME = 'attendance-black-v5';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -6,8 +6,7 @@ const ASSETS_TO_CACHE = [
   './app.js',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png',
-  './screenshot-1.png'
+  './icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -35,6 +34,11 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Pass through APK downloads directly without caching
+  if (event.request.url.endsWith('.apk')) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       return cachedResponse || fetch(event.request).catch(() => {
