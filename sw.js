@@ -1,4 +1,4 @@
-const CACHE_NAME = 'attendance-black-v5';
+const CACHE_NAME = 'attendance-bunk-v7';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -34,7 +34,6 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Pass through APK downloads directly without caching
   if (event.request.url.endsWith('.apk')) {
     return;
   }

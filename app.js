@@ -1,8 +1,8 @@
 /**
- * Attendance Manager - Clean State, OLED Black Edition, Floating Bottom Toast Undo
+ * Attendance Manager - Upcoming Class Focus & Thinkable Safe-Bunk Calculator
  */
 
-const STORAGE_KEY = 'attendance_clean_black_v6';
+const STORAGE_KEY = 'attendance_bunk_predictor_v7';
 
 // 100% Clean Default State with NO pre-filled subjects
 const DEFAULT_STATE = {
@@ -75,17 +75,17 @@ class AppState {
 
   calculateStats() {
     const target = (this.data.settings.targetPercentage || 75) / 100;
-    const overall = { attended: 0, absent: 0, cancelled: 0, total: 0, pct: 100, canBunk: 0, needAttend: 0 };
+    const overall = { attended: 0, absent: 0, cancelled: 0, total: 0, pct: null, canBunk: 0, needAttend: 0, hasRecords: false };
     const subjects = {};
 
     this.getUniqueSubjects().forEach(s => {
-      subjects[s] = { subject: s, attended: 0, absent: 0, cancelled: 0, total: 0, pct: 100, canBunk: 0, needAttend: 0 };
+      subjects[s] = { subject: s, attended: 0, absent: 0, cancelled: 0, total: 0, pct: null, canBunk: 0, needAttend: 0, hasRecords: false };
     });
 
     this.data.records.forEach(r => {
       const s = r.subject || 'Unknown';
       if (!subjects[s]) {
-        subjects[s] = { subject: s, attended: 0, absent: 0, cancelled: 0, total: 0, pct: 100, canBunk: 0, needAttend: 0 };
+        subjects[s] = { subject: s, attended: 0, absent: 0, cancelled: 0, total: 0, pct: null, canBunk: 0, needAttend: 0, hasRecords: false };
       }
       const st = (r.status || '').toLowerCase();
       if (st === 'present') {
@@ -112,12 +112,15 @@ class AppState {
 
   _computeMetrics(stat, target) {
     if (stat.total === 0) {
-      stat.pct = 100;
+      stat.pct = null; // No records till now (NOT 100%!)
       stat.canBunk = 0;
       stat.needAttend = 0;
-      stat.status = 'safe';
+      stat.hasRecords = false;
+      stat.status = 'none';
       return;
     }
+
+    stat.hasRecords = true;
     const pct = (stat.attended / stat.total) * 100;
     stat.pct = Math.round(pct * 10) / 10;
 
@@ -131,6 +134,86 @@ class AppState {
       stat.needAttend = Math.max(1, Math.ceil(shortage / (1 - target)));
       stat.status = pct < (target * 100 - 10) ? 'danger' : 'warn';
     }
+  }
+
+  // Find the upcoming lecture and its next safe-bunk prediction
+  getUpcomingLectureDetails() {
+    const now = new Date();
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const currentDay = days[now.getDay()];
+    const currentTime = now.toTimeString().slice(0, 5);
+
+    // Check today first
+    const todayList = this.data.timetable[currentDay] || [];
+    let nextLec = todayList.find(l => l.endTime > currentTime);
+    let dayLabel = "Today";
+
+    // If no more lectures today, check future days
+    if (!nextLec) {
+      const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+      if (this.data.settings.includeSaturday) dayOrder.push('Saturday');
+
+      const startIdx = dayOrder.indexOf(currentDay);
+      for (let i = 1; i <= 6; i++) {
+        const nextDayName = dayOrder[(startIdx + i) % dayOrder.length];
+        const nextDayList = this.data.timetable[nextDayName] || [];
+        if (nextDayList.length > 0) {
+          nextLec = nextDayList[0];
+          dayLabel = nextDayName;
+          break;
+        }
+      }
+    }
+
+    if (!nextLec) return null;
+
+    // Calculate prediction specifically for this subject!
+    const stats = this.calculateStats();
+    const target = this.data.settings.targetPercentage || 75;
+    const subStat = stats.subjects[nextLec.subject] || { attended: 0, total: 0, pct: null, hasRecords: false };
+
+    let prediction = {};
+    if (!subStat.hasRecords) {
+      prediction = {
+        hasRecords: false,
+        currentPct: null,
+        bunkPct: 0.0,
+        attendPct: 100.0,
+        canBunk: false,
+        advice: "First lecture of this subject! Attend to start at 100%."
+      };
+    } else {
+      const att = subStat.attended;
+      const tot = subStat.total;
+      const bunkPct = Math.round((att / (tot + 1)) * 1000) / 10;
+      const attendPct = Math.round(((att + 1) / (tot + 1)) * 1000) / 10;
+      const canBunk = bunkPct >= target;
+
+      prediction = {
+        hasRecords: true,
+        currentPct: subStat.pct,
+        attended: att,
+        total: tot,
+        bunkPct: bunkPct,
+        attendPct: attendPct,
+        canBunk: canBunk,
+        advice: canBunk
+          ? `😎 Safe to Bunk! Your attendance will be ${bunkPct}% (still above ${target}%).`
+          : `⚠️ Must Attend! If you bunk, attendance drops to ${bunkPct}% (below ${target}%).`
+      };
+    }
+
+    return {
+      lecture: nextLec,
+      dayLabel: dayLabel,
+      prediction: prediction
+    };
+  }
+
+  // Get most recently marked attendance record
+  getLastUpdatedRecord() {
+    if (!this.data.records || this.data.records.length === 0) return null;
+    return this.data.records[0]; // records are sorted newest first
   }
 
   addRecord(subject, status, dateStr = null, timeStr = null, notes = '') {
@@ -229,7 +312,6 @@ function showBottomToast(message, actionText, actionCallback) {
   msgElem.textContent = message;
   btnAction.textContent = actionText;
 
-  // Replace button clone to clean old listeners
   const newBtn = btnAction.cloneNode(true);
   btnAction.parentNode.replaceChild(newBtn, btnAction);
 
@@ -239,7 +321,6 @@ function showBottomToast(message, actionText, actionCallback) {
 
   toastContainer.classList.add('active');
 
-  // Auto-hide after 4.5 seconds
   toastTimer = setTimeout(() => {
     toastContainer.classList.remove('active');
   }, 4500);
@@ -317,21 +398,13 @@ function checkLectureTimes() {
 }
 
 function updateUpcomingBanner() {
-  const now = new Date();
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const dayName = days[now.getDay()];
-  const currentTime = now.toTimeString().slice(0, 5);
-  const timetableToday = state.data.timetable[dayName] || [];
-
-  const next = timetableToday.find(l => l.endTime > currentTime);
+  const upcoming = state.getUpcomingLectureDetails();
   const banner = document.getElementById('headerStatus');
   if (banner) {
-    if (next) {
-      banner.textContent = `⏰ Next: ${next.subject} (Ends ${next.endTime})`;
-    } else if (timetableToday.length > 0) {
-      banner.textContent = `🎉 All lectures done for today!`;
+    if (upcoming) {
+      banner.textContent = `⏰ ${upcoming.dayLabel}: ${upcoming.lecture.subject} (${upcoming.lecture.startTime})`;
     } else {
-      banner.textContent = `No lectures scheduled today`;
+      banner.textContent = `No scheduled classes`;
     }
   }
 }
@@ -353,14 +426,13 @@ function triggerLecturePrompt(lec, dateStr, promptKey) {
   }
 }
 
-// Prompt Choice Handler: Closes immediately and shows small bottom toast undo!
+// Prompt Choice Handler
 function handlePromptChoice(status) {
   if (!state.activePrompt) return;
 
   const lec = state.activePrompt.lecture;
   const rec = state.addRecord(lec.subject, status, state.activePrompt.date, lec.endTime);
 
-  // Close the popup modal immediately (No taking over the middle of screen!)
   closeModal('modalLecturePrompt');
 
   renderDashboard();
@@ -368,13 +440,10 @@ function handlePromptChoice(status) {
 
   const label = status === 'present' ? 'Present ✅' : (status === 'absent' ? 'Absent ❌' : 'Cancelled ⚪');
   
-  // Show clean floating bottom toast
   showBottomToast(`Marked ${lec.subject} as ${label}`, '↩️ Undo', () => {
-    // Undo logic
     state.deleteRecord(rec.id);
     renderDashboard();
     renderHistory();
-    // Offer redo option in bottom toast
     showBottomToast(`Undone: ${lec.subject}`, '↪️ Redo', () => {
       state.addRecord(lec.subject, status, rec.date, rec.time);
       renderDashboard();
@@ -398,59 +467,112 @@ function renderDashboard() {
   const stats = state.calculateStats();
   const overall = stats.overall;
   const target = stats.targetPercentage;
-  const hasSubjects = state.getUniqueSubjects().length > 0;
+  const upcomingData = state.getUpcomingLectureDetails();
+  const lastRecord = state.getLastUpdatedRecord();
 
-  document.getElementById('overallPercentage').textContent = hasSubjects ? `${overall.pct.toFixed(1)}%` : `100%`;
-  document.getElementById('targetBadge').textContent = `Goal: ${target.toFixed(0)}%`;
-  document.getElementById('statAttended').textContent = overall.attended;
-  document.getElementById('statTotal').textContent = overall.total;
-  document.getElementById('statAbsent').textContent = overall.absent;
-  document.getElementById('statCancelled').textContent = overall.cancelled;
+  const heroContainer = document.getElementById('heroFocusContainer');
+  const lastContainer = document.getElementById('lastUpdatedContainer');
+  const overallSummaryText = document.getElementById('overallSummaryText');
 
-  // Animate SVG circular progress gauge
-  const circle = document.getElementById('gaugeProgressCircle');
-  const circumference = 440; // 2 * pi * 70 = 439.82
-  const pctToUse = hasSubjects ? overall.pct : 100;
-  const offset = circumference * (1 - Math.min(100, Math.max(0, pctToUse)) / 100);
-  circle.style.strokeDashoffset = offset;
-
-  const pctElem = document.getElementById('overallPercentage');
-  const adviceElem = document.getElementById('attendanceAdvice');
-
-  if (!hasSubjects) {
-    circle.style.stroke = 'var(--color-present)';
-    pctElem.style.color = 'var(--color-present)';
-    adviceElem.className = 'advisor-banner advisor-safe';
-    adviceElem.innerHTML = `<span>✨</span> Tap <b>+ Add Lecture</b> below to start tracking your attendance`;
-  } else if (overall.pct >= target) {
-    circle.style.stroke = 'var(--color-present)';
-    pctElem.style.color = 'var(--color-present)';
-    adviceElem.className = 'advisor-banner advisor-safe';
-    adviceElem.innerHTML = `<span>🟢</span> Safe Zone: You can safely miss <b>${overall.canBunk}</b> class(es) and remain above ${target.toFixed(0)}%`;
-  } else if (overall.pct >= (target - 10)) {
-    circle.style.stroke = 'var(--color-warn)';
-    pctElem.style.color = 'var(--color-warn)';
-    adviceElem.className = 'advisor-banner advisor-warn';
-    adviceElem.innerHTML = `<span>🟡</span> Warning: You must attend <b>${overall.needAttend}</b> consecutive class(es) to hit ${target.toFixed(0)}%`;
+  // 1. Overall Summary Text (NEVER 100% when no records exist!)
+  if (!overall.hasRecords) {
+    overallSummaryText.textContent = `No records till now`;
+    overallSummaryText.style.color = `var(--text-muted)`;
   } else {
-    circle.style.stroke = 'var(--color-absent)';
-    pctElem.style.color = 'var(--color-absent)';
-    adviceElem.className = 'advisor-banner advisor-danger';
-    adviceElem.innerHTML = `<span>🔴</span> Shortage Alert: You must attend <b>${overall.needAttend}</b> consecutive class(es) to hit ${target.toFixed(0)}%`;
+    overallSummaryText.textContent = `${overall.pct.toFixed(1)}% (${overall.attended}/${overall.total} attended)`;
+    overallSummaryText.style.color = overall.pct >= target ? `var(--color-present)` : `var(--color-absent)`;
   }
 
-  // Subject List
+  // 2. Main Hero Focus: Upcoming Class & Thinkable Safe-Bunk Calculator
+  if (upcomingData) {
+    const lec = upcomingData.lecture;
+    const pred = upcomingData.prediction;
+    const isSafe = pred.canBunk;
+
+    const currentScoreHtml = pred.hasRecords 
+      ? `<span class="sub-current-val" style="color: ${pred.currentPct >= target ? 'var(--color-present)' : 'var(--color-absent)'}">${pred.currentPct.toFixed(1)}%</span>`
+      : `<span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">No records till now</span>`;
+
+    const impactChipsHtml = pred.hasRecords ? `
+      <div class="bunk-impact-row">
+        <div class="impact-chip">
+          <div style="color: var(--text-muted); font-size: 0.7rem;">IF YOU BUNK</div>
+          <div style="font-size: 0.95rem; font-weight: 900; color: ${pred.bunkPct >= target ? 'var(--color-present)' : 'var(--color-absent)'}">${pred.bunkPct}%</div>
+        </div>
+        <div class="impact-chip">
+          <div style="color: var(--text-muted); font-size: 0.7rem;">IF YOU ATTEND</div>
+          <div style="font-size: 0.95rem; font-weight: 900; color: var(--color-present);">${pred.attendPct}%</div>
+        </div>
+      </div>
+    ` : '';
+
+    heroContainer.innerHTML = `
+      <div class="upcoming-hero-card">
+        <div class="card-top-badge-row">
+          <span class="badge-tag-upcoming">⏰ Upcoming Class (${upcomingData.dayLabel})</span>
+          <span class="target-goal-chip">Target: ${target}%</span>
+        </div>
+        
+        <h2 class="upcoming-subject-title">${lec.subject}</h2>
+        <div class="upcoming-time-meta">⏰ ${lec.startTime} - ${lec.endTime} • 📍 ${lec.room || 'No Room Specified'}</div>
+
+        <div class="upcoming-stats-strip">
+          <span class="sub-current-lbl">Current Subject Attendance:</span>
+          ${currentScoreHtml}
+        </div>
+
+        <div class="bunk-decision-box ${isSafe ? 'bunk-box-safe' : 'bunk-box-danger'}">
+          <div class="bunk-decision-title ${isSafe ? 'bunk-decision-safe-text' : 'bunk-decision-danger-text'}">
+            <span>${isSafe ? '😎' : '⚠️'}</span> ${pred.advice}
+          </div>
+          ${impactChipsHtml}
+        </div>
+      </div>
+    `;
+  } else {
+    // If no upcoming classes found in timetable
+    heroContainer.innerHTML = `
+      <div class="empty-state-box">
+        <div class="empty-state-icon">📚</div>
+        <div class="empty-state-title">No Lectures in Schedule</div>
+        <div class="empty-state-sub">Add your lectures to see upcoming class attendance and safe-bunk predictions.</div>
+        <button class="btn-chip btn-chip-blue" style="margin: 0 auto; padding: 12px 24px;" onclick="openAddLecture()">+ Add Your First Lecture</button>
+      </div>
+    `;
+  }
+
+  // 3. Last Class Updated Strip
+  if (lastRecord) {
+    const isPres = lastRecord.status === 'present';
+    const stIcon = isPres ? '✅' : (lastRecord.status === 'absent' ? '❌' : '⚪');
+    const stColor = isPres ? 'var(--color-present)' : (lastRecord.status === 'absent' ? 'var(--color-absent)' : 'var(--text-muted)');
+    const stText = isPres ? 'Present' : (lastRecord.status === 'absent' ? 'Absent' : 'Cancelled');
+
+    lastContainer.innerHTML = `
+      <div class="last-updated-strip">
+        <div class="last-up-left">
+          <span class="last-up-icon">${stIcon}</span>
+          <div>
+            <div class="last-up-title">Last Class: ${lastRecord.subject} (${stText})</div>
+            <div class="last-up-time">📅 ${lastRecord.date} at ${lastRecord.time}</div>
+          </div>
+        </div>
+        <button class="btn-toggle-quick" onclick="toggleRecord('${lastRecord.id}')" title="1-Tap Toggle">🔄 Toggle</button>
+      </div>
+    `;
+  } else {
+    lastContainer.innerHTML = ``;
+  }
+
+  // 4. Subject Cards List
   const container = document.getElementById('subjectListContainer');
   container.innerHTML = '';
 
   const subList = Object.values(stats.subjects);
   if (subList.length === 0) {
     container.innerHTML = `
-      <div class="empty-state-box">
-        <div class="empty-state-icon">📚</div>
-        <div class="empty-state-title">No Subjects Added Yet</div>
-        <div class="empty-state-sub">Add your subjects and weekly class timings to get automatic attendance pop-ups at the end of each lecture.</div>
-        <button class="btn-chip btn-chip-blue" style="margin: 0 auto; padding: 12px 24px; font-size: 0.95rem;" onclick="openAddLecture()">+ Add Your First Lecture</button>
+      <div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 0.85rem;">
+        No subjects registered yet. Tap <b>+ Add Lecture</b> to create subjects!
       </div>
     `;
     return;
@@ -460,20 +582,30 @@ function renderDashboard() {
     const card = document.createElement('div');
     card.className = 'subject-card';
 
-    let badgeColor = 'var(--color-present)';
-    let note = `Safe to bunk: ${sub.canBunk}`;
-    if (sub.pct < target) {
-      badgeColor = sub.pct < (target - 10) ? 'var(--color-absent)' : 'var(--color-warn)';
-      note = `Must attend: ${sub.needAttend}`;
+    let badgeColor = 'var(--text-muted)';
+    let badgeText = 'No records till now';
+    let note = '0 lectures conducted';
+    let progressPct = 0;
+
+    if (sub.hasRecords) {
+      progressPct = sub.pct;
+      badgeText = `${sub.pct.toFixed(1)}%`;
+      if (sub.pct >= target) {
+        badgeColor = 'var(--color-present)';
+        note = `Safe to bunk: ${sub.canBunk}`;
+      } else {
+        badgeColor = sub.pct < (target - 10) ? 'var(--color-absent)' : 'var(--color-warn)';
+        note = `Must attend: ${sub.needAttend}`;
+      }
     }
 
     card.innerHTML = `
       <div class="sub-header-row">
         <span class="sub-title">${sub.subject}</span>
-        <span class="sub-pct-chip" style="background: ${badgeColor};">${sub.pct.toFixed(1)}%</span>
+        <span class="sub-pct-chip" style="background: ${badgeColor};">${badgeText}</span>
       </div>
       <div class="progress-track">
-        <div class="progress-fill" style="width: ${Math.min(100, sub.pct)}%; background: ${badgeColor};"></div>
+        <div class="progress-fill" style="width: ${progressPct}%; background: ${badgeColor};"></div>
       </div>
       <div class="sub-footer-row">
         <span class="sub-stat-text">${sub.attended}/${sub.total} Classes • ${note}</span>
@@ -638,6 +770,7 @@ function deleteLectureSlot(id) {
   state.deleteLecture(id);
   renderTimetable();
   updateUpcomingBanner();
+  renderDashboard();
   showBottomToast(`Removed lecture slot`, 'Dismiss', hideBottomToast);
 }
 
@@ -775,7 +908,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Direct "+ Add Lecture" button from Dashboard
   const dashAddBtn = document.getElementById('btnDashAddLec');
   if (dashAddBtn) dashAddBtn.addEventListener('click', openAddLecture);
 
@@ -826,7 +958,7 @@ document.addEventListener('DOMContentLoaded', () => {
     triggerLecturePrompt(testLec, new Date().toISOString().split('T')[0], 'test_prompt');
   });
 
-  // Prompt Buttons (1 tap -> instantly logs and closes!)
+  // Prompt Buttons
   document.getElementById('btnPromptPresent').addEventListener('click', () => handlePromptChoice('present'));
   document.getElementById('btnPromptAbsent').addEventListener('click', () => handlePromptChoice('absent'));
   document.getElementById('btnPromptCancel').addEventListener('click', () => handlePromptChoice('cancelled'));

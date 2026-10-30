@@ -52,51 +52,23 @@
       </div>
     </div>
 
-    <!-- TAB 1: DASHBOARD -->
+    <!-- TAB 1: DASHBOARD (FOCUSED ON UPCOMING CLASS & BUNK PREDICTOR) -->
     <section id="tab-dashboard" class="tab-pane active">
-      <!-- Modern Hero Gauge Card -->
-      <div class="hero-card">
-        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Overall Attendance</span>
-          <span id="targetBadge" style="font-size: 0.75rem; font-weight: 700; color: var(--accent-cyan); background: rgba(56, 189, 248, 0.12); padding: 3px 8px; border-radius: 6px;">Goal: 75%</span>
-        </div>
 
-        <!-- Circular Progress Meter -->
-        <div class="gauge-wrapper">
-          <svg class="gauge-svg" viewBox="0 0 170 170">
-            <circle class="gauge-bg" cx="85" cy="85" r="70"></circle>
-            <circle id="gaugeProgressCircle" class="gauge-progress" cx="85" cy="85" r="70"></circle>
-          </svg>
-          <div class="gauge-center-content">
-            <span id="overallPercentage" class="gauge-pct">100%</span>
-            <span class="gauge-target-label">Attended</span>
-          </div>
-        </div>
+      <!-- Dynamic Main Hero Focus Card -->
+      <div id="heroFocusContainer">
+        <!-- Rendered dynamically by app.js: Upcoming Lecture & Safe Bunk Predictor -->
+      </div>
 
-        <!-- Smart Bunk / Shortage Advisor -->
-        <div id="attendanceAdvice" class="advisor-banner advisor-safe">
-          Add your subjects to start tracking
-        </div>
+      <!-- Last Class Updated Strip -->
+      <div id="lastUpdatedContainer">
+        <!-- Rendered dynamically by app.js -->
+      </div>
 
-        <!-- 4 Key Stat Tiles -->
-        <div class="stat-tiles-row">
-          <div class="stat-tile">
-            <div id="statAttended" class="tile-number" style="color: var(--color-present)">0</div>
-            <div class="tile-label">Attended</div>
-          </div>
-          <div class="stat-tile">
-            <div id="statTotal" class="tile-number">0</div>
-            <div class="tile-label">Total</div>
-          </div>
-          <div class="stat-tile">
-            <div id="statAbsent" class="tile-number" style="color: var(--color-absent)">0</div>
-            <div class="tile-label">Missed</div>
-          </div>
-          <div class="stat-tile">
-            <div id="statCancelled" class="tile-number" style="color: var(--text-muted)">0</div>
-            <div class="tile-label">Free</div>
-          </div>
-        </div>
+      <!-- Overall Summary Row -->
+      <div id="overallSummaryContainer" class="overall-summary-row">
+        <span>Overall Attendance:</span>
+        <span id="overallSummaryText" class="overall-highlight">No records till now</span>
       </div>
 
       <!-- Subject Breakdown Section -->

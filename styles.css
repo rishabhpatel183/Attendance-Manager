@@ -209,166 +209,195 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ================= HERO ATTENDANCE CARD ================= */
-.hero-card {
-  background: var(--bg-card);
+/* ================= UPCOMING CLASS FOCUS CARD (MAIN HERO) ================= */
+.upcoming-hero-card {
+  background: linear-gradient(145deg, #131a29, #0a0e17);
   border: 1px solid var(--border-subtle);
   border-radius: 24px;
-  padding: 22px 18px;
+  padding: 20px;
   box-shadow: var(--shadow-card);
-  margin-bottom: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  margin-bottom: 16px;
   position: relative;
   overflow: hidden;
 }
 
-.hero-card::before {
+.upcoming-hero-card::before {
   content: "";
   position: absolute;
-  top: -50px;
-  right: -50px;
-  width: 140px;
-  height: 140px;
-  background: radial-gradient(circle, rgba(0, 214, 143, 0.1) 0%, transparent 70%);
+  top: -40px;
+  right: -40px;
+  width: 130px;
+  height: 130px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, transparent 70%);
   pointer-events: none;
 }
 
-/* Circular SVG Progress Meter */
-.gauge-wrapper {
-  position: relative;
-  width: 170px;
-  height: 170px;
-  margin: 8px 0 16px 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.gauge-svg {
-  width: 170px;
-  height: 170px;
-  transform: rotate(-90deg);
-}
-
-.gauge-bg {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.08);
-  stroke-width: 12;
-}
-
-.gauge-progress {
-  fill: none;
-  stroke: var(--color-present);
-  stroke-width: 12;
-  stroke-linecap: round;
-  stroke-dasharray: 440;
-  stroke-dashoffset: 88;
-  transition: stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.4s ease;
-}
-
-.gauge-center-content {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.gauge-pct {
-  font-size: 2.2rem;
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  line-height: 1;
-}
-
-.gauge-target-label {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
-
-/* Bunk / Attendance Advisor Banner */
-.advisor-banner {
-  width: 100%;
-  padding: 10px 14px;
-  border-radius: 14px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  line-height: 1.4;
-  text-align: center;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.advisor-safe {
-  background: rgba(0, 214, 143, 0.12);
-  color: #00d68f;
-  border: 1px solid rgba(0, 214, 143, 0.3);
-}
-
-.advisor-warn {
-  background: rgba(251, 191, 36, 0.12);
-  color: #fbbf24;
-  border: 1px solid rgba(251, 191, 36, 0.3);
-}
-
-.advisor-danger {
-  background: rgba(255, 59, 92, 0.12);
-  color: #ff3b5c;
-  border: 1px solid rgba(255, 59, 92, 0.3);
-}
-
-/* 4 Mini Stat Tiles */
-.stat-tiles-row {
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-}
-
-.stat-tile {
-  background: var(--bg-card-subtle);
-  border: 1px solid var(--border-subtle);
-  border-radius: 14px;
-  padding: 10px 4px;
-  text-align: center;
-}
-
-.tile-number {
-  font-size: 1.25rem;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.tile-label {
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  margin-top: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-/* Section Header */
-.section-header {
+.card-top-badge-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 18px 0 12px 0;
+  margin-bottom: 12px;
 }
 
-.section-title {
-  font-size: 1.05rem;
+.badge-tag-upcoming {
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--accent-cyan);
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.target-goal-chip {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.upcoming-subject-title {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.upcoming-time-meta {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+/* Current Subject Attendance in Upcoming Card */
+.upcoming-stats-strip {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.sub-current-lbl {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.sub-current-val {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #fff;
+}
+
+/* Thinkable Bunk Predictor Box */
+.bunk-decision-box {
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bunk-box-safe {
+  background: rgba(0, 214, 143, 0.1);
+  border: 1px solid rgba(0, 214, 143, 0.3);
+}
+
+.bunk-box-danger {
+  background: rgba(255, 59, 92, 0.1);
+  border: 1px solid rgba(255, 59, 92, 0.3);
+}
+
+.bunk-decision-title {
+  font-size: 0.95rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bunk-decision-safe-text {
+  color: #00d68f;
+}
+
+.bunk-decision-danger-text {
+  color: #ff3b5c;
+}
+
+.bunk-impact-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.impact-chip {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px 10px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+/* Last Class Updated Strip */
+.last-updated-strip {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.last-up-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.last-up-icon {
+  font-size: 1.2rem;
+}
+
+.last-up-title {
+  font-size: 0.85rem;
   font-weight: 800;
   color: #fff;
-  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.last-up-time {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Mini Overall Summary Pill */
+.overall-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 6px 12px 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.overall-highlight {
+  font-weight: 800;
+  color: #fff;
 }
 
 /* Empty State Card */
@@ -398,6 +427,21 @@ body {
   color: var(--text-muted);
   margin-bottom: 20px;
   line-height: 1.5;
+}
+
+/* Section Header */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 14px 0 10px 0;
+}
+
+.section-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.01em;
 }
 
 /* ================= SUBJECT CARDS ================= */
