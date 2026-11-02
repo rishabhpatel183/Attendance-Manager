@@ -285,6 +285,25 @@
           <label class="form-label-text" for="lecRoom">Room / Teacher (Optional)</label>
           <input type="text" id="lecRoom" class="form-input-box" placeholder="e.g. Room 204">
         </div>
+
+        <!-- Past Attendance Inputs (Optional) -->
+        <div style="margin: 10px 0 8px 0; padding-top: 10px; border-top: 1px solid var(--border-subtle);">
+          <div style="font-size: 0.78rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 0.04em;">📊 Past Attendance (Optional)</div>
+          <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; margin-bottom: 8px;">
+            If classes already happened this semester, enter your past counts here:
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="form-field">
+              <label class="form-label-text" for="lecPastAttended">Classes Attended</label>
+              <input type="number" id="lecPastAttended" class="form-input-box" min="0" placeholder="e.g. 15">
+            </div>
+            <div class="form-field">
+              <label class="form-label-text" for="lecPastTotal">Total Classes Held</label>
+              <input type="number" id="lecPastTotal" class="form-input-box" min="0" placeholder="e.g. 20">
+            </div>
+          </div>
+        </div>
+
         <button type="submit" class="btn-cta-primary">Save Lecture Slot</button>
       </form>
     </div>
@@ -326,6 +345,40 @@
           <label class="form-label-text" for="recNotes">Notes / Reason (Optional)</label>
           <input type="text" id="recNotes" class="form-input-box" placeholder="e.g. Doctor appointment">
         </div>
+        <button type="submit" class="btn-cta-primary">Save Attendance</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Direct Set Subject Attendance Sheet -->
+  <div id="modalSetAttendance" class="modal-overlay">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="modal-title-bar">
+        <h3 id="modalSetAttendanceTitle" class="modal-heading">Set Subject Attendance</h3>
+        <button class="btn-close-modal" onclick="closeModal('modalSetAttendance')">&times;</button>
+      </div>
+      <form id="formSetAttendance">
+        <input type="hidden" id="setAttSubject">
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px;">
+          Directly set or correct your past attendance numbers for <strong id="setAttSubjectName" style="color: #fff;"></strong>:
+        </p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+          <div class="form-field">
+            <label class="form-label-text" for="inputAttendedCount">Classes Attended</label>
+            <input type="number" id="inputAttendedCount" class="form-input-box" min="0" required placeholder="e.g. 15">
+          </div>
+          <div class="form-field">
+            <label class="form-label-text" for="inputTotalCount">Total Classes Held</label>
+            <input type="number" id="inputTotalCount" class="form-input-box" min="0" required placeholder="e.g. 20">
+          </div>
+        </div>
+        
+        <div id="setAttLivePreview" style="background: #000000; border: 1px solid var(--border-subtle); border-radius: 12px; padding: 10px 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">Result:</span>
+          <span id="setAttPreviewPct" style="font-size: 0.88rem; font-weight: 900; color: #fff;">--%</span>
+        </div>
+
         <button type="submit" class="btn-cta-primary">Save Attendance</button>
       </form>
     </div>

@@ -1,24 +1,24 @@
 :root {
   --bg-app: #000000;           /* Pure OLED Black */
-  --bg-card: #0d121d;          /* Dark Obsidian Card */
-  --bg-card-subtle: #131926;   /* Elevated Card Layer */
-  --bg-input: #1a2233;         /* Input Background */
+  --bg-card: #080808;          /* Pure Black Surface */
+  --bg-card-subtle: #111111;   /* Subtle Dark Elevation */
+  --bg-input: #000000;         /* Pitch Black Input */
   --text-main: #ffffff;        /* Pure White */
-  --text-muted: #8e9bb0;       /* Cool Slate Muted */
+  --text-muted: #888888;       /* High Contrast Muted */
   
   /* Vibrant Button Colors */
   --accent-cyan: #38bdf8;
   --accent-blue: #2563eb;
   --color-present: #00d68f;    /* Vivid Emerald */
-  --color-present-dark: #059669;
+  --color-present-dark: #00ab72;
   --color-absent: #ff3b5c;     /* Vivid Crimson */
-  --color-absent-dark: #dc2626;
+  --color-absent-dark: #d91b3e;
   --color-warn: #fbbf24;       /* Amber */
   --color-toggle: #facc15;     /* Cyber Yellow */
   
-  --border-subtle: rgba(255, 255, 255, 0.09);
-  --border-active: rgba(56, 189, 248, 0.45);
-  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.7);
+  --border-subtle: #1c1c1c;    /* Clean Dark Border */
+  --border-active: #333333;
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.95);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
@@ -53,9 +53,7 @@ body {
   top: 0;
   z-index: 50;
   padding: calc(var(--safe-top) + 10px) 16px 10px 16px;
-  background: rgba(0, 0, 0, 0.90);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: #000000;
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   justify-content: space-between;
@@ -72,13 +70,12 @@ body {
   width: 36px;
   height: 36px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #1e293b, #0f172a);
+  background: #0d0d0d;
   border: 1px solid var(--border-active);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.2rem;
-  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
 }
 
 .brand-title {
@@ -116,13 +113,13 @@ body {
 
 .btn-icon-round:active {
   transform: scale(0.92);
-  background: var(--bg-input);
+  background: var(--bg-card-subtle);
 }
 
 /* Download / Install Bar (Hidden in Standalone / App Mode) */
 .install-banner {
-  background: linear-gradient(135deg, #1e1b4b, #0f172a);
-  border: 1px solid rgba(99, 102, 241, 0.35);
+  background: #080808;
+  border: 1px solid #222222;
   border-radius: 16px;
   padding: 10px 14px;
   margin-bottom: 12px;
@@ -130,7 +127,6 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.15);
 }
 
 /* Hide on App / Standalone mode automatically via CSS */
@@ -228,25 +224,14 @@ body {
 
 /* ================= UPCOMING CLASS HERO CARD ================= */
 .upcoming-hero-card {
-  background: linear-gradient(145deg, #131a29, #0a0e17);
-  border: 1px solid var(--border-subtle);
+  background: #080808;
+  border: 1px solid #1f1f1f;
   border-radius: 20px;
   padding: 16px;
   box-shadow: var(--shadow-card);
   margin-bottom: 12px;
   position: relative;
   overflow: hidden;
-}
-
-.upcoming-hero-card::before {
-  content: "";
-  position: absolute;
-  top: -30px;
-  right: -30px;
-  width: 110px;
-  height: 110px;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, transparent 70%);
-  pointer-events: none;
 }
 
 .card-top-badge-row {
@@ -590,6 +575,35 @@ body {
   box-shadow: 0 4px 10px rgba(59, 130, 246, 0.25);
 }
 
+.btn-chip-slate {
+  background: #141414;
+  border: 1px solid #282828;
+  color: #ffffff;
+}
+
+.btn-chip-slate:active {
+  background: #242424;
+}
+
+.btn-icon-subtle {
+  background: none;
+  border: none;
+  color: #666666;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+}
+
+.btn-icon-subtle:hover, .btn-icon-subtle:active {
+  color: var(--color-absent);
+  background: rgba(255, 59, 92, 0.15);
+}
+
 /* ================= TIMETABLE TAB ================= */
 .day-scroll-bar {
   display: flex;
@@ -607,8 +621,8 @@ body {
 .day-chip {
   padding: 7px 14px;
   border-radius: 12px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
+  background: #0a0a0a;
+  border: 1px solid #1f1f1f;
   color: var(--text-muted);
   font-size: 0.82rem;
   font-weight: 700;
@@ -619,10 +633,11 @@ body {
 }
 
 .day-chip.active {
-  background: var(--accent-blue);
-  color: #fff;
-  border-color: var(--accent-blue);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+  background: #ffffff;
+  color: #000000;
+  font-weight: 900;
+  border-color: #ffffff;
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
 }
 
 .timetable-row {
@@ -834,11 +849,11 @@ body {
 
 .bottom-toast-pill {
   pointer-events: auto;
-  background: #151d2f;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: #0d0d0d;
+  border: 1px solid #262626;
   border-radius: 30px;
   padding: 8px 16px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.95);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -865,7 +880,7 @@ body {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.90);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   z-index: 100;
@@ -879,14 +894,14 @@ body {
 }
 
 .bottom-sheet {
-  background: #0d121d;
-  border: 1px solid var(--border-subtle);
+  background: #060606;
+  border: 1px solid #202020;
   border-top-left-radius: 24px;
   border-top-right-radius: 24px;
   padding: 20px 18px calc(var(--safe-bottom) + 20px) 18px;
   width: 100%;
   max-width: 540px;
-  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.9);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.98);
   animation: slideUp 0.24s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -917,8 +932,8 @@ body {
 }
 
 .btn-close-modal {
-  background: var(--bg-card-subtle);
-  border: none;
+  background: #141414;
+  border: 1px solid #222222;
   color: var(--text-muted);
   width: 30px;
   height: 30px;
@@ -944,8 +959,8 @@ body {
 
 .form-input-box, .form-select-box {
   width: 100%;
-  background: var(--bg-input);
-  border: 1px solid var(--border-subtle);
+  background: #000000;
+  border: 1px solid #222222;
   color: #fff;
   border-radius: 10px;
   padding: 10px 12px;
@@ -955,7 +970,8 @@ body {
 }
 
 .form-input-box:focus, .form-select-box:focus {
-  border-color: var(--accent-cyan);
+  border-color: #00d68f;
+  background: #040404;
 }
 
 .btn-cta-primary {

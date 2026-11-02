@@ -20,6 +20,7 @@ const DEFAULT_STATE = {
     Friday: [],
     Saturday: []
   },
+  baseAttendance: {}, // { [subject]: { attended: number, total: number } }
   records: [],
   promptedHistory: {}
 };
@@ -47,7 +48,8 @@ class AppState {
           ...DEFAULT_STATE,
           ...parsed,
           settings: { ...DEFAULT_STATE.settings, ...parsed.settings },
-          timetable: { ...DEFAULT_STATE.timetable, ...parsed.timetable }
+          timetable: { ...DEFAULT_STATE.timetable, ...parsed.timetable },
+          baseAttendance: { ...(parsed.baseAttendance || {}) }
         };
       }
     } catch (e) {
@@ -84,7 +86,27 @@ class AppState {
 
     const uniqueSubs = this.getUniqueSubjects();
     uniqueSubs.forEach(s => {
-      subjects[s] = { subject: s, attended: 0, absent: 0, cancelled: 0, total: 0, pct: null, canBunk: 0, needAttend: 0, hasRecords: false };
+      const base = (this.data.baseAttendance && this.data.baseAttendance[s]) || { attended: 0, total: 0 };
+      const baseAtt = base.attended || 0;
+      const baseTot = base.total || 0;
+      const baseAbs = Math.max(0, baseTot - baseAtt);
+
+      subjects[s] = {
+        subject: s,
+        attended: baseAtt,
+        absent: baseAbs,
+        cancelled: 0,
+        total: baseTot,
+        pct: null,
+        canBunk: 0,
+        needAttend: 0,
+        hasRecords: baseTot > 0
+      };
+
+      overall.attended += baseAtt;
+      overall.absent += baseAbs;
+      overall.total += baseTot;
+      if (baseTot > 0) overall.hasRecords = true;
     });
 
     this.data.records.forEach(r => {
@@ -98,11 +120,15 @@ class AppState {
         overall.total++;
         subjects[s].attended++;
         subjects[s].total++;
+        subjects[s].hasRecords = true;
+        overall.hasRecords = true;
       } else if (st === 'absent') {
         overall.absent++;
         overall.total++;
         subjects[s].absent++;
         subjects[s].total++;
+        subjects[s].hasRecords = true;
+        overall.hasRecords = true;
       } else if (st === 'cancelled') {
         overall.cancelled++;
         subjects[s].cancelled++;
@@ -293,6 +319,66 @@ class AppState {
     this.save();
   }
 
+  setSubjectAttendance(subject, attended, total) {
+    const s = subject.trim();
+    if (!this.data.baseAttendance) this.data.baseAttendance = {};
+    const att = Math.max(0, parseInt(attended) || 0);
+    const tot = Math.max(att, parseInt(total) || 0);
+
+    if (tot === 0 && att === 0) {
+      delete this.data.baseAttendance[s];
+    } else {
+      this.data.baseAttendance[s] = { attended: att, total: tot };
+    }
+
+    // Clear individual historical records for this subject since base attendance reflects cumulative past state
+    this.data.records = this.data.records.filter(r => (r.subject || '').trim().toLowerCase() !== s.toLowerCase());
+    this.save();
+  }
+
+  deleteSubjectCompletely(subject) {
+    const sLower = subject.trim().toLowerCase();
+
+    // 1. Remove all timetable slots for this subject from every day
+    Object.keys(this.data.timetable).forEach(d => {
+      this.data.timetable[d] = this.data.timetable[d].filter(l => 
+        (l.subject || '').trim().toLowerCase() !== sLower
+      );
+    });
+
+    // 2. Remove from base attendance
+    if (this.data.baseAttendance) {
+      Object.keys(this.data.baseAttendance).forEach(k => {
+        if (k.trim().toLowerCase() === sLower) {
+          delete this.data.baseAttendance[k];
+        }
+      });
+    }
+
+    // 3. Remove all history records
+    this.data.records = this.data.records.filter(r => 
+      (r.subject || '').trim().toLowerCase() !== sLower
+    );
+
+    // 4. Remove prompted history
+    if (this.data.promptedHistory) {
+      Object.keys(this.data.promptedHistory).forEach(k => {
+        if (k.toLowerCase().includes(sLower)) {
+          delete this.data.promptedHistory[k];
+        }
+      });
+    }
+
+    // 5. Clear snoozes
+    Object.keys(this.snoozeQueue).forEach(k => {
+      if (k.toLowerCase().includes(sLower)) {
+        delete this.snoozeQueue[k];
+      }
+    });
+
+    this.save();
+  }
+
   deleteLecture(id) {
     let removedSubject = null;
     Object.keys(this.data.timetable).forEach(d => {
@@ -309,10 +395,8 @@ class AppState {
       );
 
       if (!stillInTimetable) {
-        // Completely remove records for this deleted subject so it disappears from dashboard
-        this.data.records = this.data.records.filter(r =>
-          r.subject && r.subject.trim().toLowerCase() !== subjectLower
-        );
+        // Completely remove from every part of the app!
+        this.deleteSubjectCompletely(removedSubject);
       }
     }
 
@@ -655,7 +739,10 @@ function renderDashboard() {
     card.innerHTML = `
       <div class="sub-header-row">
         <span class="sub-title">${sub.subject}</span>
-        <span class="sub-pct-chip" style="background: ${badgeColor};">${badgeText}</span>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span class="sub-pct-chip" style="background: ${badgeColor};">${badgeText}</span>
+          <button class="btn-icon-subtle" onclick="confirmDeleteSubject('${sub.subject}')" title="Delete subject from every part of app">🗑️</button>
+        </div>
       </div>
       <div class="progress-track">
         <div class="progress-fill" style="width: ${progressPct}%; background: ${badgeColor};"></div>
@@ -665,6 +752,7 @@ function renderDashboard() {
         <div class="sub-btn-group">
           <button class="btn-chip btn-chip-green" onclick="quickAddAttendance('${sub.subject}', 'present')">+ Present</button>
           <button class="btn-chip btn-chip-red" onclick="quickAddAttendance('${sub.subject}', 'absent')">+ Absent</button>
+          <button class="btn-chip btn-chip-slate" onclick="openDirectAttendanceModal('${sub.subject}')" title="Set exact attended and total classes">⚡ Set</button>
         </div>
       </div>
     `;
@@ -848,6 +936,8 @@ function openAddLecture() {
   document.getElementById('lecStartTime').value = '10:00';
   document.getElementById('lecEndTime').value = '11:00';
   document.getElementById('lecRoom').value = '';
+  document.getElementById('lecPastAttended').value = '';
+  document.getElementById('lecPastTotal').value = '';
   openModal('modalLectureEditor');
 }
 
@@ -860,6 +950,9 @@ function openEditLecture(id) {
   });
   if (!found) return;
 
+  const stats = state.calculateStats();
+  const subStat = stats.subjects[found.subject];
+
   document.getElementById('modalLectureTitle').textContent = 'Edit Lecture Slot';
   document.getElementById('lecEditId').value = found.id;
   document.getElementById('lecDay').value = foundDay;
@@ -867,6 +960,8 @@ function openEditLecture(id) {
   document.getElementById('lecStartTime').value = found.startTime;
   document.getElementById('lecEndTime').value = found.endTime;
   document.getElementById('lecRoom').value = found.room || '';
+  document.getElementById('lecPastAttended').value = subStat && subStat.hasRecords ? subStat.attended : '';
+  document.getElementById('lecPastTotal').value = subStat && subStat.hasRecords ? subStat.total : '';
   openModal('modalLectureEditor');
 }
 
@@ -892,6 +987,74 @@ function openEditRecord(id) {
   document.getElementById('recTime').value = r.time;
   document.getElementById('recNotes').value = r.notes || '';
   openModal('modalRecordEditor');
+}
+
+// Direct Set Subject Attendance Handlers
+function openDirectAttendanceModal(subject) {
+  const stats = state.calculateStats();
+  const subStat = stats.subjects[subject] || { attended: 0, total: 0, hasRecords: false };
+
+  document.getElementById('setAttSubject').value = subject;
+  document.getElementById('setAttSubjectName').textContent = subject;
+  document.getElementById('inputAttendedCount').value = subStat.hasRecords ? subStat.attended : '';
+  document.getElementById('inputTotalCount').value = subStat.hasRecords ? subStat.total : '';
+
+  updateSetAttendancePreview();
+  openModal('modalSetAttendance');
+}
+
+function updateSetAttendancePreview() {
+  const attVal = document.getElementById('inputAttendedCount').value;
+  const totVal = document.getElementById('inputTotalCount').value;
+  const previewSpan = document.getElementById('setAttPreviewPct');
+
+  if (totVal === '' || totVal === null) {
+    previewSpan.textContent = 'Enter counts above';
+    previewSpan.style.color = 'var(--text-muted)';
+    return;
+  }
+
+  const att = parseInt(attVal) || 0;
+  const tot = parseInt(totVal) || 0;
+  const target = state.data.settings.targetPercentage || 75;
+
+  if (tot === 0 && att === 0) {
+    previewSpan.textContent = 'No records (0/0)';
+    previewSpan.style.color = 'var(--text-muted)';
+    return;
+  }
+  if (att > tot) {
+    previewSpan.textContent = '⚠️ Attended cannot exceed Total!';
+    previewSpan.style.color = 'var(--color-absent)';
+    return;
+  }
+
+  const pct = Math.round((att / tot) * 1000) / 10;
+  let statusText = '';
+  if (pct >= target) {
+    const canBunk = Math.max(0, Math.floor((att - ((target / 100) * tot)) / (target / 100)));
+    statusText = ` • Safe to bunk: ${canBunk}`;
+    previewSpan.style.color = 'var(--color-present)';
+  } else {
+    const shortage = ((target / 100) * tot) - att;
+    const needAttend = Math.max(1, Math.ceil(shortage / (1 - (target / 100))));
+    statusText = ` • Must attend: ${needAttend}`;
+    previewSpan.style.color = 'var(--color-absent)';
+  }
+
+  previewSpan.textContent = `${pct.toFixed(1)}% (${att}/${tot})${statusText}`;
+}
+
+// Complete Deletion of Subject Across Entire App
+function confirmDeleteSubject(subject) {
+  if (confirm(`Delete "${subject}" from entire app?\n\nThis will permanently remove it from:\n• Dashboard\n• Weekly Schedule\n• Attendance History`)) {
+    state.deleteSubjectCompletely(subject);
+    renderDashboard();
+    renderTimetable();
+    renderHistory();
+    updateUpcomingBanner();
+    showBottomToast(`Deleted "${subject}" from entire app`, 'Dismiss', hideBottomToast);
+  }
 }
 
 // Calendar Export
@@ -1071,20 +1234,59 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const id = document.getElementById('lecEditId').value;
     const day = document.getElementById('lecDay').value;
-    const sub = document.getElementById('lecSubject').value;
+    const sub = document.getElementById('lecSubject').value.trim();
     const st = document.getElementById('lecStartTime').value;
     const et = document.getElementById('lecEndTime').value;
     const room = document.getElementById('lecRoom').value;
+    const pastAttVal = document.getElementById('lecPastAttended').value;
+    const pastTotVal = document.getElementById('lecPastTotal').value;
 
     if (id) state.updateLecture(id, day, sub, st, et, room);
     else state.addLecture(day, sub, st, et, room);
+
+    // Save past attendance if entered
+    if (pastTotVal !== '' && pastTotVal !== null && !isNaN(parseInt(pastTotVal))) {
+      const pastAtt = parseInt(pastAttVal) || 0;
+      const pastTot = parseInt(pastTotVal) || 0;
+      if (pastAtt > pastTot) {
+        alert('Classes attended cannot exceed total classes held.');
+        return;
+      }
+      state.setSubjectAttendance(sub, pastAtt, pastTot);
+    }
 
     state.activeDay = day;
     closeModal('modalLectureEditor');
     renderTimetable();
     renderDashboard();
+    renderHistory();
     updateUpcomingBanner();
     showBottomToast(`Saved lecture: ${sub}`, 'Dismiss', hideBottomToast);
+  });
+
+  // Form Set Subject Attendance
+  const inputAtt = document.getElementById('inputAttendedCount');
+  const inputTot = document.getElementById('inputTotalCount');
+  if (inputAtt) inputAtt.addEventListener('input', updateSetAttendancePreview);
+  if (inputTot) inputTot.addEventListener('input', updateSetAttendancePreview);
+
+  document.getElementById('formSetAttendance').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const sub = document.getElementById('setAttSubject').value.trim();
+    const att = parseInt(document.getElementById('inputAttendedCount').value) || 0;
+    const tot = parseInt(document.getElementById('inputTotalCount').value) || 0;
+
+    if (att > tot) {
+      alert('Classes attended cannot exceed total classes held.');
+      return;
+    }
+
+    state.setSubjectAttendance(sub, att, tot);
+    closeModal('modalSetAttendance');
+    renderDashboard();
+    renderHistory();
+    updateUpcomingBanner();
+    showBottomToast(`Saved attendance for ${sub}: ${att}/${tot} classes`, 'Dismiss', hideBottomToast);
   });
 
   // Form Record
