@@ -1174,7 +1174,7 @@ function handleAiImageSelection(file) {
 }
 
 async function callGemini(parts, apiKey) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  const cleanKey = apiKey.trim();
   const systemInstruction = `You are an expert college and university timetable extraction AI.
 Analyze the timetable (photo or text) and accurately extract the complete weekly schedule of classes.
 
@@ -1227,41 +1227,59 @@ Extraction Rules:
 
 Output pure JSON only, without markdown fences or additional explanation.`;
 
-  const payload = {
-    contents: [{
-      parts: [
-        { text: systemInstruction },
-        ...parts
-      ]
-    }],
-    generationConfig: {
-      response_mime_type: "application/json"
+  const models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
+  let lastErr = null;
+
+  for (const model of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(cleanKey)}`;
+
+      const payload = {
+        contents: [{
+          parts: [
+            { text: systemInstruction },
+            ...parts
+          ]
+        }],
+        generationConfig: {
+          responseMimeType: "application/json"
+        }
+      };
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        const errMsg = (errJson.error && errJson.error.message) ? errJson.error.message : `${res.status} ${res.statusText}`;
+        if (res.status === 404) {
+          lastErr = new Error(errMsg);
+          continue;
+        }
+        throw new Error(errMsg);
+      }
+
+      const json = await res.json();
+      if (!json.candidates || !json.candidates[0] || !json.candidates[0].content) {
+        throw new Error('No timetable data returned by AI. Please ensure the timetable image is clear and well-lit.');
+      }
+
+      let text = json.candidates[0].content.parts[0].text.trim();
+      if (text.startsWith('```')) {
+        text = text.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+      }
+      return JSON.parse(text);
+    } catch (e) {
+      lastErr = e;
+      if (!e.message.includes('404')) {
+        throw e;
+      }
     }
-  };
-
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-
-  if (!res.ok) {
-    const errJson = await res.json().catch(() => ({}));
-    const errMsg = (errJson.error && errJson.error.message) ? errJson.error.message : res.statusText;
-    throw new Error(errMsg || `API error ${res.status}`);
   }
-
-  const json = await res.json();
-  if (!json.candidates || !json.candidates[0] || !json.candidates[0].content) {
-    throw new Error('No timetable data returned by AI. Please ensure the timetable image is clear and well-lit.');
-  }
-
-  let text = json.candidates[0].content.parts[0].text.trim();
-  // Strip markdown code fences if present
-  if (text.startsWith('```')) {
-    text = text.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
-  }
-  return JSON.parse(text);
+  throw lastErr;
 }
 
 // Smart Client-side Timetable Parser (Works 100% offline without any API key)
@@ -1385,8 +1403,8 @@ async function runAiImageScan() {
     const result = await callGemini([
       { text: 'Extract the full weekly schedule from this timetable image.' },
       {
-        inline_data: {
-          mime_type: currentAiImage.mimeType,
+        inlineData: {
+          mimeType: currentAiImage.mimeType || 'image/jpeg',
           data: currentAiImage.base64
         }
       }
