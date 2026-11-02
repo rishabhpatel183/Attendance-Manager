@@ -456,15 +456,30 @@
           <button id="btnRunAiImageScan" class="btn-cta-ai" style="margin-top: 12px;">
             <span>✨</span> Scan Image with AI
           </button>
+
+          <!-- Direct no-key alternative helper -->
+          <div style="margin-top: 14px; text-align: center; border-top: 1px dashed var(--border-subtle); padding-top: 12px;">
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 6px;">Don't have an API key?</div>
+            <button type="button" class="btn-chip btn-chip-slate" onclick="switchAiTab('text')" style="margin: 0 auto; padding: 7px 14px; font-size: 0.78rem; font-weight: 700; width: 100%; justify-content: center;">
+              👉 Switch to "Paste Text" (Zero API Key Needed)
+            </button>
+          </div>
         </div>
 
         <!-- TAB 2: Paste Timetable Text -->
         <div id="aiTabContentText" class="ai-tab-content">
           <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4;">
-            Paste your timetable text from WhatsApp, email, or syllabus. Works automatically with built-in smart parser (no API key required) or Gemini AI.
+            Paste your timetable text from WhatsApp, email, or syllabus. Works automatically with built-in smart parser (no API key required).
           </p>
 
-          <textarea id="aiTextareaInput" class="form-input-box" rows="6" style="resize: vertical; font-size: 0.82rem;" placeholder="e.g.&#10;Monday:&#10;10:00 - 11:00 Mathematics (Room 201)&#10;11:00 - 12:00 Physics&#10;02:00 - 03:00 Chemistry Lab&#10;&#10;Tuesday:&#10;09:00 - 10:00 Data Structures..."></textarea>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label class="form-label-text" for="aiTextareaInput" style="margin-bottom: 0;">Timetable Text</label>
+            <button type="button" class="btn-chip btn-chip-blue" onclick="loadSampleTimetableText()" style="font-size: 0.68rem; padding: 3px 8px;">
+              📋 Load Medi-Caps V-O Timetable
+            </button>
+          </div>
+
+          <textarea id="aiTextareaInput" class="form-input-box" rows="7" style="resize: vertical; font-size: 0.82rem;" placeholder="e.g.&#10;Monday:&#10;11:10 - 12:00 Computer Networks (CN) [V124]&#10;01:40 - 02:20 Software Engineering (SE) [V124]&#10;02:20 - 03:10 FMEA [V124]&#10;03:10 - 04:50 SE Lab [LV303]..."></textarea>
 
           <button id="btnRunAiTextScan" class="btn-cta-ai" style="margin-top: 12px;">
             <span>✨</span> Parse Timetable Text

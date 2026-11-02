@@ -1361,6 +1361,40 @@ function parseTimetableClientSide(text) {
   return schedule;
 }
 
+function loadSampleTimetableText() {
+  const sample = `Monday:
+11:10 - 12:00 Elective (AI / NO SQL / CC) [V125]
+01:40 - 02:20 Computer Networks (CN) [V124]
+02:20 - 03:10 FMEA [V124]
+03:10 - 04:50 Software Engineering Lab (SE(P)) [LV303]
+
+Tuesday:
+11:10 - 12:00 Elective (AI / NO SQL / CC) [V125]
+12:00 - 12:50 FMEA [V124]
+02:20 - 03:10 Computer Networks (CN) [V124]
+03:10 - 04:50 Computer Networks Lab (CN(P)) [LV203]
+
+Wednesday:
+11:10 - 12:50 Lab Session (ES / DSC / IOT) [LV225]
+02:20 - 03:10 PE [V125]
+03:10 - 04:00 Computer Networks (CN) [V334]
+04:00 - 04:50 Software Engineering (SE) [V334]
+
+Thursday:
+12:00 - 12:50 Computer Networks (CN) [V333]
+02:20 - 03:10 PE [V125]
+03:10 - 04:50 Elective Lab [LV023]
+
+Friday:
+11:10 - 12:50 SS-III [V334]
+02:20 - 03:10 Software Engineering (SE) [V124]
+03:10 - 04:50 Elective (AI / NO SQL / CC) [V125]`;
+
+  const textarea = document.getElementById('aiTextareaInput');
+  if (textarea) textarea.value = sample;
+  showBottomToast('Loaded Medi-Caps V-O timetable! Tap "Parse Timetable Text" below', 'Dismiss', hideBottomToast);
+}
+
 async function runAiImageScan() {
   if (!currentAiImage) {
     alert('Please select or take a photo of your timetable first.');
@@ -1370,7 +1404,10 @@ async function runAiImageScan() {
   const keyInput = document.getElementById('aiApiKeyInput');
   const key = (keyInput ? keyInput.value : '').trim();
   if (!key) {
-    alert('A free Google Gemini API Key is required to scan timetable photos.\n\n1. Tap "Get Free Key ↗" above (it is 100% free from Google AI Studio).\n2. Paste your key in the box.\n\nTip: You can also use the "📝 Paste Text" tab without any API key!');
+    if (confirm('Scanning an image directly requires a free Gemini API Key from Google.\n\nDon\'t want to get a key? Tap OK to switch to "Paste Text" where you can import your timetable with 0 setup!')) {
+      switchAiTab('text');
+      loadSampleTimetableText();
+    }
     return;
   }
 
