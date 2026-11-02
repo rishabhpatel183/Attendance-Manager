@@ -444,13 +444,18 @@
           </div>
 
           <!-- Free Google Gemini API Key row -->
-          <div style="margin-top: 14px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <label class="form-label-text" for="aiApiKeyInput" style="margin-bottom: 0;">Google Gemini API Key (100% Free)</label>
-              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" style="font-size: 0.72rem; color: var(--accent-cyan); text-decoration: underline;">Get Free Key ↗</a>
+          <div style="margin-top: 14px; background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.25); border-radius: 12px; padding: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 0.82rem; font-weight: 800; color: #fff;">🔑 Free AI Pass (One-Time Setup)</span>
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="btn-chip btn-chip-ai" style="font-size: 0.72rem; padding: 4px 10px; text-decoration: none;">Get Free Key ↗</a>
             </div>
-            <input type="password" id="aiApiKeyInput" class="form-input-box" placeholder="Paste Gemini API Key (starts with AIza...)">
-            <span style="font-size: 0.68rem; color: var(--text-muted); display: block; margin-top: 3px;">Saved securely on your device only. Powered by Gemini 1.5 Flash.</span>
+            <div style="font-size: 0.73rem; color: var(--text-muted); line-height: 1.45; margin-bottom: 8px;">
+              To let AI read photos of <b>ANY class or university timetable</b>, Google gives every student a 100% free key:
+              <div style="margin-top: 4px;">1. Tap <b>Get Free Key ↗</b> (log in with your Gmail).</div>
+              <div>2. Tap <b>"Create API Key"</b> and copy it.</div>
+              <div>3. Paste it below once — your phone remembers it forever!</div>
+            </div>
+            <input type="password" id="aiApiKeyInput" class="form-input-box" placeholder="Paste your free key here (starts with AIza...)">
           </div>
 
           <button id="btnRunAiImageScan" class="btn-cta-ai" style="margin-top: 12px;">
