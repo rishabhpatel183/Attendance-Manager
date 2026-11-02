@@ -1644,6 +1644,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const dashAiBtn = document.getElementById('btnDashAiTimetable');
   if (dashAiBtn) dashAiBtn.addEventListener('click', openAiTimetableModal);
 
+  const dashTopAddBtn = document.getElementById('btnDashTopAdd');
+  if (dashTopAddBtn) dashTopAddBtn.addEventListener('click', openAddLecture);
+
+  const dashTopAiBtn = document.getElementById('btnDashTopAi');
+  if (dashTopAiBtn) dashTopAiBtn.addEventListener('click', openAiTimetableModal);
+
   // Install PWA Button Click
   const btnInstall = document.getElementById('btnInstallPwa');
   if (btnInstall) {

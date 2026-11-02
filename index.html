@@ -56,6 +56,15 @@
     <!-- TAB 1: DASHBOARD (FOCUSED ON UPCOMING CLASS & BUNK PREDICTOR) -->
     <section id="tab-dashboard" class="tab-pane active">
 
+      <!-- Dashboard Top Header Bar with direct AI and Add buttons -->
+      <div class="section-header" style="margin-bottom: 12px;">
+        <h2 class="section-title">Dashboard</h2>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <button id="btnDashTopAi" class="btn-chip btn-chip-ai" title="AI Timetable Scanner">✨ AI Timetable</button>
+          <button id="btnDashTopAdd" class="btn-chip btn-chip-blue" title="Add Lecture Slot">+ Add Lecture</button>
+        </div>
+      </div>
+
       <!-- Dynamic Main Hero Focus Card -->
       <div id="heroFocusContainer">
         <!-- Rendered dynamically by app.js: Upcoming Lecture & Safe Bunk Predictor -->
