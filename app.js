@@ -1173,6 +1173,39 @@ function handleAiImageSelection(file) {
   reader.readAsDataURL(file);
 }
 
+async function getAvailableGeminiModel(cleanKey) {
+  for (const ver of ['v1beta', 'v1']) {
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/${ver}/models?key=${encodeURIComponent(cleanKey)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.models && Array.isArray(data.models)) {
+          const genModels = data.models.filter(m => 
+            m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent')
+          );
+          // Prefer flash models (1.5-flash, 2.0-flash, flash-latest)
+          const flash = genModels.find(m => m.name.toLowerCase().includes('flash'));
+          if (flash) {
+            return {
+              ver: ver,
+              model: flash.name.replace(/^models\//, '')
+            };
+          }
+          if (genModels.length > 0) {
+            return {
+              ver: ver,
+              model: genModels[0].name.replace(/^models\//, '')
+            };
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Model list query failed for ' + ver, e);
+    }
+  }
+  return null;
+}
+
 async function callGemini(parts, apiKey) {
   const cleanKey = apiKey.trim();
   const systemInstruction = `You are an expert college and university timetable extraction AI.
@@ -1220,19 +1253,43 @@ Extraction Rules:
    - Extract room numbers from square brackets or text (e.g. "[V124]" -> "V124", "[LV303]" -> "LV303", "[LT-2]" -> "LT-2", "Room 402" -> "Room 402") into the "room" property. If no room is specified, leave as "".
 
 6. Electives:
-   - If a timetable cell contains multiple parallel elective subjects (e.g. "AI", "NO SQL", "Cloud Computing" running at the same time for different student choices), extract each elective as an individual entry in the schedule list so the student can easily tap ✕ to remove the ones they aren't enrolled in.
+   - If a timetable cell contains multiple parallel elective subjects, extract each elective as an individual entry in the schedule list so the student can easily tap ✕ to remove the ones they aren't enrolled in.
 
 7. Exclusions:
    - Strictly IGNORE and exclude non-class entries such as "LUNCH", "RECESS", "BREAK", "Activities", "Activity", "Sports", "Library", "Mentor", or empty slots.
 
 Output pure JSON only, without markdown fences or additional explanation.`;
 
-  const models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
+  // 1. Check auto-discovered model directly from Google ModelService
+  const discovered = await getAvailableGeminiModel(cleanKey);
+  const candidates = [];
+  if (discovered) {
+    candidates.push(discovered);
+  }
+
+  // 2. Fallback candidate list across both v1 and v1beta
+  const fallbackList = [
+    { ver: 'v1', model: 'gemini-1.5-flash' },
+    { ver: 'v1beta', model: 'gemini-1.5-flash-latest' },
+    { ver: 'v1beta', model: 'gemini-1.5-flash' },
+    { ver: 'v1beta', model: 'gemini-2.0-flash' },
+    { ver: 'v1beta', model: 'gemini-2.0-flash-exp' },
+    { ver: 'v1beta', model: 'gemini-1.5-flash-8b' },
+    { ver: 'v1', model: 'gemini-1.5-pro' },
+    { ver: 'v1beta', model: 'gemini-1.5-pro' }
+  ];
+
+  fallbackList.forEach(item => {
+    if (!candidates.some(c => c.ver === item.ver && c.model === item.model)) {
+      candidates.push(item);
+    }
+  });
+
   let lastErr = null;
 
-  for (const model of models) {
+  for (const { ver, model } of candidates) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(cleanKey)}`;
+      const url = `https://generativelanguage.googleapis.com/${ver}/models/${model}:generateContent?key=${encodeURIComponent(cleanKey)}`;
 
       const payload = {
         contents: [{
@@ -1255,11 +1312,14 @@ Output pure JSON only, without markdown fences or additional explanation.`;
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
         const errMsg = (errJson.error && errJson.error.message) ? errJson.error.message : `${res.status} ${res.statusText}`;
-        if (res.status === 404) {
-          lastErr = new Error(errMsg);
+        lastErr = new Error(errMsg);
+
+        // If model not found / not supported / 404, smoothly try next candidate
+        if (res.status === 404 || errMsg.toLowerCase().includes('not found') || errMsg.toLowerCase().includes('not supported')) {
           continue;
         }
-        throw new Error(errMsg);
+        // If it's invalid API key or quota issue, fail immediately with clear message
+        throw lastErr;
       }
 
       const json = await res.json();
@@ -1274,9 +1334,10 @@ Output pure JSON only, without markdown fences or additional explanation.`;
       return JSON.parse(text);
     } catch (e) {
       lastErr = e;
-      if (!e.message.includes('404')) {
-        throw e;
+      if (e.message.toLowerCase().includes('not found') || e.message.toLowerCase().includes('not supported') || e.message.includes('404')) {
+        continue;
       }
+      throw e;
     }
   }
   throw lastErr;
