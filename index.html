@@ -14,7 +14,47 @@
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" type="image/png" href="icon-192.png">
 
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=24">
+
+  <!-- Immediate Auto-Update Engine (Forces clean update on mobile devices) -->
+  <script>
+    (function() {
+      const APP_BUILD_VER = 'v24_live';
+      if (localStorage.getItem('attendance_app_build') !== APP_BUILD_VER) {
+        localStorage.setItem('attendance_app_build', APP_BUILD_VER);
+        if ('caches' in window) {
+          caches.keys().then(function(names) {
+            return Promise.all(names.map(function(n) { return caches.delete(n); }));
+          }).catch(function(){});
+        }
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(regs) {
+            for (let reg of regs) reg.unregister();
+          }).catch(function(){});
+        }
+      }
+    })();
+
+    function forceAppRefresh() {
+      if ('caches' in window) {
+        caches.keys().then(function(keys) {
+          return Promise.all(keys.map(function(k) { return caches.delete(k); }));
+        }).then(function() {
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              return Promise.all(regs.map(function(r) { return r.unregister(); }));
+            }).then(function() {
+              window.location.href = window.location.origin + window.location.pathname + '?reload=' + Date.now();
+            });
+          } else {
+            window.location.href = window.location.origin + window.location.pathname + '?reload=' + Date.now();
+          }
+        });
+      } else {
+        window.location.reload(true);
+      }
+    }
+  </script>
 </head>
 <body>
 
@@ -513,10 +553,16 @@
             </button>
           </div>
         </div>
+
+        <!-- Quick Cache Refresh Helper -->
+        <div style="text-align: center; margin-top: 14px; padding-top: 10px; border-top: 1px dashed var(--border-subtle);">
+          <span style="font-size: 0.72rem; color: var(--text-muted);">Seeing an old error? </span>
+          <button type="button" onclick="forceAppRefresh()" style="background: none; border: none; color: var(--accent-cyan); font-size: 0.74rem; font-weight: 700; text-decoration: underline; cursor: pointer; padding: 2px 4px;">Tap to Force Refresh App 🔄</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <script src="app.js?v=23"></script>
+  <script src="app.js?v=24"></script>
 </body>
 </html>

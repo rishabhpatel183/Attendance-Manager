@@ -1241,6 +1241,8 @@ Output pure JSON only, without markdown fences or additional explanation.`;
 
   for (let i = 0; i < endpoints.length; i++) {
     const { ver, model } = endpoints[i];
+    const statusElem = document.getElementById('aiLoadingStatus');
+    if (statusElem) statusElem.textContent = `Analyzing with Google AI (${model})...`;
     try {
       const url = `https://generativelanguage.googleapis.com/${ver}/models/${model}:generateContent?key=${encodeURIComponent(cleanKey)}`;
 
