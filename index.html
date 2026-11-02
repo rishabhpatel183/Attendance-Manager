@@ -14,12 +14,12 @@
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" type="image/png" href="icon-192.png">
 
-  <link rel="stylesheet" href="styles.css?v=24">
+  <link rel="stylesheet" href="styles.css?v=25">
 
   <!-- Immediate Auto-Update Engine (Forces clean update on mobile devices) -->
   <script>
     (function() {
-      const APP_BUILD_VER = 'v24_live';
+      const APP_BUILD_VER = 'v25_live';
       if (localStorage.getItem('attendance_app_build') !== APP_BUILD_VER) {
         localStorage.setItem('attendance_app_build', APP_BUILD_VER);
         if ('caches' in window) {
@@ -96,11 +96,11 @@
     <!-- TAB 1: DASHBOARD (FOCUSED ON UPCOMING CLASS & BUNK PREDICTOR) -->
     <section id="tab-dashboard" class="tab-pane active">
 
-      <!-- Dashboard Top Header Bar with direct AI and Add buttons -->
+      <!-- Dashboard Top Header Bar with direct Quick Import and Add buttons -->
       <div class="section-header" style="margin-bottom: 12px;">
         <h2 class="section-title">Dashboard</h2>
         <div style="display: flex; gap: 6px; align-items: center;">
-          <button id="btnDashTopAi" class="btn-chip btn-chip-ai" title="AI Timetable Scanner">✨ AI Timetable</button>
+          <button id="btnDashTopAi" class="btn-chip btn-chip-green" title="Quick Import Schedule">📋 Quick Import</button>
           <button id="btnDashTopAdd" class="btn-chip btn-chip-blue" title="Add Lecture Slot">+ Add Lecture</button>
         </div>
       </div>
@@ -126,7 +126,7 @@
         <div class="section-header">
           <h2 class="section-title">Subject Breakdown</h2>
           <div style="display: flex; gap: 6px;">
-            <button id="btnDashAiTimetable" class="btn-chip btn-chip-ai">✨ AI Schedule</button>
+            <button id="btnDashAiTimetable" class="btn-chip btn-chip-green">📋 Quick Import</button>
             <button id="btnDashAddLec" class="btn-chip btn-chip-blue">+ Add Lecture</button>
           </div>
         </div>
@@ -141,7 +141,7 @@
       <div class="section-header">
         <h2 class="section-title">Weekly Schedule</h2>
         <div style="display: flex; gap: 6px;">
-          <button id="btnAiTimetable" class="btn-chip btn-chip-ai">✨ AI Schedule</button>
+          <button id="btnAiTimetable" class="btn-chip btn-chip-green">📋 Quick Import</button>
           <button id="btnAddLecture" class="btn-chip btn-chip-blue">+ Add</button>
         </div>
       </div>
@@ -310,13 +310,13 @@
         <button class="btn-close-modal" onclick="closeModal('modalLectureEditor')">&times;</button>
       </div>
       <form id="formLecture">
-        <!-- Quick AI shortcut banner -->
-        <div id="modalLectureAiBanner" style="background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 10px 12px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+        <!-- Quick Import shortcut banner -->
+        <div id="modalLectureImportBanner" style="background: rgba(0, 214, 143, 0.08); border: 1px solid rgba(0, 214, 143, 0.25); border-radius: 12px; padding: 10px 12px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
           <div>
-            <div style="font-size: 0.8rem; font-weight: 800; color: #fff;">Got a timetable photo or text?</div>
-            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 1px;">AI can auto-create your entire week</div>
+            <div style="font-size: 0.8rem; font-weight: 800; color: #fff;">Have your whole schedule text?</div>
+            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 1px;">Import your entire week at once</div>
           </div>
-          <button type="button" class="btn-chip btn-chip-ai" onclick="closeModal('modalLectureEditor'); openAiTimetableModal();" style="font-size: 0.72rem; padding: 5px 11px; white-space: nowrap;">✨ Use AI</button>
+          <button type="button" class="btn-chip btn-chip-green" onclick="closeModal('modalLectureEditor'); openQuickImportModal();" style="font-size: 0.72rem; padding: 5px 11px; white-space: nowrap;">📋 Quick Import</button>
         </div>
 
         <input type="hidden" id="lecEditId">
@@ -448,121 +448,65 @@
     </div>
   </div>
 
-  <!-- AI Timetable Scanner Modal -->
-  <div id="modalAiTimetable" class="modal-overlay">
+  <!-- Quick Schedule Importer Modal (100% Offline, Zero Keys, Instant) -->
+  <div id="modalQuickImport" class="modal-overlay">
     <div class="bottom-sheet" style="max-height: 90vh; display: flex; flex-direction: column;">
       <div class="sheet-handle"></div>
       <div class="modal-title-bar">
-        <h3 class="modal-heading">✨ AI Schedule Creator</h3>
-        <button class="btn-close-modal" onclick="closeModal('modalAiTimetable')">&times;</button>
-      </div>
-
-      <!-- Segmented Tab for AI Mode -->
-      <div class="ai-tabs-row">
-        <button class="ai-tab-btn active" id="tabBtnAiImage" onclick="switchAiTab('image')">📸 Timetable Photo</button>
-        <button class="ai-tab-btn" id="tabBtnAiText" onclick="switchAiTab('text')">📝 Paste Text</button>
+        <h3 class="modal-heading">📋 Quick Schedule Importer</h3>
+        <button class="btn-close-modal" onclick="closeModal('modalQuickImport')">&times;</button>
       </div>
 
       <div class="ai-body-scroller" style="overflow-y: auto; flex: 1; padding-right: 2px;">
-        <!-- TAB 1: Photo / Screenshot Upload -->
-        <div id="aiTabContentImage" class="ai-tab-content active">
-          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">
-            Upload a photo or screenshot of your college timetable notice or schedule grid.
-          </p>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.45;">
+          Paste your timetable text from WhatsApp, email, or college notice. The smart on-device parser will instantly detect all days, times, and subjects with zero setup.
+        </p>
 
-          <div class="file-drop-area" id="dropAreaImage" onclick="document.getElementById('aiFileInput').click()">
-            <input type="file" id="aiFileInput" accept="image/*" style="display: none;">
-            <div id="dropAreaPrompt">
-              <div style="font-size: 2.2rem; margin-bottom: 6px;">📷</div>
-              <div style="font-size: 0.88rem; font-weight: 800; color: #fff;">Tap to Upload or Take Photo</div>
-              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Supports JPG, PNG, Screenshots</div>
-            </div>
-            <div id="dropAreaPreview" style="display: none;">
-              <img id="aiImgPreview" src="" alt="Timetable Preview" style="max-height: 140px; border-radius: 8px; max-width: 100%; object-fit: contain;">
-              <div style="font-size: 0.75rem; color: var(--accent-cyan); margin-top: 6px; font-weight: 700;">Tap to change image</div>
-            </div>
-          </div>
-
-          <!-- Free Google Gemini API Key row -->
-          <div style="margin-top: 14px; background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.25); border-radius: 12px; padding: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <span style="font-size: 0.82rem; font-weight: 800; color: #fff;">🔑 Free AI Pass (One-Time Setup)</span>
-              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="btn-chip btn-chip-ai" style="font-size: 0.72rem; padding: 4px 10px; text-decoration: none;">Get Free Key ↗</a>
-            </div>
-            <div style="font-size: 0.73rem; color: var(--text-muted); line-height: 1.45; margin-bottom: 8px;">
-              To let AI read photos of <b>ANY class or university timetable</b>, Google gives every student a 100% free key:
-              <div style="margin-top: 4px;">1. Tap <b>Get Free Key ↗</b> (log in with your Gmail).</div>
-              <div>2. Tap <b>"Create API Key"</b> and copy it.</div>
-              <div>3. Paste it below once — your phone remembers it forever!</div>
-            </div>
-            <input type="password" id="aiApiKeyInput" class="form-input-box" placeholder="Paste your free key here (starts with AIza...)">
-          </div>
-
-          <button id="btnRunAiImageScan" class="btn-cta-ai" style="margin-top: 12px;">
-            <span>✨</span> Scan Image with AI
-          </button>
-
-          <!-- Direct no-key alternative helper -->
-          <div style="margin-top: 14px; text-align: center; border-top: 1px dashed var(--border-subtle); padding-top: 12px;">
-            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 6px;">Don't have an API key?</div>
-            <button type="button" class="btn-chip btn-chip-slate" onclick="switchAiTab('text')" style="margin: 0 auto; padding: 7px 14px; font-size: 0.78rem; font-weight: 700; width: 100%; justify-content: center;">
-              👉 Switch to "Paste Text" (Zero API Key Needed)
-            </button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <label class="form-label-text" for="quickImportTextarea" style="margin-bottom: 0;">Timetable Text</label>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" class="btn-chip btn-chip-slate" onclick="pasteFromClipboard()" style="font-size: 0.7rem; padding: 4px 10px;">📋 Paste Clipboard</button>
+            <button type="button" class="btn-chip btn-chip-slate" onclick="loadQuickImportExample()" style="font-size: 0.7rem; padding: 4px 10px;">💡 Example</button>
           </div>
         </div>
 
-        <!-- TAB 2: Paste Timetable Text -->
-        <div id="aiTabContentText" class="ai-tab-content">
-          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4;">
-            Paste your timetable text from WhatsApp, email, or syllabus. Works automatically with built-in smart parser (no API key required).
-          </p>
+        <textarea id="quickImportTextarea" class="form-input-box" rows="8" style="resize: vertical; font-size: 0.82rem; font-family: monospace;" placeholder="Paste timetable here, e.g.:&#10;&#10;Monday:&#10;10:00 - 11:00 Mathematics [Room 201]&#10;11:00 - 12:00 Physics [Room 102]&#10;01:40 - 02:20 Computer Networks [V124]&#10;03:10 - 04:50 Programming Lab [Lab 3]&#10;&#10;Tuesday:&#10;09:00 - 10:00 Data Structures..."></textarea>
 
-          <label class="form-label-text" for="aiTextareaInput" style="margin-bottom: 6px;">Timetable Text</label>
-          <textarea id="aiTextareaInput" class="form-input-box" rows="7" style="resize: vertical; font-size: 0.82rem;" placeholder="e.g.&#10;Monday:&#10;11:10 - 12:00 Mathematics [Room 101]&#10;01:40 - 02:20 Physics [Room 102]&#10;03:10 - 04:50 Chemistry Lab [Lab 3]..."></textarea>
-
-          <button id="btnRunAiTextScan" class="btn-cta-ai" style="margin-top: 12px;">
-            <span>✨</span> Parse Timetable Text
-          </button>
-        </div>
-
-        <!-- Loading Indicator -->
-        <div id="aiLoadingIndicator" style="display: none; text-align: center; padding: 20px 0;">
-          <div class="ai-spinner"></div>
-          <div id="aiLoadingStatus" style="font-size: 0.85rem; font-weight: 700; color: #fff; margin-top: 10px;">Analyzing timetable with AI...</div>
-          <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Extracting days, time slots, and subjects</div>
-        </div>
+        <button id="btnRunQuickParse" class="btn-cta-primary" style="margin-top: 12px; background: linear-gradient(135deg, #00d68f, #00ab72); color: #000; font-weight: 900;" onclick="runQuickImportParse()">
+          ⚡ Parse & Review Classes
+        </button>
 
         <!-- Parsed Results Preview Area -->
-        <div id="aiResultsContainer" style="display: none; margin-top: 14px;">
+        <div id="quickImportResultsContainer" style="display: none; margin-top: 16px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-size: 0.82rem; font-weight: 800; color: #fff;" id="aiDetectedCountBadge">Found 0 Classes</span>
-            <button class="btn-chip btn-chip-slate" onclick="resetAiScanner()" style="font-size: 0.7rem; padding: 3px 8px;">Reset</button>
+            <span style="font-size: 0.84rem; font-weight: 800; color: #fff;" id="quickImportCountBadge">Found 0 Classes</span>
+            <button class="btn-chip btn-chip-slate" onclick="resetQuickImport()" style="font-size: 0.7rem; padding: 3px 8px;">Clear</button>
           </div>
 
-          <div id="aiParsedList" class="ai-parsed-list">
+          <div id="quickImportParsedList" class="ai-parsed-list">
             <!-- Injected dynamically -->
           </div>
 
-          <div style="margin-top: 12px;">
+          <div style="margin-top: 14px;">
             <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 10px; cursor: pointer;">
-              <input type="checkbox" id="aiReplaceExisting" checked style="accent-color: var(--color-present);">
+              <input type="checkbox" id="quickImportReplaceExisting" checked style="accent-color: var(--color-present);">
               Replace existing schedule (uncheck to merge)
             </label>
-            <button id="btnConfirmAiImport" class="btn-cta-primary" style="background: linear-gradient(135deg, #00d68f, #00ab72); color: #000; font-weight: 900;">
-              ✅ Import All Classes to Schedule
+            <button id="btnConfirmQuickImport" class="btn-cta-primary" style="background: linear-gradient(135deg, #00d68f, #00ab72); color: #000; font-weight: 900;" onclick="confirmQuickScheduleImport()">
+              ✅ Save All Classes to Weekly Schedule
             </button>
           </div>
         </div>
 
         <!-- Quick Cache Refresh Helper -->
         <div style="text-align: center; margin-top: 14px; padding-top: 10px; border-top: 1px dashed var(--border-subtle);">
-          <span style="font-size: 0.72rem; color: var(--text-muted);">Seeing an old error? </span>
+          <span style="font-size: 0.72rem; color: var(--text-muted);">Seeing an old version? </span>
           <button type="button" onclick="forceAppRefresh()" style="background: none; border: none; color: var(--accent-cyan); font-size: 0.74rem; font-weight: 700; text-decoration: underline; cursor: pointer; padding: 2px 4px;">Tap to Force Refresh App 🔄</button>
         </div>
       </div>
     </div>
   </div>
 
-  <script src="app.js?v=24"></script>
+  <script src="app.js?v=25"></script>
 </body>
 </html>

@@ -1070,20 +1070,40 @@ body {
   cursor: pointer;
 }
 
-/* ================= AI TIMETABLE SCANNER STYLES ================= */
-.btn-chip-ai {
-  background: linear-gradient(135deg, #8b5cf6, #6366f1);
-  color: #fff;
+/* ================= QUICK TIMETABLE IMPORTER STYLES ================= */
+.btn-chip-green {
+  background: linear-gradient(135deg, #00d68f, #00ab72);
+  color: #000;
   border: none;
   padding: 6px 12px;
   border-radius: 10px;
   font-size: 0.78rem;
-  font-weight: 800;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  box-shadow: 0 3px 12px rgba(0, 214, 143, 0.3);
+  transition: transform 0.1s;
+}
+
+.btn-chip-green:active {
+  transform: scale(0.92);
+}
+
+.btn-chip-ai {
+  background: linear-gradient(135deg, #00d68f, #00ab72);
+  color: #000;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 900;
   display: flex;
   align-items: center;
   gap: 4px;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
+  box-shadow: 0 3px 12px rgba(0, 214, 143, 0.3);
   transition: transform 0.1s;
 }
 
