@@ -76,7 +76,10 @@
       <div id="subjectBreakdownSection" style="display: none;">
         <div class="section-header">
           <h2 class="section-title">Subject Breakdown</h2>
-          <button id="btnDashAddLec" class="btn-chip btn-chip-blue">+ Add Lecture</button>
+          <div style="display: flex; gap: 6px;">
+            <button id="btnDashAiTimetable" class="btn-chip btn-chip-ai">✨ AI Schedule</button>
+            <button id="btnDashAddLec" class="btn-chip btn-chip-blue">+ Add Lecture</button>
+          </div>
         </div>
         <div id="subjectListContainer">
           <!-- Injected via app.js -->
@@ -258,6 +261,15 @@
         <button class="btn-close-modal" onclick="closeModal('modalLectureEditor')">&times;</button>
       </div>
       <form id="formLecture">
+        <!-- Quick AI shortcut banner -->
+        <div id="modalLectureAiBanner" style="background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 10px 12px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+          <div>
+            <div style="font-size: 0.8rem; font-weight: 800; color: #fff;">Got a timetable photo or text?</div>
+            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 1px;">AI can auto-create your entire week</div>
+          </div>
+          <button type="button" class="btn-chip btn-chip-ai" onclick="closeModal('modalLectureEditor'); openAiTimetableModal();" style="font-size: 0.72rem; padding: 5px 11px; white-space: nowrap;">✨ Use AI</button>
+        </div>
+
         <input type="hidden" id="lecEditId">
         <div class="form-field">
           <label class="form-label-text" for="lecDay">Day of Week</label>

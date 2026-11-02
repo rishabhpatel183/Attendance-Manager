@@ -589,13 +589,20 @@ function renderDashboard() {
     if (subContainer) subContainer.innerHTML = '';
 
     heroContainer.innerHTML = `
-      <div class="empty-state-box" style="margin-top: 10px; padding: 32px 18px;">
-        <div class="empty-state-icon" style="font-size: 2.5rem;">🎓</div>
-        <div class="empty-state-title" style="font-size: 1.15rem; margin-bottom: 6px;">No Subjects Added Yet</div>
-        <div class="empty-state-sub" style="font-size: 0.82rem; max-width: 300px; margin: 0 auto 18px auto; color: var(--text-muted); line-height: 1.4;">
-          Add your lectures in the Schedule tab to start tracking your attendance and predicting safe bunks.
+      <div class="empty-state-box" style="margin-top: 10px; padding: 30px 18px; border: 1px solid var(--border-subtle); background: #050505;">
+        <div class="empty-state-icon" style="font-size: 2.6rem; margin-bottom: 6px;">✨</div>
+        <div class="empty-state-title" style="font-size: 1.18rem; margin-bottom: 6px; font-weight: 800;">No Lectures Added Yet</div>
+        <div class="empty-state-sub" style="font-size: 0.82rem; max-width: 320px; margin: 0 auto 18px auto; color: var(--text-muted); line-height: 1.45;">
+          Upload a timetable photo or paste schedule text — our AI will automatically create all your weekly lectures in seconds!
         </div>
-        <button class="btn-cta-primary" style="max-width: 220px; margin: 0 auto; display: block;" onclick="openAddLecture()">+ Add Your First Lecture</button>
+        <div style="display: flex; flex-direction: column; gap: 10px; max-width: 270px; margin: 0 auto;">
+          <button class="btn-chip-ai" style="width: 100%; font-size: 0.88rem; padding: 12px 16px; border-radius: 12px; justify-content: center; font-weight: 900; box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);" onclick="openAiTimetableModal()">
+            <span>✨</span> Scan Timetable with AI
+          </button>
+          <button class="btn-chip btn-chip-slate" style="width: 100%; padding: 10px 14px; font-size: 0.82rem; font-weight: 700; border-radius: 12px; justify-content: center;" onclick="openAddLecture()">
+            + Add Lecture Manually
+          </button>
+        </div>
       </div>
     `;
     return;
@@ -944,6 +951,8 @@ function openAddLecture() {
   document.getElementById('lecRoom').value = '';
   document.getElementById('lecPastAttended').value = '';
   document.getElementById('lecPastTotal').value = '';
+  const aiBanner = document.getElementById('modalLectureAiBanner');
+  if (aiBanner) aiBanner.style.display = 'flex';
   openModal('modalLectureEditor');
 }
 
@@ -958,6 +967,9 @@ function openEditLecture(id) {
 
   const stats = state.calculateStats();
   const subStat = stats.subjects[found.subject];
+
+  const aiBanner = document.getElementById('modalLectureAiBanner');
+  if (aiBanner) aiBanner.style.display = 'none';
 
   document.getElementById('modalLectureTitle').textContent = 'Edit Lecture Slot';
   document.getElementById('lecEditId').value = found.id;
@@ -1628,6 +1640,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const dashAddBtn = document.getElementById('btnDashAddLec');
   if (dashAddBtn) dashAddBtn.addEventListener('click', openAddLecture);
+
+  const dashAiBtn = document.getElementById('btnDashAiTimetable');
+  if (dashAiBtn) dashAiBtn.addEventListener('click', openAiTimetableModal);
 
   // Install PWA Button Click
   const btnInstall = document.getElementById('btnInstallPwa');
