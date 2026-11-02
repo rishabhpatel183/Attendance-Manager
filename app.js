@@ -1173,39 +1173,6 @@ function handleAiImageSelection(file) {
   reader.readAsDataURL(file);
 }
 
-async function getAvailableGeminiModel(cleanKey) {
-  for (const ver of ['v1beta', 'v1']) {
-    try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/${ver}/models?key=${encodeURIComponent(cleanKey)}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.models && Array.isArray(data.models)) {
-          const genModels = data.models.filter(m => 
-            m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent')
-          );
-          // Prefer flash models (1.5-flash, 2.0-flash, flash-latest)
-          const flash = genModels.find(m => m.name.toLowerCase().includes('flash'));
-          if (flash) {
-            return {
-              ver: ver,
-              model: flash.name.replace(/^models\//, '')
-            };
-          }
-          if (genModels.length > 0) {
-            return {
-              ver: ver,
-              model: genModels[0].name.replace(/^models\//, '')
-            };
-          }
-        }
-      }
-    } catch (e) {
-      console.warn('Model list query failed for ' + ver, e);
-    }
-  }
-  return null;
-}
-
 async function callGemini(parts, apiKey) {
   const cleanKey = apiKey.trim();
   const systemInstruction = `You are an expert college and university timetable extraction AI.
@@ -1260,34 +1227,20 @@ Extraction Rules:
 
 Output pure JSON only, without markdown fences or additional explanation.`;
 
-  // 1. Check auto-discovered model directly from Google ModelService
-  const discovered = await getAvailableGeminiModel(cleanKey);
-  const candidates = [];
-  if (discovered) {
-    candidates.push(discovered);
-  }
-
-  // 2. Fallback candidate list across both v1 and v1beta
-  const fallbackList = [
-    { ver: 'v1', model: 'gemini-1.5-flash' },
-    { ver: 'v1beta', model: 'gemini-1.5-flash-latest' },
-    { ver: 'v1beta', model: 'gemini-1.5-flash' },
+  // Tested working endpoints in priority order
+  const endpoints = [
     { ver: 'v1beta', model: 'gemini-2.0-flash' },
+    { ver: 'v1beta', model: 'gemini-1.5-flash-latest' },
+    { ver: 'v1', model: 'gemini-1.5-flash' },
     { ver: 'v1beta', model: 'gemini-2.0-flash-exp' },
-    { ver: 'v1beta', model: 'gemini-1.5-flash-8b' },
-    { ver: 'v1', model: 'gemini-1.5-pro' },
-    { ver: 'v1beta', model: 'gemini-1.5-pro' }
+    { ver: 'v1beta', model: 'gemini-1.5-pro-latest' },
+    { ver: 'v1', model: 'gemini-1.5-pro' }
   ];
-
-  fallbackList.forEach(item => {
-    if (!candidates.some(c => c.ver === item.ver && c.model === item.model)) {
-      candidates.push(item);
-    }
-  });
 
   let lastErr = null;
 
-  for (const { ver, model } of candidates) {
+  for (let i = 0; i < endpoints.length; i++) {
+    const { ver, model } = endpoints[i];
     try {
       const url = `https://generativelanguage.googleapis.com/${ver}/models/${model}:generateContent?key=${encodeURIComponent(cleanKey)}`;
 
@@ -1297,10 +1250,7 @@ Output pure JSON only, without markdown fences or additional explanation.`;
             { text: systemInstruction },
             ...parts
           ]
-        }],
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
+        }]
       };
 
       const res = await fetch(url, {
@@ -1314,11 +1264,13 @@ Output pure JSON only, without markdown fences or additional explanation.`;
         const errMsg = (errJson.error && errJson.error.message) ? errJson.error.message : `${res.status} ${res.statusText}`;
         lastErr = new Error(errMsg);
 
-        // If model not found / not supported / 404, smoothly try next candidate
-        if (res.status === 404 || errMsg.toLowerCase().includes('not found') || errMsg.toLowerCase().includes('not supported')) {
+        // If it's a model not found / unsupported error, continue to next model candidate
+        if (res.status === 404 || errMsg.toLowerCase().includes('not found') || errMsg.toLowerCase().includes('not supported') || errMsg.toLowerCase().includes('is not found')) {
+          console.warn(`Endpoint ${ver}/${model} not available (${errMsg}), trying next...`);
           continue;
         }
-        // If it's invalid API key or quota issue, fail immediately with clear message
+
+        // If it's an invalid key or permission issue, throw immediately
         throw lastErr;
       }
 
@@ -1328,19 +1280,22 @@ Output pure JSON only, without markdown fences or additional explanation.`;
       }
 
       let text = json.candidates[0].content.parts[0].text.trim();
+      // Clean markdown code blocks if wrapped
       if (text.startsWith('```')) {
         text = text.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
       }
       return JSON.parse(text);
     } catch (e) {
       lastErr = e;
-      if (e.message.toLowerCase().includes('not found') || e.message.toLowerCase().includes('not supported') || e.message.includes('404')) {
+      const msg = e.message.toLowerCase();
+      if (msg.includes('not found') || msg.includes('not supported') || msg.includes('404')) {
         continue;
       }
       throw e;
     }
   }
-  throw lastErr;
+
+  throw lastErr || new Error('Could not connect to AI service. Please verify your Google Gemini API key.');
 }
 
 // Smart Client-side Timetable Parser (Works 100% offline without any API key)

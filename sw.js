@@ -1,9 +1,9 @@
-const CACHE_NAME = 'attendance-v21-live';
+const CACHE_NAME = 'attendance-v23-live';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './styles.css',
-  './app.js',
+  './app.js?v=23',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
@@ -39,32 +39,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-First for HTML/document requests so the phone always gets the newest code
-  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
-    event.respondWith(
-      fetch(event.request)
-        .then((networkResponse) => {
-          return caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, networkResponse.clone());
-            return networkResponse;
-          });
-        })
-        .catch(() => caches.match('./index.html'))
-    );
-    return;
-  }
-
-  // Stale-While-Revalidate for CSS/JS
+  // Network-First for everything so users always get newest code instantly
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, networkResponse.clone());
-        });
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const resClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, resClone);
+          });
+        }
         return networkResponse;
-      }).catch(() => cachedResponse);
-
-      return cachedResponse || fetchPromise;
-    })
+      })
+      .catch(() => caches.match(event.request).then(cached => cached || caches.match('./index.html')))
   );
 });
