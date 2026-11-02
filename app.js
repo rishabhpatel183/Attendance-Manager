@@ -1117,44 +1117,103 @@ function handleAiImageSelection(file) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = (e) => {
-    const fullDataUrl = e.target.result;
-    const commaIdx = fullDataUrl.indexOf(',');
-    const mimeType = fullDataUrl.substring(5, commaIdx).split(';')[0];
-    const base64Data = fullDataUrl.substring(commaIdx + 1);
+    const img = new Image();
+    img.onload = () => {
+      // Downscale high-res mobile photos to max 1600px for instant upload
+      const MAX_DIM = 1600;
+      let width = img.width;
+      let height = img.height;
 
-    currentAiImage = { base64: base64Data, mimeType: mimeType };
+      if (width > MAX_DIM || height > MAX_DIM) {
+        if (width > height) {
+          height = Math.round((height * MAX_DIM) / width);
+          width = MAX_DIM;
+        } else {
+          width = Math.round((width * MAX_DIM) / height);
+          height = MAX_DIM;
+        }
+      }
 
-    const imgPreview = document.getElementById('aiImgPreview');
-    if (imgPreview) imgPreview.src = fullDataUrl;
-    const prompt = document.getElementById('dropAreaPrompt');
-    const preview = document.getElementById('dropAreaPreview');
-    if (prompt) prompt.style.display = 'none';
-    if (preview) preview.style.display = 'block';
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const mimeType = 'image/jpeg';
+      const fullDataUrl = canvas.toDataURL(mimeType, 0.88);
+      const base64Data = fullDataUrl.split(',')[1];
+
+      currentAiImage = { base64: base64Data, mimeType: mimeType };
+
+      const imgPreview = document.getElementById('aiImgPreview');
+      if (imgPreview) imgPreview.src = fullDataUrl;
+      const prompt = document.getElementById('dropAreaPrompt');
+      const preview = document.getElementById('dropAreaPreview');
+      if (prompt) prompt.style.display = 'none';
+      if (preview) preview.style.display = 'block';
+    };
+    img.onerror = () => {
+      alert('Could not read image file. Please try another photo.');
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
 
 async function callGemini(parts, apiKey) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-  const systemInstruction = `You are an expert college timetable extractor.
-Analyze the timetable and extract all classes for each day of the week (Monday, Tuesday, Wednesday, Thursday, Friday, Saturday).
-Return ONLY a valid JSON object matching this schema:
+  const systemInstruction = `You are an expert college and university timetable extraction AI.
+Analyze the timetable (photo or text) and accurately extract the complete weekly schedule of classes.
+
+Return ONLY a valid JSON object strictly matching this schema:
 {
   "schedule": [
     {
       "day": "Monday",
-      "subject": "Mathematics",
-      "startTime": "10:00",
-      "endTime": "11:00",
-      "room": "Room 201"
+      "subject": "Computer Networks (CN)",
+      "startTime": "08:30",
+      "endTime": "09:20",
+      "room": "V124"
     }
   ]
 }
-Rules:
-- "day" must be one of: "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday".
-- "startTime" and "endTime" must be in 24-hour HH:MM format (e.g. "09:00", "14:30"). If AM/PM is omitted, assume daytime college hours.
-- Exclude breaks, recess, lunch.
-- Output pure JSON only.`;
+
+Extraction Rules:
+1. Day Normalization:
+   - "day" must be one of: "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday".
+   - Normalize day abbreviations ("MON", "TUE", "WED", "THU", "FRI", "SAT") to full capitalized day names.
+
+2. Strict 24-Hour Time Format (HH:MM):
+   - "startTime" and "endTime" must be 24-hour two-digit strings (e.g. "08:30", "09:20", "13:40", "14:20", "15:10", "16:00", "16:50").
+   - Crucial Indian & College Timetable Rule:
+     Hours starting with 1, 2, 3, 4, 5, 6 after noon (e.g. 1:40, 2:20, 3:10, 4:00, 4:50) MUST be converted to PM:
+     * 1:40 -> "13:40"
+     * 2:20 -> "14:20"
+     * 3:10 -> "15:10"
+     * 4:00 -> "16:00"
+     * 4:50 -> "16:50"
+   - Hours starting with 8, 9, 10, 11 are AM ("08:30", "09:20", "10:20", "11:10") and 12 is "12:00".
+
+3. Multi-Period Practicals / Labs:
+   - When a practical or lab session (indicated by "(P)", "Lab", "Practical", e.g. "SE(P)", "CN(P)", "DSC(P)", "IOT Lab") spans across 2 or more consecutive period columns (e.g. Period IX: 03:10-04:00 and Period X: 04:00-04:50), merge them into a single entry spanning from the start of the first period to the end of the last period (e.g. startTime: "15:10", endTime: "16:50").
+   - Clearly label practicals as "(P)" or "Lab" in the subject name (e.g. "Software Engineering Lab (SE(P))" or "CN(P)").
+
+4. Clean Subject Names:
+   - Separate room numbers and teacher initials from the subject name.
+   - For example: "CN 5CSE-O (MPC) [V124]" -> subject: "Computer Networks (CN)", room: "V124".
+   - Strip out batch tags (e.g. "5CSE-O", "5CSE-O1", "M+N+O+P") and faculty initials (e.g. "[ASH]", "(MPC)") from the subject name.
+
+5. Room Extraction:
+   - Extract room numbers from square brackets or text (e.g. "[V124]" -> "V124", "[LV303]" -> "LV303", "[LT-2]" -> "LT-2", "Room 402" -> "Room 402") into the "room" property. If no room is specified, leave as "".
+
+6. Electives:
+   - If a timetable cell contains multiple parallel elective subjects (e.g. "AI", "NO SQL", "Cloud Computing" running at the same time for different student choices), extract each elective as an individual entry in the schedule list so the student can easily tap ✕ to remove the ones they aren't enrolled in.
+
+7. Exclusions:
+   - Strictly IGNORE and exclude non-class entries such as "LUNCH", "RECESS", "BREAK", "Activities", "Activity", "Sports", "Library", "Mentor", or empty slots.
+
+Output pure JSON only, without markdown fences or additional explanation.`;
 
   const payload = {
     contents: [{
@@ -1181,7 +1240,15 @@ Rules:
   }
 
   const json = await res.json();
-  const text = json.candidates[0].content.parts[0].text;
+  if (!json.candidates || !json.candidates[0] || !json.candidates[0].content) {
+    throw new Error('No timetable data returned by AI. Please ensure the timetable image is clear and well-lit.');
+  }
+
+  let text = json.candidates[0].content.parts[0].text.trim();
+  // Strip markdown code fences if present
+  if (text.startsWith('```')) {
+    text = text.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+  }
   return JSON.parse(text);
 }
 
@@ -1215,10 +1282,13 @@ function parseTimetableClientSide(text) {
 
     if (isPM && h < 12) h += 12;
     if (isAM && h === 12) h = 0;
+    // College daytime heuristic: 1 to 6 without AM/PM is afternoon PM
     if (!isPM && !isAM && h >= 1 && h <= 6) h += 12;
 
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
   }
+
+  const ignoreWords = ['lunch', 'recess', 'break', 'activities', 'activity', 'sports', 'mentor', 'library'];
 
   lines.forEach(line => {
     const lower = line.toLowerCase().replace(/[:\-_,]/g, '').trim();
@@ -1232,20 +1302,39 @@ function parseTimetableClientSide(text) {
       currentDay = dayAliases[firstWord];
     }
 
+    if (ignoreWords.some(w => line.toLowerCase().includes(w))) {
+      return;
+    }
+
     const match = line.match(timeRegex);
     if (match) {
       const startTime = to24h(match[1], false);
       const endTime = to24h(match[2], true);
 
-      let subject = line.replace(match[0], '').replace(new RegExp(`^${currentDay}[:\\s]*`, 'i'), '').replace(/[:\-\(\)]/g, ' ').replace(/\s+/g, ' ').trim();
+      let subject = line.replace(match[0], '').replace(new RegExp(`^${currentDay}[:\\s]*`, 'i'), '').trim();
       let room = '';
-      const roomMatch = subject.match(/(?:room|hall|lab|rm|lh)\s*[:#]?\s*([a-z0-9\-]+)/i);
-      if (roomMatch) {
-        room = roomMatch[0];
-        subject = subject.replace(roomMatch[0], '').trim();
+
+      // Extract bracketed room like [V124] or [LV303]
+      const bracketRoom = subject.match(/\[([A-Za-z0-9\-_ ]+)\]/);
+      if (bracketRoom) {
+        room = bracketRoom[1].trim();
+        subject = subject.replace(bracketRoom[0], '').trim();
+      } else {
+        const roomMatch = subject.match(/(?:room|hall|lab|rm|lh)\s*[:#]?\s*([a-z0-9\-]+)/i);
+        if (roomMatch) {
+          room = roomMatch[0];
+          subject = subject.replace(roomMatch[0], '').trim();
+        }
       }
 
-      if (subject.length > 0) {
+      // Remove teacher initials in brackets/parentheses like (MPC) or [ASH]
+      subject = subject.replace(/\([A-Za-z0-9\-_ ]+\)/g, ' ').replace(/\[[A-Za-z0-9\-_ ]+\]/g, ' ');
+      // Remove batch codes like 5CSE-O or 5CSE
+      subject = subject.replace(/\b\d+[A-Za-z]+(?:-[A-Za-z0-9]+)?\b/g, ' ');
+      // Clean up punctuation and whitespace
+      subject = subject.replace(/[:\-]/g, ' ').replace(/\s+/g, ' ').trim();
+
+      if (subject.length > 0 && !ignoreWords.some(w => subject.toLowerCase() === w)) {
         schedule.push({
           day: currentDay,
           subject: subject,
