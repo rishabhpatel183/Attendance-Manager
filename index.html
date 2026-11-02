@@ -88,7 +88,10 @@
     <section id="tab-timetable" class="tab-pane">
       <div class="section-header">
         <h2 class="section-title">Weekly Schedule</h2>
-        <button id="btnAddLecture" class="btn-chip btn-chip-blue">+ Add Lecture</button>
+        <div style="display: flex; gap: 6px;">
+          <button id="btnAiTimetable" class="btn-chip btn-chip-ai">✨ AI Schedule</button>
+          <button id="btnAddLecture" class="btn-chip btn-chip-blue">+ Add</button>
+        </div>
       </div>
 
       <!-- Day Segmented Horizontal Scroller -->
@@ -350,22 +353,22 @@
     </div>
   </div>
 
-  <!-- Direct Set Subject Attendance Sheet -->
+  <!-- Direct Edit Subject Attendance Sheet -->
   <div id="modalSetAttendance" class="modal-overlay">
     <div class="bottom-sheet">
       <div class="sheet-handle"></div>
       <div class="modal-title-bar">
-        <h3 id="modalSetAttendanceTitle" class="modal-heading">Set Subject Attendance</h3>
+        <h3 id="modalSetAttendanceTitle" class="modal-heading">✏️ Edit Attendance</h3>
         <button class="btn-close-modal" onclick="closeModal('modalSetAttendance')">&times;</button>
       </div>
       <form id="formSetAttendance">
         <input type="hidden" id="setAttSubject">
         <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px;">
-          Directly set or correct your past attendance numbers for <strong id="setAttSubjectName" style="color: #fff;"></strong>:
+          Directly set or correct attendance numbers for <strong id="setAttSubjectName" style="color: #fff;"></strong>:
         </p>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
           <div class="form-field">
-            <label class="form-label-text" for="inputAttendedCount">Classes Attended</label>
+            <label class="form-label-text" for="inputAttendedCount">Classes Attended (Present)</label>
             <input type="number" id="inputAttendedCount" class="form-input-box" min="0" required placeholder="e.g. 15">
           </div>
           <div class="form-field">
@@ -379,8 +382,103 @@
           <span id="setAttPreviewPct" style="font-size: 0.88rem; font-weight: 900; color: #fff;">--%</span>
         </div>
 
-        <button type="submit" class="btn-cta-primary">Save Attendance</button>
+        <button type="submit" class="btn-cta-primary">Save Changes</button>
       </form>
+    </div>
+  </div>
+
+  <!-- AI Timetable Scanner Modal -->
+  <div id="modalAiTimetable" class="modal-overlay">
+    <div class="bottom-sheet" style="max-height: 90vh; display: flex; flex-direction: column;">
+      <div class="sheet-handle"></div>
+      <div class="modal-title-bar">
+        <h3 class="modal-heading">✨ AI Schedule Creator</h3>
+        <button class="btn-close-modal" onclick="closeModal('modalAiTimetable')">&times;</button>
+      </div>
+
+      <!-- Segmented Tab for AI Mode -->
+      <div class="ai-tabs-row">
+        <button class="ai-tab-btn active" id="tabBtnAiImage" onclick="switchAiTab('image')">📸 Timetable Photo</button>
+        <button class="ai-tab-btn" id="tabBtnAiText" onclick="switchAiTab('text')">📝 Paste Text</button>
+      </div>
+
+      <div class="ai-body-scroller" style="overflow-y: auto; flex: 1; padding-right: 2px;">
+        <!-- TAB 1: Photo / Screenshot Upload -->
+        <div id="aiTabContentImage" class="ai-tab-content active">
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">
+            Upload a photo or screenshot of your college timetable notice or schedule grid.
+          </p>
+
+          <div class="file-drop-area" id="dropAreaImage" onclick="document.getElementById('aiFileInput').click()">
+            <input type="file" id="aiFileInput" accept="image/*" style="display: none;">
+            <div id="dropAreaPrompt">
+              <div style="font-size: 2.2rem; margin-bottom: 6px;">📷</div>
+              <div style="font-size: 0.88rem; font-weight: 800; color: #fff;">Tap to Upload or Take Photo</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Supports JPG, PNG, Screenshots</div>
+            </div>
+            <div id="dropAreaPreview" style="display: none;">
+              <img id="aiImgPreview" src="" alt="Timetable Preview" style="max-height: 140px; border-radius: 8px; max-width: 100%; object-fit: contain;">
+              <div style="font-size: 0.75rem; color: var(--accent-cyan); margin-top: 6px; font-weight: 700;">Tap to change image</div>
+            </div>
+          </div>
+
+          <!-- Free Google Gemini API Key row -->
+          <div style="margin-top: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label class="form-label-text" for="aiApiKeyInput" style="margin-bottom: 0;">Google Gemini API Key (100% Free)</label>
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" style="font-size: 0.72rem; color: var(--accent-cyan); text-decoration: underline;">Get Free Key ↗</a>
+            </div>
+            <input type="password" id="aiApiKeyInput" class="form-input-box" placeholder="Paste Gemini API Key (starts with AIza...)">
+            <span style="font-size: 0.68rem; color: var(--text-muted); display: block; margin-top: 3px;">Saved securely on your device only. Powered by Gemini 1.5 Flash.</span>
+          </div>
+
+          <button id="btnRunAiImageScan" class="btn-cta-ai" style="margin-top: 12px;">
+            <span>✨</span> Scan Image with AI
+          </button>
+        </div>
+
+        <!-- TAB 2: Paste Timetable Text -->
+        <div id="aiTabContentText" class="ai-tab-content">
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4;">
+            Paste your timetable text from WhatsApp, email, or syllabus. Works automatically with built-in smart parser (no API key required) or Gemini AI.
+          </p>
+
+          <textarea id="aiTextareaInput" class="form-input-box" rows="6" style="resize: vertical; font-size: 0.82rem;" placeholder="e.g.&#10;Monday:&#10;10:00 - 11:00 Mathematics (Room 201)&#10;11:00 - 12:00 Physics&#10;02:00 - 03:00 Chemistry Lab&#10;&#10;Tuesday:&#10;09:00 - 10:00 Data Structures..."></textarea>
+
+          <button id="btnRunAiTextScan" class="btn-cta-ai" style="margin-top: 12px;">
+            <span>✨</span> Parse Timetable Text
+          </button>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="aiLoadingIndicator" style="display: none; text-align: center; padding: 20px 0;">
+          <div class="ai-spinner"></div>
+          <div id="aiLoadingStatus" style="font-size: 0.85rem; font-weight: 700; color: #fff; margin-top: 10px;">Analyzing timetable with AI...</div>
+          <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Extracting days, time slots, and subjects</div>
+        </div>
+
+        <!-- Parsed Results Preview Area -->
+        <div id="aiResultsContainer" style="display: none; margin-top: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 0.82rem; font-weight: 800; color: #fff;" id="aiDetectedCountBadge">Found 0 Classes</span>
+            <button class="btn-chip btn-chip-slate" onclick="resetAiScanner()" style="font-size: 0.7rem; padding: 3px 8px;">Reset</button>
+          </div>
+
+          <div id="aiParsedList" class="ai-parsed-list">
+            <!-- Injected dynamically -->
+          </div>
+
+          <div style="margin-top: 12px;">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 10px; cursor: pointer;">
+              <input type="checkbox" id="aiReplaceExisting" checked style="accent-color: var(--color-present);">
+              Replace existing schedule (uncheck to merge)
+            </label>
+            <button id="btnConfirmAiImport" class="btn-cta-primary" style="background: linear-gradient(135deg, #00d68f, #00ab72); color: #000; font-weight: 900;">
+              ✅ Import All Classes to Schedule
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

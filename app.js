@@ -666,7 +666,10 @@ function renderDashboard() {
 
         <div class="upcoming-stats-strip">
           <span class="sub-current-lbl">Current Subject Attendance:</span>
-          ${currentScoreHtml}
+          <div style="display: flex; align-items: center; gap: 8px;">
+            ${currentScoreHtml}
+            <button class="btn-link-edit" onclick="openDirectAttendanceModal('${lec.subject}')" title="Edit attendance numbers">✏️ Edit</button>
+          </div>
         </div>
 
         <div class="bunk-decision-box ${isSafe ? 'bunk-box-safe' : 'bunk-box-danger'}">
@@ -740,7 +743,7 @@ function renderDashboard() {
       <div class="sub-header-row">
         <span class="sub-title">${sub.subject}</span>
         <div style="display: flex; align-items: center; gap: 6px;">
-          <span class="sub-pct-chip" style="background: ${badgeColor};">${badgeText}</span>
+          <span class="sub-pct-chip" style="background: ${badgeColor}; cursor: pointer;" onclick="openDirectAttendanceModal('${sub.subject}')" title="Click to edit attendance">${badgeText} ✏️</span>
           <button class="btn-icon-subtle" onclick="confirmDeleteSubject('${sub.subject}')" title="Delete subject from every part of app">🗑️</button>
         </div>
       </div>
@@ -748,11 +751,14 @@ function renderDashboard() {
         <div class="progress-fill" style="width: ${progressPct}%; background: ${badgeColor};"></div>
       </div>
       <div class="sub-footer-row">
-        <span class="sub-stat-text">${sub.attended}/${sub.total} Classes • ${note}</span>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span class="sub-stat-text">${sub.attended}/${sub.total} Classes • ${note}</span>
+          <button class="btn-link-edit" onclick="openDirectAttendanceModal('${sub.subject}')" title="Edit attendance numbers">✏️ Edit</button>
+        </div>
         <div class="sub-btn-group">
           <button class="btn-chip btn-chip-green" onclick="quickAddAttendance('${sub.subject}', 'present')">+ Present</button>
           <button class="btn-chip btn-chip-red" onclick="quickAddAttendance('${sub.subject}', 'absent')">+ Absent</button>
-          <button class="btn-chip btn-chip-slate" onclick="openDirectAttendanceModal('${sub.subject}')" title="Set exact attended and total classes">⚡ Set</button>
+          <button class="btn-chip btn-chip-slate" onclick="openDirectAttendanceModal('${sub.subject}')" title="Set exact attended and total classes">✏️ Edit</button>
         </div>
       </div>
     `;
@@ -994,6 +1000,7 @@ function openDirectAttendanceModal(subject) {
   const stats = state.calculateStats();
   const subStat = stats.subjects[subject] || { attended: 0, total: 0, hasRecords: false };
 
+  document.getElementById('modalSetAttendanceTitle').textContent = `✏️ Edit Attendance: ${subject}`;
   document.getElementById('setAttSubject').value = subject;
   document.getElementById('setAttSubjectName').textContent = subject;
   document.getElementById('inputAttendedCount').value = subStat.hasRecords ? subStat.attended : '';
@@ -1055,6 +1062,364 @@ function confirmDeleteSubject(subject) {
     updateUpcomingBanner();
     showBottomToast(`Deleted "${subject}" from entire app`, 'Dismiss', hideBottomToast);
   }
+}
+
+// ================= AI TIMETABLE SCANNER & GENERATOR =================
+let currentAiImage = null;
+let detectedAiSchedule = [];
+
+function openAiTimetableModal() {
+  const savedKey = localStorage.getItem('gemini_api_key') || '';
+  const keyInput = document.getElementById('aiApiKeyInput');
+  if (keyInput) keyInput.value = savedKey;
+
+  switchAiTab('image');
+  resetAiScanner();
+  openModal('modalAiTimetable');
+}
+
+function switchAiTab(tabName) {
+  const tabImage = document.getElementById('tabBtnAiImage');
+  const tabText = document.getElementById('tabBtnAiText');
+  const contentImage = document.getElementById('aiTabContentImage');
+  const contentText = document.getElementById('aiTabContentText');
+
+  if (tabName === 'image') {
+    if (tabImage) tabImage.classList.add('active');
+    if (tabText) tabText.classList.remove('active');
+    if (contentImage) contentImage.classList.add('active');
+    if (contentText) contentText.classList.remove('active');
+  } else {
+    if (tabText) tabText.classList.add('active');
+    if (tabImage) tabImage.classList.remove('active');
+    if (contentText) contentText.classList.add('active');
+    if (contentImage) contentImage.classList.remove('active');
+  }
+}
+
+function resetAiScanner() {
+  currentAiImage = null;
+  detectedAiSchedule = [];
+  const fileInput = document.getElementById('aiFileInput');
+  if (fileInput) fileInput.value = '';
+  const prompt = document.getElementById('dropAreaPrompt');
+  const preview = document.getElementById('dropAreaPreview');
+  const loader = document.getElementById('aiLoadingIndicator');
+  const results = document.getElementById('aiResultsContainer');
+
+  if (prompt) prompt.style.display = 'block';
+  if (preview) preview.style.display = 'none';
+  if (loader) loader.style.display = 'none';
+  if (results) results.style.display = 'none';
+}
+
+function handleAiImageSelection(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const fullDataUrl = e.target.result;
+    const commaIdx = fullDataUrl.indexOf(',');
+    const mimeType = fullDataUrl.substring(5, commaIdx).split(';')[0];
+    const base64Data = fullDataUrl.substring(commaIdx + 1);
+
+    currentAiImage = { base64: base64Data, mimeType: mimeType };
+
+    const imgPreview = document.getElementById('aiImgPreview');
+    if (imgPreview) imgPreview.src = fullDataUrl;
+    const prompt = document.getElementById('dropAreaPrompt');
+    const preview = document.getElementById('dropAreaPreview');
+    if (prompt) prompt.style.display = 'none';
+    if (preview) preview.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function callGemini(parts, apiKey) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  const systemInstruction = `You are an expert college timetable extractor.
+Analyze the timetable and extract all classes for each day of the week (Monday, Tuesday, Wednesday, Thursday, Friday, Saturday).
+Return ONLY a valid JSON object matching this schema:
+{
+  "schedule": [
+    {
+      "day": "Monday",
+      "subject": "Mathematics",
+      "startTime": "10:00",
+      "endTime": "11:00",
+      "room": "Room 201"
+    }
+  ]
+}
+Rules:
+- "day" must be one of: "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday".
+- "startTime" and "endTime" must be in 24-hour HH:MM format (e.g. "09:00", "14:30"). If AM/PM is omitted, assume daytime college hours.
+- Exclude breaks, recess, lunch.
+- Output pure JSON only.`;
+
+  const payload = {
+    contents: [{
+      parts: [
+        { text: systemInstruction },
+        ...parts
+      ]
+    }],
+    generationConfig: {
+      response_mime_type: "application/json"
+    }
+  };
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    const errJson = await res.json().catch(() => ({}));
+    const errMsg = (errJson.error && errJson.error.message) ? errJson.error.message : res.statusText;
+    throw new Error(errMsg || `API error ${res.status}`);
+  }
+
+  const json = await res.json();
+  const text = json.candidates[0].content.parts[0].text;
+  return JSON.parse(text);
+}
+
+// Smart Client-side Timetable Parser (Works 100% offline without any API key)
+function parseTimetableClientSide(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const dayAliases = {
+    mon: 'Monday', monday: 'Monday',
+    tue: 'Tuesday', tues: 'Tuesday', tuesday: 'Tuesday',
+    wed: 'Wednesday', wednesday: 'Wednesday',
+    thu: 'Thursday', thur: 'Thursday', thurs: 'Thursday', thursday: 'Thursday',
+    fri: 'Friday', friday: 'Friday',
+    sat: 'Saturday', saturday: 'Saturday'
+  };
+
+  let currentDay = 'Monday';
+  const schedule = [];
+
+  const timeRegex = /(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:-|to)\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i;
+
+  function to24h(str, isEnd) {
+    if (!str) return isEnd ? '11:00' : '10:00';
+    let clean = str.trim().toLowerCase();
+    const isPM = clean.includes('pm');
+    const isAM = clean.includes('am');
+    clean = clean.replace(/am|pm/g, '').trim();
+
+    let [h, m] = clean.includes(':') ? clean.split(':').map(Number) : [parseInt(clean, 10), 0];
+    if (isNaN(h)) h = 10;
+    if (isNaN(m)) m = 0;
+
+    if (isPM && h < 12) h += 12;
+    if (isAM && h === 12) h = 0;
+    if (!isPM && !isAM && h >= 1 && h <= 6) h += 12;
+
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+
+  lines.forEach(line => {
+    const lower = line.toLowerCase().replace(/[:\-_,]/g, '').trim();
+    if (dayAliases[lower]) {
+      currentDay = dayAliases[lower];
+      return;
+    }
+
+    const firstWord = line.split(/[\s:,\-]/)[0].toLowerCase();
+    if (dayAliases[firstWord]) {
+      currentDay = dayAliases[firstWord];
+    }
+
+    const match = line.match(timeRegex);
+    if (match) {
+      const startTime = to24h(match[1], false);
+      const endTime = to24h(match[2], true);
+
+      let subject = line.replace(match[0], '').replace(new RegExp(`^${currentDay}[:\\s]*`, 'i'), '').replace(/[:\-\(\)]/g, ' ').replace(/\s+/g, ' ').trim();
+      let room = '';
+      const roomMatch = subject.match(/(?:room|hall|lab|rm|lh)\s*[:#]?\s*([a-z0-9\-]+)/i);
+      if (roomMatch) {
+        room = roomMatch[0];
+        subject = subject.replace(roomMatch[0], '').trim();
+      }
+
+      if (subject.length > 0) {
+        schedule.push({
+          day: currentDay,
+          subject: subject,
+          startTime: startTime,
+          endTime: endTime,
+          room: room
+        });
+      }
+    }
+  });
+
+  return schedule;
+}
+
+async function runAiImageScan() {
+  if (!currentAiImage) {
+    alert('Please select or take a photo of your timetable first.');
+    return;
+  }
+
+  const keyInput = document.getElementById('aiApiKeyInput');
+  const key = (keyInput ? keyInput.value : '').trim();
+  if (!key) {
+    alert('A free Google Gemini API Key is required to scan timetable photos.\n\n1. Tap "Get Free Key ↗" above (it is 100% free from Google AI Studio).\n2. Paste your key in the box.\n\nTip: You can also use the "📝 Paste Text" tab without any API key!');
+    return;
+  }
+
+  localStorage.setItem('gemini_api_key', key);
+
+  const loader = document.getElementById('aiLoadingIndicator');
+  const status = document.getElementById('aiLoadingStatus');
+  if (loader) loader.style.display = 'block';
+  if (status) status.textContent = 'Gemini Flash is analyzing your timetable photo...';
+
+  try {
+    const result = await callGemini([
+      { text: 'Extract the full weekly schedule from this timetable image.' },
+      {
+        inline_data: {
+          mime_type: currentAiImage.mimeType,
+          data: currentAiImage.base64
+        }
+      }
+    ], key);
+
+    if (loader) loader.style.display = 'none';
+
+    if (!result || !result.schedule || result.schedule.length === 0) {
+      alert('No classes could be recognized from this image. Please ensure the timetable grid, days, and times are clearly visible.');
+      return;
+    }
+
+    renderAiParsedResults(result.schedule);
+  } catch (err) {
+    if (loader) loader.style.display = 'none';
+    console.error('AI Scan Error:', err);
+    alert('AI Scan Failed: ' + err.message);
+  }
+}
+
+async function runAiTextScan() {
+  const textarea = document.getElementById('aiTextareaInput');
+  const rawText = (textarea ? textarea.value : '').trim();
+
+  if (!rawText) {
+    alert('Please paste your timetable text first.');
+    return;
+  }
+
+  const keyInput = document.getElementById('aiApiKeyInput');
+  const key = (keyInput ? keyInput.value : '').trim();
+
+  const loader = document.getElementById('aiLoadingIndicator');
+  const status = document.getElementById('aiLoadingStatus');
+  if (loader) loader.style.display = 'block';
+  if (status) status.textContent = 'Analyzing timetable text...';
+
+  try {
+    let schedule = [];
+    if (key) {
+      localStorage.setItem('gemini_api_key', key);
+      const result = await callGemini([
+        { text: 'Extract the full weekly schedule from this text:\n\n' + rawText }
+      ], key);
+      schedule = (result && result.schedule) ? result.schedule : [];
+    } else {
+      schedule = parseTimetableClientSide(rawText);
+    }
+
+    if (loader) loader.style.display = 'none';
+
+    if (!schedule || schedule.length === 0) {
+      alert('Could not detect any class times or subjects from the text.\n\nTry including days (e.g. Monday), times (e.g. 10:00 - 11:00), and subject names.');
+      return;
+    }
+
+    renderAiParsedResults(schedule);
+  } catch (err) {
+    if (loader) loader.style.display = 'none';
+    console.warn('Falling back to client-side parser:', err);
+    const fallback = parseTimetableClientSide(rawText);
+    if (fallback.length > 0) {
+      renderAiParsedResults(fallback);
+    } else {
+      alert('Parsing failed: ' + err.message);
+    }
+  }
+}
+
+function renderAiParsedResults(classes) {
+  detectedAiSchedule = classes;
+  const container = document.getElementById('aiParsedList');
+  const badge = document.getElementById('aiDetectedCountBadge');
+  const resultsBox = document.getElementById('aiResultsContainer');
+
+  if (!container || !resultsBox) return;
+
+  container.innerHTML = '';
+  const daysSet = new Set(classes.map(c => c.day));
+  if (badge) badge.textContent = `Found ${classes.length} classes across ${daysSet.size} days`;
+
+  classes.forEach((c, idx) => {
+    const item = document.createElement('div');
+    item.className = 'ai-parsed-item';
+    item.innerHTML = `
+      <div>
+        <div class="ai-parsed-day">${c.day} • ${c.startTime} - ${c.endTime}</div>
+        <div class="ai-parsed-title">${c.subject}</div>
+        ${c.room ? `<div class="ai-parsed-time">📍 ${c.room}</div>` : ''}
+      </div>
+      <button class="btn-icon-subtle" onclick="removeAiParsedItem(${idx})" title="Remove class">✕</button>
+    `;
+    container.appendChild(item);
+  });
+
+  resultsBox.style.display = 'block';
+}
+
+function removeAiParsedItem(index) {
+  detectedAiSchedule.splice(index, 1);
+  renderAiParsedResults(detectedAiSchedule);
+}
+
+function confirmAiScheduleImport() {
+  if (!detectedAiSchedule || detectedAiSchedule.length === 0) return;
+
+  const replaceCheckbox = document.getElementById('aiReplaceExisting');
+  const shouldReplace = replaceCheckbox ? replaceCheckbox.checked : true;
+
+  if (shouldReplace) {
+    Object.keys(state.data.timetable).forEach(d => {
+      state.data.timetable[d] = [];
+    });
+  }
+
+  let hasSaturday = false;
+  detectedAiSchedule.forEach(c => {
+    if (c.day === 'Saturday') hasSaturday = true;
+    state.addLecture(c.day, c.subject, c.startTime, c.endTime, c.room || '');
+  });
+
+  if (hasSaturday) {
+    state.data.settings.includeSaturday = true;
+    const satPill = document.getElementById('satPill');
+    if (satPill) satPill.style.display = 'block';
+    state.save();
+  }
+
+  closeModal('modalAiTimetable');
+  renderTimetable();
+  renderDashboard();
+  renderHistory();
+  updateUpcomingBanner();
+  showBottomToast(`🎉 Successfully created schedule with ${detectedAiSchedule.length} classes!`, 'Dismiss', hideBottomToast);
 }
 
 // Calendar Export
@@ -1288,6 +1653,28 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUpcomingBanner();
     showBottomToast(`Saved attendance for ${sub}: ${att}/${tot} classes`, 'Dismiss', hideBottomToast);
   });
+
+  // AI Timetable Event Listeners
+  const btnAi = document.getElementById('btnAiTimetable');
+  if (btnAi) btnAi.addEventListener('click', openAiTimetableModal);
+
+  const aiFileInput = document.getElementById('aiFileInput');
+  if (aiFileInput) {
+    aiFileInput.addEventListener('change', function () {
+      if (this.files && this.files[0]) {
+        handleAiImageSelection(this.files[0]);
+      }
+    });
+  }
+
+  const btnAiImgScan = document.getElementById('btnRunAiImageScan');
+  if (btnAiImgScan) btnAiImgScan.addEventListener('click', runAiImageScan);
+
+  const btnAiTxtScan = document.getElementById('btnRunAiTextScan');
+  if (btnAiTxtScan) btnAiTxtScan.addEventListener('click', runAiTextScan);
+
+  const btnAiImport = document.getElementById('btnConfirmAiImport');
+  if (btnAiImport) btnAiImport.addEventListener('click', confirmAiScheduleImport);
 
   // Form Record
   document.getElementById('btnAddManualRecord').addEventListener('click', openAddManualRecord);
