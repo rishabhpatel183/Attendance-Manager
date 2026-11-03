@@ -1172,8 +1172,8 @@ function handleAiImageSelection(file) {
   reader.onload = (e) => {
     const img = new Image();
     img.onload = () => {
-      // Downscale high-resolution mobile photos to max 1600px for lightning-fast upload
-      const MAX_DIM = 1600;
+      // Downscale mobile camera photos to max 1400px & 0.85 quality for lightning-fast 1-second upload
+      const MAX_DIM = 1400;
       let width = img.width;
       let height = img.height;
 
@@ -1194,7 +1194,7 @@ function handleAiImageSelection(file) {
       ctx.drawImage(img, 0, 0, width, height);
 
       const mimeType = 'image/jpeg';
-      const fullDataUrl = canvas.toDataURL(mimeType, 0.88);
+      const fullDataUrl = canvas.toDataURL(mimeType, 0.85);
       const base64Data = fullDataUrl.split(',')[1];
 
       currentAiImage = { base64: base64Data, mimeType: mimeType };
@@ -1589,8 +1589,93 @@ function runAiTextScan() {
   renderScheduleReview(schedule);
 }
 
+
+// Smart Post-Processor: Strips section/teacher noise & merges 2-period practical labs
+function cleanAndMergeSchedule(rawSchedule) {
+  if (!Array.isArray(rawSchedule)) return [];
+
+  const cleaned = rawSchedule.map(item => {
+    let sub = (item.subject || '').trim();
+    let room = (item.room || '').trim();
+
+    // Check if practical lab (P), [P], Lab, or Practical
+    const isPractical = /\([Pp]\)/i.test(sub) || /\[[Pp]\]/i.test(sub) || /[A-Za-z0-9]+\([Pp]\)/i.test(sub) || /\b(?:Lab|Practical)\b/i.test(sub);
+
+    // Extract bracketed room like [LV303] or [V124] if left in subject
+    const roomMatches = sub.match(/\[([A-Za-z0-9\-_ ]+)\]/g);
+    if (roomMatches) {
+      roomMatches.forEach(rm => {
+        const inner = rm.replace(/[\[\]]/g, '').trim();
+        if (/[A-Za-z]+[0-9]+|[0-9]+[A-Za-z]+/i.test(inner) || inner.toLowerCase().includes('lab') || inner.toLowerCase().includes('room')) {
+          if (!room) room = inner;
+        }
+        sub = sub.replace(rm, ' ');
+      });
+    }
+
+    // Strip section / batch tags: 5CSE-O, 5CSE-O1, 5CSE-02, 5CSE O+P, M+N+O+P, etc.
+    sub = sub.replace(/\b\d+[A-Za-z]+(?:-[A-Za-z0-9]+)?\b/gi, ' ');
+    sub = sub.replace(/\b[A-Za-z](?:\+[A-Za-z])+\b/gi, ' ');
+    sub = sub.replace(/\b(?:5CSE|CSE|IT|ECE|MECH|CIVIL|AIML|DS)[-_ ]?[A-Za-z0-9+]*\b/gi, ' ');
+    sub = sub.replace(/\b(?:Batch|Sec|Section)\s*[-_0-9A-Za-z]+\b/gi, ' ');
+
+    // Strip teacher initials in brackets/parentheses: [ASH], [MPC], (KJ), (SY), (M3), (AJK), etc.
+    sub = sub.replace(/\([A-Za-z0-9]{2,4}\)/g, ' ');
+    sub = sub.replace(/\[[A-Za-z0-9]{2,4}\]/g, ' ');
+    sub = sub.replace(/\b(?:MPC|ASH|KJ|SY|M3|AJK|AG|DIS|ABJ|SSF3|NF13|AC|LJ|NIB)\b/gi, ' ');
+
+    // Remove any leftover (P) temporarily to clean core name
+    sub = sub.replace(/\([Pp]\)/g, ' ').replace(/\[[Pp]\]/g, ' ').replace(/\b[Pp]\b/g, ' ');
+    sub = sub.replace(/[\[\]\(\):\-]/g, ' ').replace(/\s+/g, ' ').trim();
+
+    // Re-attach (P) if practical so it is cleanly tracked in attendance separately from theory
+    if (isPractical) {
+      sub = `${sub} (P)`;
+    }
+
+    return {
+      day: item.day,
+      subject: sub,
+      startTime: item.startTime,
+      endTime: item.endTime,
+      room: room
+    };
+  }).filter(item => item.subject && item.subject.length > 0);
+
+  // Auto-merge consecutive periods for the SAME practical class into a single 100-minute session
+  const merged = [];
+  const dayOrder = { Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
+  cleaned.sort((a, b) => {
+    if (a.day !== b.day) return (dayOrder[a.day] || 99) - (dayOrder[b.day] || 99);
+    return a.startTime.localeCompare(b.startTime);
+  });
+
+  cleaned.forEach(item => {
+    const isItemLab = item.subject.includes('(P)');
+    const prev = merged.find(m => 
+      m.day === item.day && 
+      m.subject.toLowerCase() === item.subject.toLowerCase() && 
+      (m.endTime === item.startTime || m.startTime === item.endTime)
+    );
+
+    // Merge practicals, or contiguous lectures of same subject
+    if (prev && (isItemLab || prev.subject.toLowerCase() === item.subject.toLowerCase())) {
+      if (prev.endTime === item.startTime) {
+        prev.endTime = item.endTime;
+      } else if (prev.startTime === item.endTime) {
+        prev.startTime = item.startTime;
+      }
+      if (!prev.room && item.room) prev.room = item.room;
+    } else {
+      merged.push({ ...item });
+    }
+  });
+
+  return merged;
+}
+
 function renderScheduleReview(classes) {
-  detectedSchedule = classes;
+  detectedSchedule = cleanAndMergeSchedule(classes);
   const container = document.getElementById('aiParsedList');
   const badge = document.getElementById('aiDetectedCountBadge');
   const resultsBox = document.getElementById('aiResultsContainer');

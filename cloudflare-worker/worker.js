@@ -11,27 +11,11 @@ export default {
     const apiKey = (env.GEMINI_API_KEY || '').trim();
 
     if (request.method === 'GET') {
-      let modelList = [];
-      let listError = null;
-      try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-        const data = await res.json();
-        if (data.models) {
-          modelList = data.models.map(m => m.name);
-        } else {
-          listError = data.error || data;
-        }
-      } catch (e) {
-        listError = e.message;
-      }
-
       return new Response(JSON.stringify({ 
         status: 'online', 
         service: 'Attendance Timetable Scanner',
-        key_configured: Boolean(apiKey),
-        available_models: modelList,
-        list_error: listError
-      }, null, 2), {
+        key_configured: Boolean(apiKey)
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
@@ -50,53 +34,78 @@ export default {
         });
       }
 
-      const SYSTEM_PROMPT = `You are an expert college timetable extractor. Examine the timetable photo and extract ALL classes into a weekly schedule.
-Rules:
-1. Day: One of "Monday","Tuesday","Wednesday","Thursday","Friday","Saturday".
-2. Times: Strict 24-hr HH:MM (e.g. "11:10","12:00","13:40","14:20","15:10","16:00","16:50"). Hours 1, 2, 3, 4, 5, 6 after noon MUST be PM (1:40->13:40, 3:10->15:10).
-3. Multi-period Labs: Merge consecutive practicals (e.g. 03:10-04:00 and 04:00-04:50 -> 15:10 to 16:50).
-4. Parallel Electives: Extract each elective as an individual entry.
-5. Rooms: Put room in "room" field (e.g. "V124","LV303").
-6. Exclude: Skip "LUNCH","BREAK","Activities","Sports".
-Return JSON strictly matching this schema:
-{ "schedule": [ { "day": "Monday", "subject": "Computer Networks (CN)", "startTime": "12:00", "endTime": "12:50", "room": "V124" } ] }`;
+      const SYSTEM_PROMPT = `You are an expert college timetable schedule extractor.
+Your job is to examine the provided timetable image and extract ALL classes into a clean weekly schedule.
 
-      // 1. Discover models directly from Google
-      let modelsToTry = [];
-      try {
-        const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-        if (listRes.ok) {
-          const listJson = await listRes.json();
-          const valid = (listJson.models || []).filter(m => 
-            Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent')
-          );
-          modelsToTry = valid.map(m => m.name);
-        }
-      } catch (_) {}
+CRITICAL EXTRACTION RULES:
+1. CLEAN PURE SUBJECT NAMES (No Clutter):
+   - The "subject" field MUST contain ONLY the standardized subject name.
+   - Strictly STRIP OUT and REMOVE:
+     * Batch and Section codes: e.g. "5CSE-O", "5CSE-O1", "5CSE-O2", "5CSE O+P", "5CSE M+N+O+P", "CSE-O", "O1", "O2", "Batch 1", etc.
+     * Teacher / Faculty initials: e.g. "(MPC)", "[ASH]", "(KJ)", "(SY)", "(M3)", "[AJK]", "(AG)", "(DIS)", "(ABJ)", "[SSF3]".
+     * Room numbers: e.g. "[V124]", "[LV303]", "[V026]", "Room 101". Put room numbers in the "room" field, NOT in the subject name.
+   - Example Bad: "CN 5CSE-O (MPC) [V124]" -> Example Good: subject: "Computer Networks (CN)", room: "V124"
+   - Example Bad: "SE 5CSE-O [ASH] [V124]" -> Example Good: subject: "Software Engineering (SE)", room: "V124"
 
-      // Fallbacks if list failed
-      if (modelsToTry.length === 0) {
-        modelsToTry = [
-          'models/gemini-2.0-flash',
-          'models/gemini-1.5-flash-latest',
-          'models/gemini-1.5-flash-8b',
-          'models/gemini-1.5-pro-latest'
-        ];
-      }
+2. PRACTICAL / LAB CLASSES WITH (P):
+   - Any class with "(P)", "[P]", "(Lab)", or "Lab" in its cell (e.g. "SE(P)", "CN(P)", "DSC(P)", "IOT(P)", "AI(P)", "NO SQL(P)", "CC(P)", "ES(P)"):
+     * It is a PRACTICAL LAB class.
+     * It MUST have "(P)" in the subject name (e.g. "Software Engineering (P)" or "Computer Networks (P)") so it is tracked separately from theory lectures in attendance.
+     * Practicals in college always span 2 consecutive periods (e.g. Period IX 03:10-04:00 and Period X 04:00-04:50, or Period III 10:20-11:10 and Period IV 11:10-12:00).
+     * You MUST COMBINE the 2 periods into a SINGLE entry from the start time of the first period to the end time of the second period (e.g. startTime: "15:10", endTime: "16:50", or startTime: "10:20", endTime: "12:00"). Do NOT split a practical into two separate 50-minute entries!
 
-      // Prioritize flash models
-      modelsToTry.sort((a, b) => {
-        const aFlash = a.includes('flash') ? 0 : 1;
-        const bFlash = b.includes('flash') ? 0 : 1;
-        return aFlash - bFlash;
-      });
+3. THEORY LECTURES (WITHOUT (P)):
+   - Any class without "(P)" is a regular Theory lecture (e.g. "Computer Networks (CN)", "Software Engineering (SE)").
+   - Do NOT add "(P)" to theory lectures.
+
+4. STRICT 24-HOUR TIME FORMAT (HH:MM):
+   - "startTime" and "endTime" must be 24-hour HH:MM strings.
+   - Hours 1, 2, 3, 4, 5, 6 after 12:00 noon MUST be converted to PM:
+     * 1:40 -> "13:40"
+     * 2:20 -> "14:20"
+     * 3:10 -> "15:10"
+     * 4:00 -> "16:00"
+     * 4:50 -> "16:50"
+   - Hours 8, 9, 10, 11 are AM ("08:30", "09:20", "10:20", "11:10"). 12 is "12:00" to "12:50".
+
+5. PARALLEL ELECTIVES:
+   - If a cell has multiple elective options (e.g. AT / NoSQL / CC), list each elective subject as a separate entry with the same time slot so the student can easily delete the ones they are not taking.
+
+6. EXCLUDE NON-CLASS SLOTS:
+   - Skip "LUNCH", "BREAK", "RECESS", "Activities", "Sports", "Library", "Mentor", or empty slots.
+
+Return pure JSON matching this schema:
+{
+  "schedule": [
+    {
+      "day": "Monday",
+      "subject": "Computer Networks (CN)",
+      "startTime": "12:00",
+      "endTime": "12:50",
+      "room": "V124"
+    },
+    {
+      "day": "Monday",
+      "subject": "Software Engineering (P)",
+      "startTime": "15:10",
+      "endTime": "16:50",
+      "room": "LV303"
+    }
+  ]
+}`;
+
+      // Fastest verified models in priority order
+      const modelsToTry = [
+        'gemini-2.5-flash',
+        'gemini-flash-latest',
+        'gemini-1.5-flash'
+      ];
 
       let lastErrorDetail = '';
 
-      for (const fullModelName of modelsToTry) {
-        const cleanModel = fullModelName.replace(/^models\//, '');
+      for (const model of modelsToTry) {
         try {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${cleanModel}:generateContent?key=${apiKey}`, {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
