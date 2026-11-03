@@ -590,14 +590,14 @@ function renderDashboard() {
 
     heroContainer.innerHTML = `
       <div class="empty-state-box" style="margin-top: 10px; padding: 30px 18px; border: 1px solid var(--border-subtle); background: #050505;">
-        <div class="empty-state-icon" style="font-size: 2.6rem; margin-bottom: 6px;">📋</div>
+        <div class="empty-state-icon" style="font-size: 2.6rem; margin-bottom: 6px;">✨</div>
         <div class="empty-state-title" style="font-size: 1.18rem; margin-bottom: 6px; font-weight: 800;">No Lectures Added Yet</div>
         <div class="empty-state-sub" style="font-size: 0.82rem; max-width: 320px; margin: 0 auto 18px auto; color: var(--text-muted); line-height: 1.45;">
-          Paste your schedule text from WhatsApp, email, or syllabus to import your whole week instantly!
+          Upload a timetable photo or paste schedule text — our AI will automatically create all your weekly lectures in seconds!
         </div>
         <div style="display: flex; flex-direction: column; gap: 10px; max-width: 270px; margin: 0 auto;">
-          <button class="btn-chip-green" style="width: 100%; font-size: 0.88rem; padding: 12px 16px; border-radius: 12px; justify-content: center; font-weight: 900;" onclick="openQuickImportModal()">
-            <span>📋</span> Quick Import Schedule
+          <button class="btn-chip-ai" style="width: 100%; font-size: 0.88rem; padding: 12px 16px; border-radius: 12px; justify-content: center; font-weight: 900; box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);" onclick="openScheduleCreatorModal()">
+            <span>✨</span> Scan Timetable with AI
           </button>
           <button class="btn-chip btn-chip-slate" style="width: 100%; padding: 10px 14px; font-size: 0.82rem; font-weight: 700; border-radius: 12px; justify-content: center;" onclick="openAddLecture()">
             + Add Lecture Manually
@@ -931,8 +931,21 @@ function deleteLectureSlot(id) {
 
 // Modal Helpers
 function openModal(modalId) {
-  const modal = document.getElementById(modalId);
+  let id = modalId;
+  if ((id === 'modalAiTimetable' || id === 'modalQuickImport') && !document.getElementById(id)) {
+    id = 'modalScheduleCreator';
+  }
+  const modal = document.getElementById(id);
   if (modal) modal.classList.add('open');
+}
+
+function closeModal(modalId) {
+  let id = modalId;
+  if ((id === 'modalAiTimetable' || id === 'modalQuickImport') && !document.getElementById(id)) {
+    id = 'modalScheduleCreator';
+  }
+  const modal = document.getElementById(id);
+  if (modal) modal.classList.remove('open');
 }
 
 function closeModal(modalId) {
@@ -1076,82 +1089,345 @@ function confirmDeleteSubject(subject) {
   }
 }
 
-// ================= QUICK TIMETABLE IMPORTER (100% OFFLINE, ZERO SETUP) =================
-let detectedImportSchedule = [];
+// ================= UNIFIED TIMETABLE CREATOR (AI PHOTO SCAN + INSTANT TEXT) =================
+let currentAiImage = null;
+let detectedSchedule = [];
 
-function openQuickImportModal() {
-  resetQuickImport();
-  openModal('modalQuickImport');
+function openScheduleCreatorModal() {
+  const savedKey = localStorage.getItem('gemini_api_key') || '';
+  const keyInput = document.getElementById('aiApiKeyInput');
+  if (keyInput) keyInput.value = savedKey;
+
+  switchAiTab('image');
+  resetAiScanner();
+  openModal('modalScheduleCreator');
 }
 
-// Backwards compatibility alias
-function openAiTimetableModal() {
-  openQuickImportModal();
+// Backwards compatibility aliases
+function openQuickImportModal() { openScheduleCreatorModal(); }
+function openAiTimetableModal() { openScheduleCreatorModal(); }
+
+function switchAiTab(tabName) {
+  const tabImage = document.getElementById('tabBtnAiImage');
+  const tabText = document.getElementById('tabBtnAiText');
+  const contentImage = document.getElementById('aiTabContentImage');
+  const contentText = document.getElementById('aiTabContentText');
+
+  if (tabName === 'image') {
+    if (tabImage) tabImage.classList.add('active');
+    if (tabText) tabText.classList.remove('active');
+    if (contentImage) contentImage.classList.add('active');
+    if (contentText) contentText.classList.remove('active');
+  } else {
+    if (tabText) tabText.classList.add('active');
+    if (tabImage) tabImage.classList.remove('active');
+    if (contentText) contentText.classList.add('active');
+    if (contentImage) contentImage.classList.remove('active');
+  }
 }
 
-function resetQuickImport() {
-  detectedImportSchedule = [];
-  const textarea = document.getElementById('quickImportTextarea');
-  const resultsContainer = document.getElementById('quickImportResultsContainer');
-  const parsedList = document.getElementById('quickImportParsedList');
-  if (textarea) textarea.value = '';
-  if (resultsContainer) resultsContainer.style.display = 'none';
+function resetAiScanner() {
+  currentAiImage = null;
+  detectedSchedule = [];
+  const fileInput = document.getElementById('aiFileInput');
+  if (fileInput) fileInput.value = '';
+  const prompt = document.getElementById('dropAreaPrompt');
+  const preview = document.getElementById('dropAreaPreview');
+  const loader = document.getElementById('aiLoadingIndicator');
+  const results = document.getElementById('aiResultsContainer');
+  const parsedList = document.getElementById('aiParsedList');
+
+  if (prompt) prompt.style.display = 'block';
+  if (preview) preview.style.display = 'none';
+  if (loader) loader.style.display = 'none';
+  if (results) results.style.display = 'none';
   if (parsedList) parsedList.innerHTML = '';
 }
 
-function loadQuickImportExample() {
-  const example = `Monday:
-10:00 - 11:00 Mathematics [Room 201]
-11:10 - 12:00 Physics [Room 102]
-01:40 - 02:20 Computer Networks [V124]
-03:10 - 04:50 Programming Lab [Lab 3]
+function resetQuickImport() { resetAiScanner(); }
 
-Tuesday:
-09:00 - 10:00 Data Structures [Room 205]
-10:00 - 11:00 Operating Systems [Room 205]
-11:10 - 12:00 Software Engineering [Room 201]
-01:40 - 03:10 OS Lab [Lab 2]
-
-Wednesday:
-10:00 - 11:00 Mathematics [Room 201]
-11:10 - 12:00 Physics [Room 102]
-01:40 - 02:20 Computer Networks [V124]
-
-Thursday:
-09:00 - 10:00 Data Structures [Room 205]
-10:00 - 11:00 Operating Systems [Room 205]
-01:40 - 03:10 Networks Lab [Lab 1]
-
-Friday:
-10:00 - 11:00 Mathematics [Room 201]
-11:10 - 12:00 Software Engineering [Room 201]
-01:40 - 02:20 Environmental Studies [Auditorium]`;
-
-  const textarea = document.getElementById('quickImportTextarea');
-  if (textarea) {
-    textarea.value = example;
-    runQuickImportParse();
+function toggleApiKeyVisibility() {
+  const keyInput = document.getElementById('aiApiKeyInput');
+  if (keyInput) {
+    keyInput.type = keyInput.type === 'password' ? 'text' : 'password';
   }
 }
 
-async function pasteFromClipboard() {
-  const textarea = document.getElementById('quickImportTextarea');
-  if (!textarea) return;
-  try {
-    if (navigator.clipboard && navigator.clipboard.readText) {
-      const text = await navigator.clipboard.readText();
-      if (text && text.trim().length > 0) {
-        textarea.value = text;
-        runQuickImportParse();
-        return;
+function handleAiImageSelection(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      // Downscale high-resolution mobile photos to max 1600px for lightning-fast upload
+      const MAX_DIM = 1600;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > MAX_DIM || height > MAX_DIM) {
+        if (width > height) {
+          height = Math.round((height * MAX_DIM) / width);
+          width = MAX_DIM;
+        } else {
+          width = Math.round((width * MAX_DIM) / height);
+          height = MAX_DIM;
+        }
       }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const mimeType = 'image/jpeg';
+      const fullDataUrl = canvas.toDataURL(mimeType, 0.88);
+      const base64Data = fullDataUrl.split(',')[1];
+
+      currentAiImage = { base64: base64Data, mimeType: mimeType };
+
+      const imgPreview = document.getElementById('aiImgPreview');
+      if (imgPreview) imgPreview.src = fullDataUrl;
+      const prompt = document.getElementById('dropAreaPrompt');
+      const preview = document.getElementById('dropAreaPreview');
+      if (prompt) prompt.style.display = 'none';
+      if (preview) preview.style.display = 'block';
+    };
+    img.onerror = () => {
+      alert('Could not read image file. Please try another photo or screenshot.');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+const SYSTEM_TIMETABLE_PROMPT = `You are an expert college and university timetable schedule extractor.
+Your job is to examine the provided timetable image (or text) and extract ALL classes into a structured weekly schedule.
+
+Rules:
+1. Day: Must be one of "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday". Normalize abbreviations (MON -> Monday, TUE -> Tuesday, etc.).
+2. Times: Must be 24-hour HH:MM format (e.g. "08:30", "11:10", "12:00", "13:40", "14:20", "15:10", "16:00", "16:50").
+   - VERY IMPORTANT: College afternoon hours starting with 1, 2, 3, 4, 5, 6 MUST be converted to PM (e.g. 1:40 -> "13:40", 2:20 -> "14:20", 3:10 -> "15:10", 4:00 -> "16:00", 4:50 -> "16:50").
+3. Multi-period Labs/Practicals: When a lab or practical (e.g. "SE(P)", "CN(P)", "DSC(P)", "Lab") spans 2 or more consecutive period slots (e.g. Period 9 at 03:10-04:00 and Period 10 at 04:00-04:50), merge them into a single entry from the start of the first period to the end of the last period (e.g. "15:10" to "16:50").
+4. Parallel Elective Subjects: If a time slot has multiple elective subjects listed (e.g. "AT", "NO SQL", "CC"), extract EACH elective subject as its own separate class in the list so the student can easily tap ✕ to delete the ones they aren't taking.
+5. Rooms: Extract room or lab codes (e.g. "V124", "LV303", "Room 201") into the "room" field. Remove room codes from the subject name.
+6. Clean Subject Names: Remove teacher initials (e.g. "(MPC)", "[ASH]") and batch tags (e.g. "5CSE-O") from the subject name.
+7. Exclude: Strictly skip non-class slots like "LUNCH", "RECESS", "BREAK", "Activities", "Sports", "Library", "Mentor", or empty cells.
+
+Return a JSON object strictly matching this schema:
+{
+  "schedule": [
+    {
+      "day": "Monday",
+      "subject": "Computer Networks (CN)",
+      "startTime": "12:00",
+      "endTime": "12:50",
+      "room": "V124"
     }
-  } catch (e) {
-    console.warn('Clipboard read permission or API unavailable:', e);
+  ]
+}`;
+
+// Dynamic Google Model Auto-Discovery: Queries Google's ListModels API directly with user's key
+async function getWorkingGeminiModel(cleanKey) {
+  const versions = ['v1beta', 'v1'];
+  for (const ver of versions) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/${ver}/models?key=${encodeURIComponent(cleanKey)}`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.models && Array.isArray(data.models)) {
+          const contentModels = data.models.filter(m => 
+            Array.isArray(m.supportedGenerationMethods) && 
+            m.supportedGenerationMethods.includes('generateContent')
+          );
+
+          // Fast vision model priorities
+          const preferred = [
+            'gemini-2.0-flash',
+            'gemini-2.0-flash-exp',
+            'gemini-1.5-flash-latest',
+            'gemini-1.5-flash',
+            'gemini-1.5-flash-8b',
+            'gemini-2.5-flash',
+            'gemini-1.5-pro-latest',
+            'gemini-1.5-pro'
+          ];
+
+          for (const pref of preferred) {
+            const match = contentModels.find(m => m.name === `models/${pref}` || m.name.endsWith(`/${pref}`));
+            if (match) {
+              const modelName = match.name.replace(/^models\//, '');
+              console.log(`[Gemini] Auto-discovered active model: ${ver}/${modelName}`);
+              return { ver, model: modelName };
+            }
+          }
+
+          if (contentModels.length > 0) {
+            const modelName = contentModels[0].name.replace(/^models\//, '');
+            console.log(`[Gemini] Using available model: ${ver}/${modelName}`);
+            return { ver, model: modelName };
+          }
+        }
+      } else if (res.status === 400) {
+        const errJson = await res.json().catch(() => ({}));
+        if (errJson.error && errJson.error.message && errJson.error.message.includes('API_KEY_INVALID')) {
+          throw new Error('Invalid API Key. Please verify that you copied your key correctly from Google AI Studio.');
+        }
+      }
+    } catch (e) {
+      if (e.message.includes('Invalid API Key')) throw e;
+      console.warn(`[Gemini] ListModels check on ${ver} failed:`, e);
+    }
   }
-  textarea.focus();
-  textarea.select();
-  showBottomToast('Please long-press and tap Paste inside the box.', 'OK', hideBottomToast);
+
+  // Fallback default
+  return { ver: 'v1beta', model: 'gemini-2.0-flash' };
+}
+
+async function callGemini(parts, apiKey) {
+  const cleanKey = apiKey.trim();
+  if (!cleanKey) {
+    throw new Error('Please enter a Google Gemini API Key.');
+  }
+
+  const statusElem = document.getElementById('aiLoadingStatus');
+  if (statusElem) statusElem.textContent = 'Discovering available AI models on Google servers...';
+
+  // Discover working model directly from user's key
+  const detected = await getWorkingGeminiModel(cleanKey);
+
+  // Prioritized list of candidates to try
+  const tryList = [
+    detected,
+    { ver: 'v1beta', model: 'gemini-2.0-flash' },
+    { ver: 'v1beta', model: 'gemini-1.5-flash-latest' },
+    { ver: 'v1', model: 'gemini-1.5-flash' },
+    { ver: 'v1beta', model: 'gemini-1.5-flash' }
+  ];
+
+  const seen = new Set();
+  const uniqueList = tryList.filter(item => {
+    const k = `${item.ver}/${item.model}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+
+  let lastErr = null;
+
+  for (const { ver, model } of uniqueList) {
+    if (statusElem) statusElem.textContent = `Analyzing timetable with Google AI (${model})...`;
+    try {
+      const url = `https://generativelanguage.googleapis.com/${ver}/models/${model}:generateContent?key=${encodeURIComponent(cleanKey)}`;
+      const payload = {
+        contents: [{
+          parts: [
+            { text: SYSTEM_TIMETABLE_PROMPT },
+            ...parts
+          ]
+        }],
+        generationConfig: {
+          temperature: 0.1,
+          responseMimeType: 'application/json'
+        }
+      };
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        const errMsg = (errJson.error && errJson.error.message) ? errJson.error.message : `${res.status} ${res.statusText}`;
+        lastErr = new Error(errMsg);
+
+        if (res.status === 400 && errMsg.includes('API_KEY_INVALID')) {
+          throw new Error('Invalid API Key. Please verify your Google Gemini API key from Google AI Studio.');
+        }
+
+        if (res.status === 404 || errMsg.toLowerCase().includes('not found') || errMsg.toLowerCase().includes('not supported')) {
+          console.warn(`Model ${ver}/${model} not supported, trying next candidate...`);
+          continue;
+        }
+
+        throw lastErr;
+      }
+
+      const json = await res.json();
+      if (!json.candidates || !json.candidates[0] || !json.candidates[0].content) {
+        throw new Error('No timetable data returned. Please ensure the timetable image is clear and well-lit.');
+      }
+
+      let text = json.candidates[0].content.parts[0].text.trim();
+      if (text.startsWith('```')) {
+        text = text.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+      }
+
+      return JSON.parse(text);
+    } catch (e) {
+      lastErr = e;
+      if (e.message.includes('Invalid API Key')) throw e;
+      const msg = e.message.toLowerCase();
+      if (msg.includes('not found') || msg.includes('not supported') || msg.includes('404')) {
+        continue;
+      }
+      throw e;
+    }
+  }
+
+  throw lastErr || new Error('Could not connect to Google AI. Please check your API key.');
+}
+
+async function runAiImageScan() {
+  if (!currentAiImage) {
+    alert('Please select or take a photo of your timetable first.');
+    return;
+  }
+
+  const keyInput = document.getElementById('aiApiKeyInput');
+  const key = (keyInput ? keyInput.value : '').trim();
+  if (!key) {
+    alert('A free Google Gemini API Key is required to scan timetable photos.\n\n1. Tap "Get Free Key ↗" (takes 15 seconds from Google AI Studio).\n2. Paste your key in the box.\n\nYour phone will save it forever!');
+    if (keyInput) keyInput.focus();
+    return;
+  }
+
+  localStorage.setItem('gemini_api_key', key);
+
+  const loader = document.getElementById('aiLoadingIndicator');
+  const status = document.getElementById('aiLoadingStatus');
+  const resultsBox = document.getElementById('aiResultsContainer');
+  if (loader) loader.style.display = 'block';
+  if (resultsBox) resultsBox.style.display = 'none';
+  if (status) status.textContent = 'Connecting to Google AI...';
+
+  try {
+    const result = await callGemini([
+      { text: 'Extract the full weekly schedule from this timetable image.' },
+      {
+        inlineData: {
+          mimeType: currentAiImage.mimeType || 'image/jpeg',
+          data: currentAiImage.base64
+        }
+      }
+    ], key);
+
+    if (loader) loader.style.display = 'none';
+
+    if (!result || !result.schedule || result.schedule.length === 0) {
+      alert('No classes could be recognized from this image. Please ensure the timetable grid, days, and times are clearly visible.');
+      return;
+    }
+
+    renderScheduleReview(result.schedule);
+  } catch (err) {
+    if (loader) loader.style.display = 'none';
+    console.error('AI Scan Error:', err);
+    alert('AI Scan Failed: ' + err.message);
+  }
 }
 
 // Smart Client-side Timetable Parser (Works 100% offline without any API key or external network)
@@ -1184,7 +1460,6 @@ function parseTimetableClientSide(text) {
 
     if (isPM && h < 12) h += 12;
     if (isAM && h === 12) h = 0;
-    // College daytime heuristic: 1 to 6 without AM/PM is afternoon PM
     if (!isPM && !isAM && h >= 1 && h <= 6) h += 12;
 
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
@@ -1251,7 +1526,7 @@ function parseTimetableClientSide(text) {
   return schedule;
 }
 
-function runQuickImportParse() {
+function runAiTextScan() {
   const textarea = document.getElementById('quickImportTextarea');
   const text = (textarea ? textarea.value : '').trim();
   if (!text) {
@@ -1265,14 +1540,14 @@ function runQuickImportParse() {
     return;
   }
 
-  renderQuickParsedResults(schedule);
+  renderScheduleReview(schedule);
 }
 
-function renderQuickParsedResults(classes) {
-  detectedImportSchedule = classes;
-  const container = document.getElementById('quickImportParsedList');
-  const badge = document.getElementById('quickImportCountBadge');
-  const resultsBox = document.getElementById('quickImportResultsContainer');
+function renderScheduleReview(classes) {
+  detectedSchedule = classes;
+  const container = document.getElementById('aiParsedList');
+  const badge = document.getElementById('aiDetectedCountBadge');
+  const resultsBox = document.getElementById('aiResultsContainer');
 
   if (!container || !resultsBox) return;
 
@@ -1283,13 +1558,14 @@ function renderQuickParsedResults(classes) {
   classes.forEach((c, idx) => {
     const item = document.createElement('div');
     item.className = 'ai-parsed-item';
+    item.style.cssText = 'background: #0d0d0d; border: 1px solid var(--border-subtle); border-radius: 10px; padding: 10px 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; gap: 8px;';
     item.innerHTML = `
       <div style="flex: 1; min-width: 0;">
-        <div class="ai-parsed-day" style="color: var(--accent-cyan); font-weight: 800;">${c.day} • ${c.startTime} - ${c.endTime}</div>
-        <div class="ai-parsed-title" style="font-size: 0.92rem; font-weight: 700; color: #fff; margin-top: 2px;">${c.subject}</div>
-        ${c.room ? `<div class="ai-parsed-time" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">📍 ${c.room}</div>` : ''}
+        <div style="font-size: 0.75rem; color: var(--accent-cyan); font-weight: 800;">${c.day} • ${c.startTime} - ${c.endTime}</div>
+        <div style="font-size: 0.88rem; font-weight: 700; color: #fff; margin-top: 2px;">${c.subject}</div>
+        ${c.room ? `<div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">📍 ${c.room}</div>` : ''}
       </div>
-      <button class="btn-icon-subtle" onclick="removeQuickParsedItem(${idx})" title="Remove class" style="color: var(--color-absent); font-size: 1.1rem; padding: 4px 8px;">✕</button>
+      <button type="button" class="btn-icon-subtle" onclick="removeDetectedItem(${idx})" title="Remove class" style="color: var(--color-absent); font-size: 1.1rem; padding: 4px 8px; background: none; border: none; cursor: pointer;">✕</button>
     `;
     container.appendChild(item);
   });
@@ -1298,20 +1574,20 @@ function renderQuickParsedResults(classes) {
   resultsBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-function removeQuickParsedItem(index) {
-  detectedImportSchedule.splice(index, 1);
-  if (detectedImportSchedule.length === 0) {
-    const resultsBox = document.getElementById('quickImportResultsContainer');
+function removeDetectedItem(index) {
+  detectedSchedule.splice(index, 1);
+  if (detectedSchedule.length === 0) {
+    const resultsBox = document.getElementById('aiResultsContainer');
     if (resultsBox) resultsBox.style.display = 'none';
   } else {
-    renderQuickParsedResults(detectedImportSchedule);
+    renderScheduleReview(detectedSchedule);
   }
 }
 
-function confirmQuickScheduleImport() {
-  if (!detectedImportSchedule || detectedImportSchedule.length === 0) return;
+function confirmScheduleImport() {
+  if (!detectedSchedule || detectedSchedule.length === 0) return;
 
-  const replaceCheckbox = document.getElementById('quickImportReplaceExisting');
+  const replaceCheckbox = document.getElementById('aiReplaceExisting');
   const shouldReplace = replaceCheckbox ? replaceCheckbox.checked : true;
 
   if (shouldReplace) {
@@ -1321,7 +1597,7 @@ function confirmQuickScheduleImport() {
   }
 
   let hasSaturday = false;
-  detectedImportSchedule.forEach(c => {
+  detectedSchedule.forEach(c => {
     if (c.day === 'Saturday') hasSaturday = true;
     state.addLecture(c.day, c.subject, c.startTime, c.endTime, c.room || '');
   });
@@ -1333,27 +1609,92 @@ function confirmQuickScheduleImport() {
     state.save();
   }
 
+  closeModal('modalScheduleCreator');
   closeModal('modalQuickImport');
-  // Also close old modal if open
   closeModal('modalAiTimetable');
 
   renderTimetable();
   renderDashboard();
   renderHistory();
   updateUpcomingBanner();
-  showBottomToast(`🎉 Successfully saved ${detectedImportSchedule.length} classes to your schedule!`, 'Dismiss', hideBottomToast);
+  showBottomToast(`🎉 Successfully saved ${detectedSchedule.length} classes to your schedule!`, 'Dismiss', hideBottomToast);
 }
 
-// Global window exposure for inline handlers
-window.openQuickImportModal = openQuickImportModal;
-window.openAiTimetableModal = openQuickImportModal;
-window.resetQuickImport = resetQuickImport;
+function loadQuickImportExample() {
+  const example = `Monday:
+10:00 - 11:00 Mathematics [Room 201]
+11:10 - 12:00 Physics [Room 102]
+01:40 - 02:20 Computer Networks [V124]
+03:10 - 04:50 Programming Lab [Lab 3]
+
+Tuesday:
+09:00 - 10:00 Data Structures [Room 205]
+10:00 - 11:00 Operating Systems [Room 205]
+11:10 - 12:00 Software Engineering [Room 201]
+01:40 - 03:10 OS Lab [Lab 2]
+
+Wednesday:
+10:00 - 11:00 Mathematics [Room 201]
+11:10 - 12:00 Physics [Room 102]
+01:40 - 02:20 Computer Networks [V124]
+
+Thursday:
+09:00 - 10:00 Data Structures [Room 205]
+10:00 - 11:00 Operating Systems [Room 205]
+01:40 - 03:10 Networks Lab [Lab 1]
+
+Friday:
+10:00 - 11:00 Mathematics [Room 201]
+11:10 - 12:00 Software Engineering [Room 201]
+01:40 - 02:20 Environmental Studies [Auditorium]`;
+
+  const textarea = document.getElementById('quickImportTextarea');
+  if (textarea) {
+    textarea.value = example;
+    runAiTextScan();
+  }
+}
+
+async function pasteFromClipboard() {
+  const textarea = document.getElementById('quickImportTextarea');
+  if (!textarea) return;
+  try {
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      const text = await navigator.clipboard.readText();
+      if (text && text.trim().length > 0) {
+        textarea.value = text;
+        runAiTextScan();
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('Clipboard read error:', e);
+  }
+  textarea.focus();
+  textarea.select();
+  showBottomToast('Please long-press and tap Paste inside the box.', 'OK', hideBottomToast);
+}
+
+// Global window exposure for inline handlers & backward compatibility
+window.openScheduleCreatorModal = openScheduleCreatorModal;
+window.openQuickImportModal = openScheduleCreatorModal;
+window.openAiTimetableModal = openScheduleCreatorModal;
+window.switchAiTab = switchAiTab;
+window.resetAiScanner = resetAiScanner;
+window.resetQuickImport = resetAiScanner;
+window.toggleApiKeyVisibility = toggleApiKeyVisibility;
+window.runAiImageScan = runAiImageScan;
+window.runAiTextScan = runAiTextScan;
+window.runQuickImportParse = runAiTextScan;
+window.renderScheduleReview = renderScheduleReview;
+window.removeDetectedItem = removeDetectedItem;
+window.removeQuickParsedItem = removeDetectedItem;
+window.removeAiParsedItem = removeDetectedItem;
+window.confirmScheduleImport = confirmScheduleImport;
+window.confirmQuickScheduleImport = confirmScheduleImport;
+window.confirmAiScheduleImport = confirmScheduleImport;
 window.loadQuickImportExample = loadQuickImportExample;
 window.pasteFromClipboard = pasteFromClipboard;
-window.runQuickImportParse = runQuickImportParse;
-window.renderQuickParsedResults = renderQuickParsedResults;
-window.removeQuickParsedItem = removeQuickParsedItem;
-window.confirmQuickScheduleImport = confirmQuickScheduleImport;
 
 // Calendar Export
 function exportToCalendarICS() {
@@ -1474,13 +1815,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (dashAddBtn) dashAddBtn.addEventListener('click', openAddLecture);
 
   const dashAiBtn = document.getElementById('btnDashAiTimetable');
-  if (dashAiBtn) dashAiBtn.addEventListener('click', openQuickImportModal);
+  if (dashAiBtn) dashAiBtn.addEventListener('click', openScheduleCreatorModal);
 
   const dashTopAddBtn = document.getElementById('btnDashTopAdd');
   if (dashTopAddBtn) dashTopAddBtn.addEventListener('click', openAddLecture);
 
   const dashTopAiBtn = document.getElementById('btnDashTopAi');
-  if (dashTopAiBtn) dashTopAiBtn.addEventListener('click', openQuickImportModal);
+  if (dashTopAiBtn) dashTopAiBtn.addEventListener('click', openScheduleCreatorModal);
 
   // Install PWA Button Click
   const btnInstall = document.getElementById('btnInstallPwa');
@@ -1596,15 +1937,27 @@ document.addEventListener('DOMContentLoaded', () => {
     showBottomToast(`Saved attendance for ${sub}: ${att}/${tot} classes`, 'Dismiss', hideBottomToast);
   });
 
-  // Quick Timetable Import Event Listeners
+  // Timetable Schedule Creator Event Listeners
   const btnAi = document.getElementById('btnAiTimetable');
-  if (btnAi) btnAi.addEventListener('click', openQuickImportModal);
+  if (btnAi) btnAi.addEventListener('click', openScheduleCreatorModal);
+
+  const aiFileInput = document.getElementById('aiFileInput');
+  if (aiFileInput) {
+    aiFileInput.addEventListener('change', function () {
+      if (this.files && this.files[0]) {
+        handleAiImageSelection(this.files[0]);
+      }
+    });
+  }
+
+  const btnAiImgScan = document.getElementById('btnRunAiImageScan');
+  if (btnAiImgScan) btnAiImgScan.addEventListener('click', runAiImageScan);
 
   const btnRunQuickParse = document.getElementById('btnRunQuickParse');
-  if (btnRunQuickParse) btnRunQuickParse.addEventListener('click', runQuickImportParse);
+  if (btnRunQuickParse) btnRunQuickParse.addEventListener('click', runAiTextScan);
 
-  const btnConfirmQuick = document.getElementById('btnConfirmQuickImport');
-  if (btnConfirmQuick) btnConfirmQuick.addEventListener('click', confirmQuickScheduleImport);
+  const btnConfirmAi = document.getElementById('btnConfirmAiImport');
+  if (btnConfirmAi) btnConfirmAi.addEventListener('click', confirmScheduleImport);
 
   // Form Record
   document.getElementById('btnAddManualRecord').addEventListener('click', openAddManualRecord);
