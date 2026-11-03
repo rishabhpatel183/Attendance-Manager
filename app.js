@@ -1090,6 +1090,8 @@ function confirmDeleteSubject(subject) {
 }
 
 // ================= UNIFIED TIMETABLE CREATOR (AI PHOTO SCAN + INSTANT TEXT) =================
+// Set your Cloudflare Worker URL here once deployed for 100% Zero-Key Scanning for all students!
+let CLOUDFLARE_WORKER_URL = '';
 let currentAiImage = null;
 let detectedSchedule = [];
 
@@ -1097,6 +1099,17 @@ function openScheduleCreatorModal() {
   const savedKey = localStorage.getItem('gemini_api_key') || '';
   const keyInput = document.getElementById('aiApiKeyInput');
   if (keyInput) keyInput.value = savedKey;
+
+  const keyCard = document.getElementById('aiApiKeyCard');
+  const zeroKeyBadge = document.getElementById('aiZeroKeyBadge');
+  const isWorkerReady = Boolean(CLOUDFLARE_WORKER_URL && CLOUDFLARE_WORKER_URL.trim().length > 0);
+
+  if (keyCard) {
+    keyCard.style.display = isWorkerReady ? 'none' : 'block';
+  }
+  if (zeroKeyBadge) {
+    zeroKeyBadge.style.display = isWorkerReady ? 'block' : 'none';
+  }
 
   switchAiTab('image');
   resetAiScanner();
@@ -1387,21 +1400,54 @@ async function runAiImageScan() {
     return;
   }
 
+  const loader = document.getElementById('aiLoadingIndicator');
+  const status = document.getElementById('aiLoadingStatus');
+  const resultsBox = document.getElementById('aiResultsContainer');
+  if (loader) loader.style.display = 'block';
+  if (resultsBox) resultsBox.style.display = 'none';
+
+  // PATH 1: Cloudflare Worker (100% Zero-Key for All Students)
+  if (CLOUDFLARE_WORKER_URL && CLOUDFLARE_WORKER_URL.trim().length > 0) {
+    if (status) status.textContent = 'Scanning timetable photo with Cloud AI (Zero setup)...';
+    try {
+      const res = await fetch(CLOUDFLARE_WORKER_URL.trim(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageBase64: currentAiImage.base64,
+          mimeType: currentAiImage.mimeType || 'image/jpeg'
+        })
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (loader) loader.style.display = 'none';
+
+      if (!res.ok || !data.success || !Array.isArray(data.schedule) || data.schedule.length === 0) {
+        throw new Error(data.error || 'No classes detected in timetable image.');
+      }
+
+      renderScheduleReview(data.schedule);
+      return;
+    } catch (workerErr) {
+      console.warn('Cloud worker scan error:', workerErr);
+      if (loader) loader.style.display = 'none';
+      alert('Cloud Scan Notice: ' + workerErr.message + '\n\nYou can also paste a personal Gemini key below to scan directly.');
+      // Fall through to direct key check
+    }
+  }
+
+  // PATH 2: Direct Google Gemini API Key
   const keyInput = document.getElementById('aiApiKeyInput');
   const key = (keyInput ? keyInput.value : '').trim();
   if (!key) {
+    if (loader) loader.style.display = 'none';
     alert('A free Google Gemini API Key is required to scan timetable photos.\n\n1. Tap "Get Free Key ↗" (takes 15 seconds from Google AI Studio).\n2. Paste your key in the box.\n\nYour phone will save it forever!');
     if (keyInput) keyInput.focus();
     return;
   }
 
   localStorage.setItem('gemini_api_key', key);
-
-  const loader = document.getElementById('aiLoadingIndicator');
-  const status = document.getElementById('aiLoadingStatus');
-  const resultsBox = document.getElementById('aiResultsContainer');
   if (loader) loader.style.display = 'block';
-  if (resultsBox) resultsBox.style.display = 'none';
   if (status) status.textContent = 'Connecting to Google AI...';
 
   try {
