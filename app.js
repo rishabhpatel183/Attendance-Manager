@@ -1090,8 +1090,8 @@ function confirmDeleteSubject(subject) {
 }
 
 // ================= UNIFIED TIMETABLE CREATOR (AI PHOTO SCAN + INSTANT TEXT) =================
-// Set your Cloudflare Worker URL here once deployed for 100% Zero-Key Scanning for all students!
-let CLOUDFLARE_WORKER_URL = '';
+// Active Cloudflare Worker URL: 100% Zero-Key Photo Scanning for ALL students!
+let CLOUDFLARE_WORKER_URL = 'https://attendance-scan.rishabhpatelme01.workers.dev';
 let currentAiImage = null;
 let detectedSchedule = [];
 
