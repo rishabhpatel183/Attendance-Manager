@@ -25,6 +25,27 @@ const DEFAULT_STATE = {
   promptedHistory: {}
 };
 
+// 12-Hour Clock Formatter (e.g. "13:40" -> "01:40 PM", "08:30" -> "08:30 AM")
+function format12h(timeStr) {
+  if (!timeStr || typeof timeStr !== 'string') return timeStr || '';
+  const clean = timeStr.trim();
+  if (/AM|PM/i.test(clean)) return clean;
+  const parts = clean.split(':');
+  if (parts.length < 2) return clean;
+  let h = parseInt(parts[0], 10);
+  const m = parts[1].padStart(2, '0');
+  if (isNaN(h)) return clean;
+  let ampm = 'AM';
+  if (h >= 12) {
+    ampm = 'PM';
+    if (h > 12) h -= 12;
+  } else if (h === 0) {
+    h = 12;
+  }
+  const hStr = h < 10 ? `0${h}` : `${h}`;
+  return `${hStr}:${m} ${ampm}`;
+}
+
 class AppState {
   constructor() {
     this.data = this.load();
@@ -511,7 +532,7 @@ function updateUpcomingBanner() {
   const banner = document.getElementById('headerStatus');
   if (banner) {
     if (upcoming) {
-      banner.textContent = `⏰ ${upcoming.dayLabel}: ${upcoming.lecture.subject} (${upcoming.lecture.startTime})`;
+      banner.textContent = `⏰ ${upcoming.dayLabel}: ${upcoming.lecture.subject} (${format12h(upcoming.lecture.startTime)})`;
     } else {
       banner.textContent = `No scheduled classes`;
     }
@@ -522,14 +543,14 @@ function updateUpcomingBanner() {
 function triggerLecturePrompt(lec, dateStr, promptKey) {
   state.activePrompt = { lecture: lec, date: dateStr, promptKey };
   document.getElementById('promptSubject').textContent = lec.subject;
-  document.getElementById('promptTimeRoom').textContent = `${lec.startTime} - ${lec.endTime} • ${lec.room || 'No Room Specified'}`;
+  document.getElementById('promptTimeRoom').textContent = `${format12h(lec.startTime)} - ${format12h(lec.endTime)} • ${lec.room || 'No Room Specified'}`;
 
   openModal('modalLecturePrompt');
   playNotificationChime();
 
   if ('Notification' in window && Notification.permission === 'granted') {
     new Notification('⏰ Lecture Finished: ' + lec.subject, {
-      body: `Did you attend ${lec.subject} (${lec.startTime} - ${lec.endTime})? Tap to mark attendance.`,
+      body: `Did you attend ${lec.subject} (${format12h(lec.startTime)} - ${format12h(lec.endTime)})? Tap to mark attendance.`,
       icon: 'icon-192.png'
     });
   }
@@ -669,7 +690,7 @@ function renderDashboard() {
         </div>
         
         <h2 class="upcoming-subject-title">${lec.subject}</h2>
-        <div class="upcoming-time-meta">⏰ ${lec.startTime} - ${lec.endTime} • 📍 ${lec.room || 'No Room Specified'}</div>
+        <div class="upcoming-time-meta">⏰ ${format12h(lec.startTime)} - ${format12h(lec.endTime)} • 📍 ${lec.room || 'No Room Specified'}</div>
 
         <div class="upcoming-stats-strip">
           <span class="sub-current-lbl">Current Subject Attendance:</span>
@@ -814,8 +835,8 @@ function renderTimetable() {
     row.className = 'timetable-row';
     row.innerHTML = `
       <div class="time-badge">
-        <div class="time-start">${lec.startTime}</div>
-        <div class="time-end">${lec.endTime}</div>
+        <div class="time-start">${format12h(lec.startTime)}</div>
+        <div class="time-end">${format12h(lec.endTime)}</div>
       </div>
       <div class="lec-details">
         <div class="lec-name">${lec.subject}</div>
@@ -1590,9 +1611,76 @@ function runAiTextScan() {
 }
 
 
-// Smart Post-Processor: Strips section/teacher noise & merges 2-period practical labs
+// Disambiguation & Review State
+let rawDetectedSchedule = [];
+let disambiguationModel = null;
+let userElectiveChoices = {};
+let userDailyLabChoices = {};
+
+// 24-Hour Time Normalizer with College Period Snapping
+function normalizeTime24(timeStr, isEnd = false) {
+  if (!timeStr || typeof timeStr !== 'string') return isEnd ? '11:00' : '10:00';
+  let clean = timeStr.trim().toLowerCase();
+  const isPM = clean.includes('pm');
+  const isAM = clean.includes('am');
+  clean = clean.replace(/am|pm/g, '').trim();
+  const parts = clean.split(':');
+  let h = parseInt(parts[0], 10);
+  let m = parts.length > 1 ? parseInt(parts[1], 10) : 0;
+  if (isNaN(h)) h = 10;
+  if (isNaN(m)) m = 0;
+
+  // College timetable heuristic: Hours 1-6 are strictly PM
+  if (isPM && h < 12) h += 12;
+  else if (isAM && h === 12) h = 0;
+  else if (!isAM && !isPM) {
+    if (h >= 1 && h <= 6) h += 12; // 1:40 -> 13:40, 2:20 -> 14:20, 3:10 -> 15:10, 4:00 -> 16:00, 4:50 -> 16:50
+  }
+
+  // Canonical period snapping (Medicaps / Indian college standard grid)
+  const totalMins = h * 60 + m;
+  const canonicalMins = [
+    8 * 60 + 30,  // 08:30 (Period I start)
+    9 * 60 + 20,  // 09:20 (Period I end / Period II start)
+    10 * 60 + 10, // 10:10 (Period II end)
+    10 * 60 + 20, // 10:20 (Period III start)
+    11 * 60 + 10, // 11:10 (Period III end / Period IV start)
+    12 * 60 + 0,  // 12:00 (Period IV end / Period V start)
+    12 * 60 + 50, // 12:50 (Period V end / Lunch start)
+    13 * 60 + 40, // 13:40 (Lunch end / Period VII start)
+    14 * 60 + 20, // 14:20 (Period VII end / Period VIII start)
+    15 * 60 + 10, // 15:10 (Period VIII end / Period IX & Lab start)
+    16 * 60 + 0,  // 16:00 (Period IX end / Period X start)
+    16 * 60 + 50  // 16:50 (Period X / Lab end)
+  ];
+
+  for (const cMin of canonicalMins) {
+    if (Math.abs(totalMins - cMin) <= 6) {
+      h = Math.floor(cMin / 60);
+      m = cMin % 60;
+      break;
+    }
+  }
+
+  const hStr = h < 10 ? `0${h}` : `${h}`;
+  const mStr = m < 10 ? `0${m}` : `${m}`;
+  return `${hStr}:${mStr}`;
+}
+
+function isScheduleOverlapping(c1, c2) {
+  if (c1.day !== c2.day) return false;
+  return !(c1.endTime <= c2.startTime || c1.startTime >= c2.endTime);
+}
+
+function cleanBaseSubject(s) {
+  return (s || '').replace(/\s*\([Pp]\)/g, '').trim();
+}
+
+// Smart Post-Processor: Cleans subjects, normalizes period times, & merges 2-period practical labs
 function cleanAndMergeSchedule(rawSchedule) {
   if (!Array.isArray(rawSchedule)) return [];
+
+  const knownFaculty = /\b(?:MPC|ASH|KJ|SY|M3|AJK|AG|DIS|ABJ|SSF3|NF13|AC|LJ|NIB)\b/i;
 
   const cleaned = rawSchedule.map(item => {
     let sub = (item.subject || '').trim();
@@ -1601,48 +1689,58 @@ function cleanAndMergeSchedule(rawSchedule) {
     // Check if practical lab (P), [P], Lab, or Practical
     const isPractical = /\([Pp]\)/i.test(sub) || /\[[Pp]\]/i.test(sub) || /[A-Za-z0-9]+\([Pp]\)/i.test(sub) || /\b(?:Lab|Practical)\b/i.test(sub);
 
-    // Extract bracketed room like [LV303] or [V124] if left in subject
-    const roomMatches = sub.match(/\[([A-Za-z0-9\-_ ]+)\]/g);
-    if (roomMatches) {
-      roomMatches.forEach(rm => {
-        const inner = rm.replace(/[\[\]]/g, '').trim();
-        if (/[A-Za-z]+[0-9]+|[0-9]+[A-Za-z]+/i.test(inner) || inner.toLowerCase().includes('lab') || inner.toLowerCase().includes('room')) {
+    // Extract true rooms from brackets: [V124], [LV303], [V026], [LV203], [V226], etc.
+    const bracketMatches = sub.match(/\[([A-Za-z0-9\-_ ]+)\]/g);
+    if (bracketMatches) {
+      bracketMatches.forEach(bm => {
+        const inner = bm.replace(/[\[\]]/g, '').trim();
+        if (/^(?:LV|V|LAB|ROOM)[-_ ]?\d+/i.test(inner) || /^(?:LV\d+|V\d+|LAB\d*)/i.test(inner)) {
           if (!room) room = inner;
         }
-        sub = sub.replace(rm, ' ');
+        sub = sub.replace(bm, ' ');
       });
     }
 
-    // Strip section / batch tags: 5CSE-O, 5CSE-O1, 5CSE-02, 5CSE O+P, M+N+O+P, etc.
-    sub = sub.replace(/\b\d+[A-Za-z]+(?:-[A-Za-z0-9]+)?\b/gi, ' ');
-    sub = sub.replace(/\b[A-Za-z](?:\+[A-Za-z])+\b/gi, ' ');
-    sub = sub.replace(/\b(?:5CSE|CSE|IT|ECE|MECH|CIVIL|AIML|DS)[-_ ]?[A-Za-z0-9+]*\b/gi, ' ');
-    sub = sub.replace(/\b(?:Batch|Sec|Section)\s*[-_0-9A-Za-z]+\b/gi, ' ');
+    if (room && knownFaculty.test(room)) {
+      room = '';
+    }
 
-    // Strip teacher initials in brackets/parentheses: [ASH], [MPC], (KJ), (SY), (M3), (AJK), etc.
+    // Strip section / batch tags without destroying subjects like DSC (Data Science)
+    sub = sub.replace(/5CSE[-_ ]?[A-Za-z0-9\+\-]+/gi, ' ');
+    sub = sub.replace(/\b5CSE\b/gi, ' ');
+    sub = sub.replace(/\b[A-Za-z](?:\+[A-Za-z])+\b/gi, ' ');
+    sub = sub.replace(/\b(?:Batch|Sec|Section)\s*[-_0-9A-Za-z]+\b/gi, ' ');
+    sub = sub.replace(/AI-[ABC]/gi, ' ');
+    sub = sub.replace(/\b(?:BSc|AI-A|AI-B|AI-C)\b/gi, ' ');
+
+    // Strip teacher initials
     sub = sub.replace(/\([A-Za-z0-9]{2,4}\)/g, ' ');
     sub = sub.replace(/\[[A-Za-z0-9]{2,4}\]/g, ' ');
     sub = sub.replace(/\b(?:MPC|ASH|KJ|SY|M3|AJK|AG|DIS|ABJ|SSF3|NF13|AC|LJ|NIB)\b/gi, ' ');
 
-    // Remove any leftover (P) temporarily to clean core name
+    // Remove (P) temporarily to clean core name
     sub = sub.replace(/\([Pp]\)/g, ' ').replace(/\[[Pp]\]/g, ' ').replace(/\b[Pp]\b/g, ' ');
-    sub = sub.replace(/[\[\]\(\):\-]/g, ' ').replace(/\s+/g, ' ').trim();
+    sub = sub.replace(/[\[\]\(\):]/g, ' ').replace(/\s+/g, ' ').trim();
+    sub = sub.replace(/[-–]+$/, '').trim();
 
-    // Re-attach (P) if practical so it is cleanly tracked in attendance separately from theory
+    // Re-attach (P) if practical
     if (isPractical) {
       sub = `${sub} (P)`;
     }
 
+    const sTime = normalizeTime24(item.startTime, false);
+    const eTime = normalizeTime24(item.endTime, true);
+
     return {
       day: item.day,
       subject: sub,
-      startTime: item.startTime,
-      endTime: item.endTime,
+      startTime: sTime,
+      endTime: eTime,
       room: room
     };
   }).filter(item => item.subject && item.subject.length > 0);
 
-  // Auto-merge consecutive periods for the SAME practical class into a single 100-minute session
+  // Auto-merge consecutive periods for the SAME practical class into a single combined session (e.g. 15:10 - 16:50)
   const merged = [];
   const dayOrder = { Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
   cleaned.sort((a, b) => {
@@ -1658,7 +1756,6 @@ function cleanAndMergeSchedule(rawSchedule) {
       (m.endTime === item.startTime || m.startTime === item.endTime)
     );
 
-    // Merge practicals, or contiguous lectures of same subject
     if (prev && (isItemLab || prev.subject.toLowerCase() === item.subject.toLowerCase())) {
       if (prev.endTime === item.startTime) {
         prev.endTime = item.endTime;
@@ -1674,17 +1771,280 @@ function cleanAndMergeSchedule(rawSchedule) {
   return merged;
 }
 
-function renderScheduleReview(classes) {
-  detectedSchedule = cleanAndMergeSchedule(classes);
+// Build Disambiguation Model: Separates Recurring Electives from Daily Lab Slots
+function buildDisambiguationModel(schedule) {
+  const slotGroups = [];
+  const assigned = new Set();
+
+  for (let i = 0; i < schedule.length; i++) {
+    if (assigned.has(i)) continue;
+    const group = [schedule[i]];
+    assigned.add(i);
+
+    for (let j = i + 1; j < schedule.length; j++) {
+      if (assigned.has(j)) continue;
+      if (group.some(g => isScheduleOverlapping(g, schedule[j]))) {
+        group.push(schedule[j]);
+        assigned.add(j);
+      }
+    }
+
+    if (group.length > 1) {
+      slotGroups.push(group);
+    }
+  }
+
+  const labSlots = [];
+  const theorySlots = [];
+
+  slotGroups.forEach(grp => {
+    const hasLab = grp.some(c => c.subject.includes('(P)'));
+    if (hasLab) {
+      labSlots.push(grp);
+    } else {
+      theorySlots.push(grp);
+    }
+  });
+
+  // 1. Identify Recurring Theory Electives across the semester
+  const electiveGroups = [];
+  const handledTheoryIndices = new Set();
+  const theoryBaseSets = theorySlots.map(grp => new Set(grp.map(c => cleanBaseSubject(c.subject))));
+
+  for (let i = 0; i < theorySlots.length; i++) {
+    if (handledTheoryIndices.has(i)) continue;
+    const setA = theoryBaseSets[i];
+
+    const matchingIndices = [i];
+    for (let j = i + 1; j < theorySlots.length; j++) {
+      if (handledTheoryIndices.has(j)) continue;
+      const setB = theoryBaseSets[j];
+
+      let common = 0;
+      setA.forEach(s => { if (setB.has(s)) common++; });
+
+      if (common >= 2 || (setA.size >= 2 && common === setA.size)) {
+        matchingIndices.push(j);
+      }
+    }
+
+    matchingIndices.forEach(idx => handledTheoryIndices.add(idx));
+
+    const allBaseSubjects = new Set();
+    matchingIndices.forEach(idx => {
+      theorySlots[idx].forEach(c => allBaseSubjects.add(cleanBaseSubject(c.subject)));
+    });
+
+    const options = Array.from(allBaseSubjects);
+    const days = Array.from(new Set(matchingIndices.map(idx => theorySlots[idx][0].day)));
+
+    electiveGroups.push({
+      id: `elective_${electiveGroups.length + 1}`,
+      title: `Elective Track: ${options.slice(0, 3).join(' / ')}`,
+      days: days,
+      options: options,
+      defaultChoice: options[0]
+    });
+  }
+
+  // 2. Identify Daily Lab Choices (asked per-day)
+  const dailyLabChoices = labSlots.map((grp, idx) => {
+    const day = grp[0].day;
+    const options = Array.from(new Set(grp.map(c => c.subject)));
+    return {
+      id: `lab_${day.toLowerCase()}_${idx}`,
+      day: day,
+      startTime: grp[0].startTime,
+      endTime: grp[0].endTime,
+      title: `${day} Lab (${format12h(grp[0].startTime)} - ${format12h(grp[0].endTime)})`,
+      options: options,
+      defaultChoice: options[0],
+      slotGroup: grp
+    };
+  });
+
+  return { electiveGroups, dailyLabChoices, allSlotGroups: slotGroups };
+}
+
+// Render Disambiguation Wizard Cards
+function renderDisambiguationWizard() {
+  const wizardContainer = document.getElementById('aiWizardContainer');
+  const wizardCards = document.getElementById('aiWizardCards');
+  if (!wizardContainer || !wizardCards) return;
+
+  const hasElectives = disambiguationModel && disambiguationModel.electiveGroups.length > 0;
+  const hasDailyLabs = disambiguationModel && disambiguationModel.dailyLabChoices.length > 0;
+
+  if (!hasElectives && !hasDailyLabs) {
+    wizardContainer.style.display = 'none';
+    wizardCards.innerHTML = '';
+    return;
+  }
+
+  wizardContainer.style.display = 'block';
+  let html = '';
+
+  // Render Elective Groups
+  if (hasElectives) {
+    disambiguationModel.electiveGroups.forEach(grp => {
+      const selected = userElectiveChoices[grp.id];
+      html += `
+        <div class="wizard-group-card">
+          <div class="wizard-group-header">
+            <span class="wizard-group-title">📚 ${grp.title}</span>
+            <span class="wizard-group-badge">Days: ${grp.days.join(', ')}</span>
+          </div>
+          <div class="wizard-group-sub">Select your enrolled elective (will automatically apply to all days):</div>
+          <div class="wizard-options-grid">
+            ${grp.options.map(opt => `
+              <button type="button" class="wizard-chip ${opt === selected ? 'active' : ''}" onclick="selectElectiveOption('${grp.id}', '${opt.replace(/'/g, "\\'")}')">
+                ${opt === selected ? '✓ ' : ''}${opt}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  // Render Daily Lab Choices
+  if (hasDailyLabs) {
+    disambiguationModel.dailyLabChoices.forEach(lab => {
+      const selected = userDailyLabChoices[lab.id];
+      html += `
+        <div class="wizard-group-card">
+          <div class="wizard-group-header">
+            <span class="wizard-group-title">🔬 ${lab.title}</span>
+            <span class="wizard-group-badge" style="background: rgba(0, 195, 255, 0.15); color: var(--accent-cyan);">${lab.day}</span>
+          </div>
+          <div class="wizard-group-sub">Select which practical batch you attend on this day:</div>
+          <div class="wizard-options-grid">
+            ${lab.options.map(opt => `
+              <button type="button" class="wizard-chip ${opt === selected ? 'active' : ''}" onclick="selectDailyLabOption('${lab.id}', '${opt.replace(/'/g, "\\'")}')">
+                ${opt === selected ? '✓ ' : ''}${opt}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  wizardCards.innerHTML = html;
+}
+
+// User Selection Handlers
+function selectElectiveOption(groupId, option) {
+  userElectiveChoices[groupId] = option;
+
+  // Auto-sync any lab matching this elective (e.g. if NO SQL picked, auto-pick NO SQL (P))
+  const baseChosen = cleanBaseSubject(option).toLowerCase();
+  if (disambiguationModel && disambiguationModel.dailyLabChoices) {
+    disambiguationModel.dailyLabChoices.forEach(lab => {
+      const matchingLabOpt = lab.options.find(opt => cleanBaseSubject(opt).toLowerCase() === baseChosen);
+      if (matchingLabOpt) {
+        userDailyLabChoices[lab.id] = matchingLabOpt;
+      }
+    });
+  }
+
+  renderDisambiguationWizard();
+  applyDisambiguationAndRenderList();
+}
+
+function selectDailyLabOption(labId, option) {
+  userDailyLabChoices[labId] = option;
+  renderDisambiguationWizard();
+  applyDisambiguationAndRenderList();
+}
+
+// Filter Schedule by User Selections
+function computeFilteredSchedule(rawList, electiveChoices, dailyLabChoices) {
+  const resolved = [];
+  const dayGroups = {};
+  rawList.forEach(c => {
+    if (!dayGroups[c.day]) dayGroups[c.day] = [];
+    dayGroups[c.day].push(c);
+  });
+
+  const electiveVals = Object.values(electiveChoices || {}).map(v => v.toLowerCase());
+
+  Object.keys(dayGroups).forEach(day => {
+    const list = dayGroups[day];
+    const visited = new Set();
+    const clusters = [];
+
+    for (let i = 0; i < list.length; i++) {
+      if (visited.has(i)) continue;
+      const cluster = [list[i]];
+      visited.add(i);
+      for (let j = i + 1; j < list.length; j++) {
+        if (visited.has(j)) continue;
+        if (cluster.some(c => isScheduleOverlapping(c, list[j]))) {
+          cluster.push(list[j]);
+          visited.add(j);
+        }
+      }
+      clusters.push(cluster);
+    }
+
+    clusters.forEach(cluster => {
+      if (cluster.length === 1) {
+        resolved.push(cluster[0]);
+        return;
+      }
+
+      const isLab = cluster.some(c => c.subject.includes('(P)'));
+      if (isLab) {
+        let chosenLab = null;
+        if (disambiguationModel && disambiguationModel.dailyLabChoices) {
+          for (const lab of disambiguationModel.dailyLabChoices) {
+            if (lab.day === day && isScheduleOverlapping(lab, cluster[0])) {
+              const picked = dailyLabChoices[lab.id];
+              chosenLab = cluster.find(c => c.subject.toLowerCase() === (picked || '').toLowerCase());
+              break;
+            }
+          }
+        }
+        if (!chosenLab) {
+          chosenLab = cluster.find(c => electiveVals.includes(cleanBaseSubject(c.subject).toLowerCase()));
+        }
+        resolved.push(chosenLab || cluster[0]);
+        return;
+      }
+
+      // Theory elective cluster
+      let chosenTheory = null;
+      for (const eVal of electiveVals) {
+        const found = cluster.find(c => cleanBaseSubject(c.subject).toLowerCase() === eVal);
+        if (found) {
+          chosenTheory = found;
+          break;
+        }
+      }
+      resolved.push(chosenTheory || cluster[0]);
+    });
+  });
+
+  const dayOrder = { Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
+  resolved.sort((a, b) => {
+    if (a.day !== b.day) return (dayOrder[a.day] || 99) - (dayOrder[b.day] || 99);
+    return a.startTime.localeCompare(b.startTime);
+  });
+
+  return resolved;
+}
+
+function renderPreviewItems(classes) {
   const container = document.getElementById('aiParsedList');
   const badge = document.getElementById('aiDetectedCountBadge');
-  const resultsBox = document.getElementById('aiResultsContainer');
-
-  if (!container || !resultsBox) return;
+  const btnSave = document.getElementById('btnConfirmAiImport');
+  if (!container) return;
 
   container.innerHTML = '';
   const daysSet = new Set(classes.map(c => c.day));
-  if (badge) badge.textContent = `Found ${classes.length} classes across ${daysSet.size} days`;
+  if (badge) badge.textContent = `Ready: ${classes.length} Classes across ${daysSet.size} Days`;
+  if (btnSave) btnSave.textContent = `✅ Save My Timetable (${classes.length} Classes)`;
 
   classes.forEach((c, idx) => {
     const item = document.createElement('div');
@@ -1692,7 +2052,7 @@ function renderScheduleReview(classes) {
     item.style.cssText = 'background: #0d0d0d; border: 1px solid var(--border-subtle); border-radius: 10px; padding: 10px 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; gap: 8px;';
     item.innerHTML = `
       <div style="flex: 1; min-width: 0;">
-        <div style="font-size: 0.75rem; color: var(--accent-cyan); font-weight: 800;">${c.day} • ${c.startTime} - ${c.endTime}</div>
+        <div style="font-size: 0.75rem; color: var(--accent-cyan); font-weight: 800;">${c.day} • ${format12h(c.startTime)} - ${format12h(c.endTime)}</div>
         <div style="font-size: 0.88rem; font-weight: 700; color: #fff; margin-top: 2px;">${c.subject}</div>
         ${c.room ? `<div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">📍 ${c.room}</div>` : ''}
       </div>
@@ -1700,18 +2060,58 @@ function renderScheduleReview(classes) {
     `;
     container.appendChild(item);
   });
+}
 
-  resultsBox.style.display = 'block';
-  resultsBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+function applyDisambiguationAndRenderList() {
+  detectedSchedule = computeFilteredSchedule(rawDetectedSchedule, userElectiveChoices, userDailyLabChoices);
+  renderPreviewItems(detectedSchedule);
+}
+
+function renderScheduleReview(classes) {
+  rawDetectedSchedule = cleanAndMergeSchedule(classes);
+  disambiguationModel = buildDisambiguationModel(rawDetectedSchedule);
+
+  userElectiveChoices = {};
+  userDailyLabChoices = {};
+
+  if (disambiguationModel) {
+    disambiguationModel.electiveGroups.forEach(grp => {
+      userElectiveChoices[grp.id] = grp.options[0];
+    });
+
+    disambiguationModel.dailyLabChoices.forEach(lab => {
+      let matchedOption = lab.options[0];
+      const electiveVals = Object.values(userElectiveChoices);
+      for (const opt of lab.options) {
+        const baseOpt = cleanBaseSubject(opt);
+        if (electiveVals.some(v => v.toLowerCase() === baseOpt.toLowerCase())) {
+          matchedOption = opt;
+          break;
+        }
+      }
+      userDailyLabChoices[lab.id] = matchedOption;
+    });
+  }
+
+  renderDisambiguationWizard();
+  applyDisambiguationAndRenderList();
+
+  const resultsBox = document.getElementById('aiResultsContainer');
+  if (resultsBox) {
+    resultsBox.style.display = 'block';
+    resultsBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 }
 
 function removeDetectedItem(index) {
-  detectedSchedule.splice(index, 1);
-  if (detectedSchedule.length === 0) {
+  if (detectedSchedule && detectedSchedule.length > index) {
+    detectedSchedule.splice(index, 1);
+  }
+  if (!detectedSchedule || detectedSchedule.length === 0) {
     const resultsBox = document.getElementById('aiResultsContainer');
     if (resultsBox) resultsBox.style.display = 'none';
   } else {
-    renderScheduleReview(detectedSchedule);
+    renderPreviewItems(detectedSchedule);
   }
 }
 
@@ -1821,6 +2221,9 @@ window.renderScheduleReview = renderScheduleReview;
 window.removeDetectedItem = removeDetectedItem;
 window.removeQuickParsedItem = removeDetectedItem;
 window.removeAiParsedItem = removeDetectedItem;
+window.selectElectiveOption = selectElectiveOption;
+window.selectDailyLabOption = selectDailyLabOption;
+window.format12h = format12h;
 window.confirmScheduleImport = confirmScheduleImport;
 window.confirmQuickScheduleImport = confirmScheduleImport;
 window.confirmAiScheduleImport = confirmScheduleImport;

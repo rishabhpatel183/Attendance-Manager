@@ -14,12 +14,12 @@
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" type="image/png" href="icon-192.png">
 
-  <link rel="stylesheet" href="styles.css?v=28">
+  <link rel="stylesheet" href="styles.css?v=29">
 
   <!-- Immediate Auto-Update Engine (Forces clean update on mobile devices) -->
   <script>
     (function() {
-      const APP_BUILD_VER = 'v28_live';
+      const APP_BUILD_VER = 'v29_live';
       if (localStorage.getItem('attendance_app_build') !== APP_BUILD_VER) {
         localStorage.setItem('attendance_app_build', APP_BUILD_VER);
         if ('caches' in window) {
@@ -541,6 +541,21 @@
 
         <!-- Parsed Results Preview Area -->
         <div id="aiResultsContainer" style="display: none; margin-top: 16px;">
+          <!-- Disambiguation / Elective & Lab Selection Wizard -->
+          <div id="aiWizardContainer" style="display: none; margin-bottom: 14px;">
+            <div style="background: linear-gradient(135deg, rgba(0, 214, 143, 0.12), rgba(0, 171, 114, 0.05)); border: 1px solid rgba(0, 214, 143, 0.3); border-radius: 12px; padding: 12px; margin-bottom: 12px;">
+              <div style="font-size: 0.86rem; font-weight: 800; color: var(--color-present); display: flex; align-items: center; gap: 6px;">
+                <span>⚡</span> Choose Your Electives & Labs
+              </div>
+              <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 3px;">
+                Multiple parallel electives and lab batches were detected. Select which ones you attend:
+              </div>
+            </div>
+            <div id="aiWizardCards">
+              <!-- Dynamically injected elective & lab picker cards -->
+            </div>
+          </div>
+
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <span style="font-size: 0.84rem; font-weight: 800; color: #fff;" id="aiDetectedCountBadge">Found 0 Classes</span>
             <button class="btn-chip btn-chip-slate" onclick="resetAiScanner()" style="font-size: 0.7rem; padding: 3px 8px;">Clear</button>
@@ -556,7 +571,7 @@
               Replace existing schedule (uncheck to merge)
             </label>
             <button id="btnConfirmAiImport" class="btn-cta-primary" style="background: linear-gradient(135deg, #00d68f, #00ab72); color: #000; font-weight: 900;" onclick="confirmScheduleImport()">
-              ✅ Save All Classes to Weekly Schedule
+              ✅ Save My Timetable
             </button>
           </div>
         </div>
@@ -570,6 +585,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=28"></script>
+  <script src="app.js?v=29"></script>
 </body>
 </html>
