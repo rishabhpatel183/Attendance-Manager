@@ -544,6 +544,35 @@ body {
   gap: 6px;
 }
 
+.sub-projection-strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+}
+
+.projection-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.proj-lbl {
+  font-size: 0.67rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.proj-val {
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
 .sub-action-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

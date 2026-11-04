@@ -660,6 +660,43 @@ function triggerLecturePrompt(lec, dateStr, promptKey) {
   document.getElementById('promptSubject').textContent = lec.subject;
   document.getElementById('promptTimeRoom').textContent = `${format12h(lec.startTime)} - ${format12h(lec.endTime)} • ${lec.room || 'No Room Specified'}`;
 
+  // Live Attendance Impact Calculation for this lecture
+  const stats = state.calculateStats();
+  const target = state.data.settings.targetPercentage || 75;
+  const subStat = stats.subjects[lec.subject] || { attended: 0, total: 0, hasRecords: false };
+  let attendPct = 100.0;
+  let bunkPct = 0.0;
+  let attendColor = '#4ade80';
+  let bunkColor = '#f87171';
+
+  if (subStat.hasRecords) {
+    const att = subStat.attended;
+    const tot = subStat.total;
+    attendPct = Math.round(((att + 1) / (tot + 1)) * 1000) / 10;
+    bunkPct = Math.round((att / (tot + 1)) * 1000) / 10;
+    attendColor = attendPct >= target ? '#4ade80' : '#f87171';
+    bunkColor = bunkPct >= target ? '#4ade80' : '#f87171';
+  }
+
+  const impactStrip = document.getElementById('promptImpactStrip');
+  if (impactStrip) {
+    impactStrip.innerHTML = `
+      <div class="projection-cell">
+        <span class="proj-lbl">IF ATTENDED</span>
+        <span class="proj-val" style="color: ${attendColor};">${attendPct.toFixed(1)}%</span>
+      </div>
+      <div class="projection-cell" style="justify-content: flex-end; gap: 8px;">
+        <span class="proj-lbl">IF MISSED</span>
+        <span class="proj-val" style="color: ${bunkColor};">${bunkPct.toFixed(1)}%</span>
+      </div>
+    `;
+  }
+
+  const btnPres = document.getElementById('btnPromptPresent');
+  const btnAbs = document.getElementById('btnPromptAbsent');
+  if (btnPres) btnPres.textContent = `✅ Present (${attendPct.toFixed(1)}%)`;
+  if (btnAbs) btnAbs.textContent = `❌ Absent (${bunkPct.toFixed(1)}%)`;
+
   openModal('modalLecturePrompt');
   playNotificationChime();
 
@@ -909,6 +946,21 @@ function renderDashboard() {
 
     const safeSub = sub.subject.replace(/'/g, "\\'");
 
+    // Live Projected Percentage for Next Attendance Action
+    let attendPct = 100.0;
+    let bunkPct = 0.0;
+    let attendColor = '#4ade80';
+    let bunkColor = '#f87171';
+
+    if (sub.hasRecords) {
+      const att = sub.attended;
+      const tot = sub.total;
+      attendPct = Math.round(((att + 1) / (tot + 1)) * 1000) / 10;
+      bunkPct = Math.round((att / (tot + 1)) * 1000) / 10;
+      attendColor = attendPct >= target ? '#4ade80' : '#f87171';
+      bunkColor = bunkPct >= target ? '#4ade80' : '#f87171';
+    }
+
     card.innerHTML = `
       <div class="sub-header-row">
         <div style="flex: 1; min-width: 0;">
@@ -927,17 +979,29 @@ function renderDashboard() {
         <div class="progress-fill" style="width: ${progressPct}%; background: ${progressColor};"></div>
       </div>
 
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.75rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.75rem;">
         <span style="color: ${bunkAdviceColor}; font-weight: 700;">${bunkAdviceText}</span>
         <button class="btn-link-edit" onclick="openDirectAttendanceModal('${safeSub}')" style="font-size: 0.75rem; color: var(--accent-cyan); font-weight: 700; padding: 2px 4px;">✏️ Edit</button>
       </div>
 
+      <!-- Live 1-Tap Attendance Projection -->
+      <div class="sub-projection-strip">
+        <div class="projection-cell">
+          <span class="proj-lbl">IF ATTENDED</span>
+          <span class="proj-val" style="color: ${attendColor};">${attendPct.toFixed(1)}%</span>
+        </div>
+        <div class="projection-cell" style="justify-content: flex-end; gap: 8px;">
+          <span class="proj-lbl">IF MISSED</span>
+          <span class="proj-val" style="color: ${bunkColor};">${bunkPct.toFixed(1)}%</span>
+        </div>
+      </div>
+
       <div class="sub-action-grid">
         <button type="button" class="btn-chip btn-chip-green" style="padding: 10px 12px; font-size: 0.84rem; font-weight: 800; justify-content: center; border-radius: 10px;" onclick="quickAddAttendance('${safeSub}', 'present')">
-          ✅ Present
+          ✅ Present (${attendPct.toFixed(1)}%)
         </button>
         <button type="button" class="btn-chip btn-chip-red" style="padding: 10px 12px; font-size: 0.84rem; font-weight: 800; justify-content: center; border-radius: 10px;" onclick="quickAddAttendance('${safeSub}', 'absent')">
-          ❌ Absent
+          ❌ Absent (${bunkPct.toFixed(1)}%)
         </button>
       </div>
     `;
