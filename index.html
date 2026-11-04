@@ -14,12 +14,12 @@
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" type="image/png" href="icon-192.png">
 
-  <link rel="stylesheet" href="styles.css?v=34">
+  <link rel="stylesheet" href="styles.css?v=35">
 
   <!-- Immediate Auto-Update Engine (Forces clean update on mobile devices) -->
   <script>
     (function() {
-      const APP_BUILD_VER = 'v34_live';
+      const APP_BUILD_VER = 'v35_live';
       if (localStorage.getItem('attendance_app_build') !== APP_BUILD_VER) {
         localStorage.setItem('attendance_app_build', APP_BUILD_VER);
         if ('caches' in window) {
@@ -281,7 +281,7 @@
   <div id="modalLecturePrompt" class="modal-overlay">
     <div class="bottom-sheet prompt-sheet">
       <div class="sheet-handle"></div>
-      <span class="prompt-tag">🔔 LECTURE FINISHED</span>
+      <span class="prompt-tag">🔔 LECTURE ATTENDANCE</span>
       <h2 id="promptSubject" class="prompt-subject-name">Subject Name</h2>
       <p id="promptTimeRoom" class="prompt-meta-text">10:00 - 11:00 • Room 101</p>
 
@@ -301,7 +301,7 @@
         </div>
         <div class="prompt-sub-row">
           <button id="btnPromptCancel" class="btn-prompt-link">⚪ Cancelled / Free</button>
-          <button id="btnPromptSnooze" class="btn-prompt-link">⏱ Snooze 5m</button>
+          <button id="btnPromptSnooze" class="btn-prompt-link">⏱ Snooze 10m</button>
         </div>
       </div>
     </div>
@@ -614,6 +614,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=34"></script>
+  <script src="app.js?v=35"></script>
 </body>
 </html>

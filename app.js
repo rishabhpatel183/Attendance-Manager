@@ -10,7 +10,7 @@ const DEFAULT_STATE = {
     targetPercentage: 75,
     includeSaturday: false,
     soundEnabled: true,
-    snoozeMinutes: 5
+    snoozeMinutes: 10
   },
   timetable: {
     Monday: [],
@@ -44,6 +44,22 @@ function format12h(timeStr) {
   }
   const hStr = h < 10 ? `0${h}` : `${h}`;
   return `${hStr}:${m} ${ampm}`;
+}
+
+// Convert "11:10", "12:50", "01:40", "01:40 PM", "13:40" into minutes from midnight (0..1439)
+function timeStrToMinutes(timeStr) {
+  if (!timeStr || typeof timeStr !== 'string') return -1;
+  const clean = timeStr.trim();
+  const match = clean.match(/^(\d{1,2}):(\d{2})(?:\s*(AM|PM))?$/i);
+  if (!match) return -1;
+  let h = parseInt(match[1], 10);
+  const m = parseInt(match[2], 10);
+  const ampm = (match[3] || '').toUpperCase();
+  if (ampm === 'PM' && h < 12) h += 12;
+  if (ampm === 'AM' && h === 12) h = 0;
+  // If no AM/PM provided and hour is between 1 and 6, assume afternoon college lecture (13:00 to 18:00)
+  if (!ampm && h >= 1 && h <= 6) h += 12;
+  return h * 60 + m;
 }
 
 class AppState {
@@ -236,25 +252,46 @@ class AppState {
     const now = new Date();
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const currentDay = days[now.getDay()];
-    const currentTime = now.toTimeString().slice(0, 5);
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const todayStr = now.toISOString().split('T')[0];
 
     // Check today first
     const todayList = this.data.timetable[currentDay] || [];
-    let nextLec = todayList.find(l => l.endTime > currentTime);
+    const sortedToday = [...todayList].sort((a, b) => timeStrToMinutes(a.startTime) - timeStrToMinutes(b.startTime));
+
+    let nextLec = null;
     let dayLabel = "Today";
 
-    // If no more lectures today, check future days
-    if (!nextLec) {
-      const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-      if (this.data.settings.includeSaturday) dayOrder.push('Saturday');
+    for (let i = 0; i < sortedToday.length; i++) {
+      const lec = sortedToday[i];
+      const startMin = timeStrToMinutes(lec.startTime);
+      // If lecture has already started or passed, skip to find next upcoming lecture
+      if (startMin <= currentMinutes) continue;
 
-      const startIdx = dayOrder.indexOf(currentDay);
-      for (let i = 1; i <= 6; i++) {
-        const nextDayName = dayOrder[(startIdx + i) % dayOrder.length];
-        const nextDayList = this.data.timetable[nextDayName] || [];
-        if (nextDayList.length > 0) {
-          nextLec = nextDayList[0];
-          dayLabel = nextDayName;
+      // Check if user already marked attendance for this class today ahead of time
+      const subLower = lec.subject.trim().toLowerCase();
+      const loggedCount = this.data.records.filter(r => r.date === todayStr && r.subject.trim().toLowerCase() === subLower).length;
+      const priorCount = sortedToday.slice(0, i + 1).filter(x => x.subject.trim().toLowerCase() === subLower).length;
+      if (loggedCount >= priorCount) continue;
+
+      nextLec = lec;
+      break;
+    }
+
+    // If no more upcoming lectures today, check future days
+    if (!nextLec) {
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const currentDayIdx = now.getDay();
+      for (let i = 1; i <= 7; i++) {
+        const targetDayIdx = (currentDayIdx + i) % 7;
+        const targetDayName = dayNames[targetDayIdx];
+        if (targetDayName === 'Sunday') continue;
+        if (targetDayName === 'Saturday' && !this.data.settings.includeSaturday) continue;
+        const dayList = this.data.timetable[targetDayName] || [];
+        if (dayList.length > 0) {
+          const sortedNextDay = [...dayList].sort((a, b) => timeStrToMinutes(a.startTime) - timeStrToMinutes(b.startTime));
+          nextLec = sortedNextDay[0];
+          dayLabel = (i === 1) ? 'Tomorrow' : targetDayName;
           break;
         }
       }
@@ -324,6 +361,32 @@ class AppState {
       notes: notes.trim()
     };
     this.data.records.unshift(newRec);
+
+    // If attendance was logged for today, dismiss any active prompt or snooze for this subject
+    const todayStr = now.toISOString().split('T')[0];
+    if (d === todayStr) {
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const todayName = days[now.getDay()];
+      const todayList = this.data.timetable[todayName] || [];
+      const subLower = subject.trim().toLowerCase();
+      const matchLectures = todayList.filter(l => l.subject.trim().toLowerCase() === subLower);
+      const loggedCount = this.data.records.filter(r => r.date === todayStr && r.subject.trim().toLowerCase() === subLower).length;
+
+      matchLectures.forEach((lec, idx) => {
+        if (loggedCount > idx) {
+          const promptKey = `${todayStr}_${lec.id}`;
+          if (this.snoozeQueue) delete this.snoozeQueue[promptKey];
+          if (!this.data.promptedHistory) this.data.promptedHistory = {};
+          this.data.promptedHistory[promptKey] = 'completed';
+        }
+      });
+
+      if (this.activePrompt && this.activePrompt.lecture.subject.trim().toLowerCase() === subLower) {
+        closeModal('modalLecturePrompt');
+        this.activePrompt = null;
+      }
+    }
+
     this.save();
     return newRec;
   }
@@ -605,7 +668,7 @@ function playNotificationChime() {
   }
 }
 
-// Background Time Monitor for Lecture End Alerts
+// Background Time Monitor for Lecture Start Attendance Alerts
 function checkLectureTimes() {
   const now = new Date();
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -615,27 +678,65 @@ function checkLectureTimes() {
   if (!isMonitored) return;
 
   const todayStr = now.toISOString().split('T')[0];
-  const currentTime = now.toTimeString().slice(0, 5);
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
   const timetableToday = state.data.timetable[dayName] || [];
+  const sortedToday = [...timetableToday].sort((a, b) => timeStrToMinutes(a.startTime) - timeStrToMinutes(b.startTime));
 
-  timetableToday.forEach(lec => {
-    if (!lec.endTime) return;
+  sortedToday.forEach((lec, idx) => {
+    if (!lec.startTime) return;
 
     const promptKey = `${todayStr}_${lec.id}`;
-    if (state.snoozeQueue[promptKey] && now < state.snoozeQueue[promptKey]) return;
-    if (state.data.promptedHistory[promptKey]) return;
 
-    const [h, m] = lec.endTime.split(':').map(Number);
-    const endMinutes = h * 60 + m;
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    // If already marked completed, never prompt again
+    if (state.data.promptedHistory && state.data.promptedHistory[promptKey] === 'completed') {
+      return;
+    }
 
-    if (currentMinutes >= endMinutes && (currentMinutes - endMinutes) <= 240) {
-      const alreadyLogged = state.data.records.some(r => r.date === todayStr && r.subject.toLowerCase() === lec.subject.toLowerCase());
-      if (!alreadyLogged) {
-        state.data.promptedHistory[promptKey] = now.toISOString();
-        state.save();
-        triggerLecturePrompt(lec, todayStr, promptKey);
+    // Check if user already marked attendance manually today for this subject
+    const subLower = lec.subject.trim().toLowerCase();
+    const loggedCountToday = state.data.records.filter(r => 
+      r.date === todayStr && r.subject.trim().toLowerCase() === subLower
+    ).length;
+    const priorCountOfThisSub = sortedToday.slice(0, idx + 1).filter(x => 
+      x.subject.trim().toLowerCase() === subLower
+    ).length;
+
+    if (loggedCountToday >= priorCountOfThisSub) {
+      if (state.snoozeQueue) delete state.snoozeQueue[promptKey];
+      if (!state.data.promptedHistory) state.data.promptedHistory = {};
+      state.data.promptedHistory[promptKey] = 'completed';
+      state.save();
+      return;
+    }
+
+    // If snoozed, check if 10-minute snooze period has elapsed
+    if (state.snoozeQueue && state.snoozeQueue[promptKey]) {
+      const snoozeExpiry = new Date(state.snoozeQueue[promptKey]);
+      if (now < snoozeExpiry) {
+        return; // Still in snooze
       }
+    }
+
+    const startMinutes = timeStrToMinutes(lec.startTime);
+    const endMinutes = timeStrToMinutes(lec.endTime);
+    if (startMinutes < 0) return;
+
+    // Trigger condition:
+    // Lecture has started (currentMinutes >= startMinutes)
+    // Within alert window (e.g. from startTime up to endMinutes + 180 min, or startTime + 240 min)
+    const maxWindow = (endMinutes > 0 && endMinutes >= startMinutes) ? (endMinutes + 180) : (startMinutes + 240);
+
+    if (currentMinutes >= startMinutes && currentMinutes <= maxWindow) {
+      // Don't duplicate if already actively open
+      if (state.activePrompt && state.activePrompt.promptKey === promptKey) {
+        return;
+      }
+      const modal = document.getElementById('modalLecturePrompt');
+      if (modal && modal.classList.contains('open')) {
+        return;
+      }
+
+      triggerLecturePrompt(lec, todayStr, promptKey);
     }
   });
 
@@ -703,7 +804,7 @@ function triggerLecturePrompt(lec, dateStr, promptKey) {
   playNotificationChime();
 
   if ('Notification' in window && Notification.permission === 'granted') {
-    new Notification('⏰ Lecture Finished: ' + lec.subject, {
+    new Notification('⏰ Attendance Check: ' + lec.subject, {
       body: `Did you attend ${lec.subject} (${format12h(lec.startTime)} - ${format12h(lec.endTime)})? Tap to mark attendance.`,
       icon: 'icon-192.png'
     });
@@ -715,12 +816,22 @@ function handlePromptChoice(status) {
   if (!state.activePrompt) return;
 
   const lec = state.activePrompt.lecture;
-  const rec = state.addRecord(lec.subject, status, state.activePrompt.date, lec.endTime);
+  const key = state.activePrompt.promptKey;
+
+  // Mark completed in history and clear snooze
+  if (!state.data.promptedHistory) state.data.promptedHistory = {};
+  state.data.promptedHistory[key] = 'completed';
+  if (state.snoozeQueue) delete state.snoozeQueue[key];
+  state.save();
+
+  const rec = state.addRecord(lec.subject, status, state.activePrompt.date, lec.startTime || lec.endTime);
 
   closeModal('modalLecturePrompt');
+  state.activePrompt = null;
 
   renderDashboard();
   renderHistory();
+  updateUpcomingBanner();
 
   const label = status === 'present' ? 'Present ✅' : (status === 'absent' ? 'Absent ❌' : 'Cancelled ⚪');
   
@@ -728,10 +839,12 @@ function handlePromptChoice(status) {
     state.deleteRecord(rec.id);
     renderDashboard();
     renderHistory();
+    updateUpcomingBanner();
     showBottomToast(`Undone: ${lec.subject}`, '↪️ Redo', () => {
       state.addRecord(lec.subject, status, rec.date, rec.time);
       renderDashboard();
       renderHistory();
+      updateUpcomingBanner();
       hideBottomToast();
     });
   });
@@ -740,10 +853,11 @@ function handlePromptChoice(status) {
 function handlePromptSnooze() {
   if (state.activePrompt) {
     const key = state.activePrompt.promptKey;
-    state.snoozeQueue[key] = new Date(Date.now() + 5 * 60 * 1000);
+    state.snoozeQueue[key] = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes snooze!
   }
   closeModal('modalLecturePrompt');
-  showBottomToast(`Snoozed for 5 minutes ⏱`, 'Dismiss', hideBottomToast);
+  state.activePrompt = null;
+  showBottomToast(`Snoozed for 10 minutes ⏱`, 'Dismiss', hideBottomToast);
 }
 
 // UI Rendering Functions
