@@ -65,13 +65,26 @@ class AppState {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        return {
+        const data = {
           ...DEFAULT_STATE,
           ...parsed,
           settings: { ...DEFAULT_STATE.settings, ...parsed.settings },
           timetable: { ...DEFAULT_STATE.timetable, ...parsed.timetable },
           baseAttendance: { ...(parsed.baseAttendance || {}) }
         };
+
+        // Self-healing migration: Ensure every lecture slot has a guaranteed unique ID
+        const seenIds = new Set();
+        Object.keys(data.timetable || {}).forEach(day => {
+          (data.timetable[day] || []).forEach(lec => {
+            if (!lec.id || seenIds.has(lec.id)) {
+              lec.id = 'lec-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9) + '-' + Math.floor(Math.random() * 100000);
+            }
+            seenIds.add(lec.id);
+          });
+        });
+
+        return data;
       }
     } catch (e) {
       console.warn('Error loading localStorage:', e);
@@ -318,8 +331,9 @@ class AppState {
 
   addLecture(day, subject, startTime, endTime, room) {
     if (!this.data.timetable[day]) this.data.timetable[day] = [];
+    const randPart = Math.random().toString(36).substring(2, 9) + '-' + Math.floor(Math.random() * 100000);
     const newLec = {
-      id: 'lec-' + Date.now(),
+      id: 'lec-' + Date.now() + '-' + randPart,
       subject: subject.trim(),
       startTime: startTime.trim(),
       endTime: endTime.trim(),
@@ -751,8 +765,9 @@ function renderDashboard() {
     card.className = 'subject-card';
 
     let badgeColor = 'var(--text-muted)';
-    let badgeText = 'No records till now';
-    let note = '0 lectures conducted';
+    let badgeText = 'No records';
+    let bunkAdviceText = '0 lectures conducted';
+    let bunkAdviceColor = 'var(--text-muted)';
     let progressPct = 0;
 
     if (sub.hasRecords) {
@@ -760,37 +775,50 @@ function renderDashboard() {
       badgeText = `${sub.pct.toFixed(1)}%`;
       if (sub.pct >= target) {
         badgeColor = 'var(--color-present)';
-        note = `Safe to bunk: ${sub.canBunk}`;
+        bunkAdviceText = `😎 Safe to bunk: ${sub.canBunk} class${sub.canBunk === 1 ? '' : 'es'}`;
+        bunkAdviceColor = 'var(--color-present)';
       } else {
         badgeColor = sub.pct < (target - 10) ? 'var(--color-absent)' : 'var(--color-warn)';
-        note = `Must attend: ${sub.needAttend}`;
+        bunkAdviceText = `⚠️ Must attend: ${sub.needAttend} class${sub.needAttend === 1 ? '' : 'es'}`;
+        bunkAdviceColor = badgeColor;
       }
     }
 
+    const safeSub = sub.subject.replace(/'/g, "\\'");
+
     card.innerHTML = `
       <div class="sub-header-row">
-        <span class="sub-title">${sub.subject}</span>
+        <div style="flex: 1; min-width: 0;">
+          <h3 class="sub-title">${sub.subject}</h3>
+          <div class="sub-stat-text" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+            ${sub.hasRecords ? `Attended: <strong style="color: #fff;">${sub.attended}</strong> / <strong style="color: #fff;">${sub.total}</strong> Classes` : 'No attendance recorded yet'}
+          </div>
+        </div>
         <div style="display: flex; align-items: center; gap: 6px;">
-          <span class="sub-pct-chip" style="background: ${badgeColor}; cursor: pointer;" onclick="openDirectAttendanceModal('${sub.subject}')" title="Click to edit attendance">${badgeText} ✏️</span>
-          <button class="btn-icon-subtle" onclick="confirmDeleteSubject('${sub.subject}')" title="Delete subject from every part of app">🗑️</button>
+          <span class="sub-pct-chip" style="background: ${badgeColor};">${badgeText}</span>
+          <button class="btn-icon-subtle" onclick="confirmDeleteSubject('${safeSub}')" title="Delete subject from schedule">🗑️</button>
         </div>
       </div>
-      <div class="progress-track">
+
+      <div class="progress-track" style="margin: 10px 0 6px 0;">
         <div class="progress-fill" style="width: ${progressPct}%; background: ${badgeColor};"></div>
       </div>
-      <div class="sub-footer-row">
-        <div style="display: flex; align-items: center; gap: 6px;">
-          <span class="sub-stat-text">${sub.attended}/${sub.total} Classes • ${note}</span>
-          <button class="btn-link-edit" onclick="openDirectAttendanceModal('${sub.subject}')" title="Edit attendance numbers">✏️ Edit</button>
-        </div>
-        <div class="sub-btn-group">
-          <button class="btn-chip btn-chip-green" onclick="quickAddAttendance('${sub.subject}', 'present')">+ Present</button>
-          <button class="btn-chip btn-chip-red" onclick="quickAddAttendance('${sub.subject}', 'absent')">+ Absent</button>
-          <button class="btn-chip btn-chip-slate" onclick="openDirectAttendanceModal('${sub.subject}')" title="Set exact attended and total classes">✏️ Edit</button>
-        </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.75rem;">
+        <span style="color: ${bunkAdviceColor}; font-weight: 700;">${bunkAdviceText}</span>
+        <button class="btn-link-edit" onclick="openDirectAttendanceModal('${safeSub}')" style="font-size: 0.75rem; color: var(--accent-cyan); font-weight: 700; padding: 2px 4px;">✏️ Edit</button>
+      </div>
+
+      <div class="sub-action-grid">
+        <button type="button" class="btn-chip btn-chip-green" style="padding: 10px 12px; font-size: 0.84rem; font-weight: 800; justify-content: center; border-radius: 10px;" onclick="quickAddAttendance('${safeSub}', 'present')">
+          ✅ Present
+        </button>
+        <button type="button" class="btn-chip btn-chip-red" style="padding: 10px 12px; font-size: 0.84rem; font-weight: 800; justify-content: center; border-radius: 10px;" onclick="quickAddAttendance('${safeSub}', 'absent')">
+          ❌ Absent
+        </button>
       </div>
     `;
-    container.appendChild(card);
+    subContainer.appendChild(card);
   });
 }
 
@@ -1108,6 +1136,92 @@ function confirmDeleteSubject(subject) {
     updateUpcomingBanner();
     showBottomToast(`Deleted "${subject}" from entire app`, 'Dismiss', hideBottomToast);
   }
+}
+
+// Master Edit All Attendance Modal Handlers
+function openEditAllAttendanceModal() {
+  const uniqueSubs = state.getUniqueSubjects();
+  if (uniqueSubs.length === 0) {
+    showBottomToast('No subjects in schedule to edit.', 'Dismiss', hideBottomToast);
+    return;
+  }
+
+  const container = document.getElementById('editAllSubsList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const stats = state.calculateStats();
+  const target = state.data.settings.targetPercentage || 75;
+
+  uniqueSubs.forEach(s => {
+    const subStat = stats.subjects[s] || { attended: 0, total: 0, hasRecords: false };
+    const row = document.createElement('div');
+    row.className = 'edit-all-sub-row';
+
+    let scoreBadge = '';
+    if (subStat.hasRecords) {
+      const color = subStat.pct >= target ? 'var(--color-present)' : 'var(--color-absent)';
+      scoreBadge = `<span style="font-size: 0.74rem; font-weight: 800; color: ${color};">${subStat.pct.toFixed(1)}%</span>`;
+    }
+
+    row.innerHTML = `
+      <div style="font-weight: 800; font-size: 0.90rem; color: #fff; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+        <span>${s}</span>
+        ${scoreBadge}
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+          <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 4px; font-weight: 600;">Attended</label>
+          <input type="number" min="0" class="form-input-box edit-all-att-input" data-subject="${s.replace(/"/g, '&quot;')}" value="${subStat.hasRecords ? subStat.attended : ''}" placeholder="0" style="padding: 8px 10px; font-size: 0.88rem; font-weight: 800; color: var(--color-present);">
+        </div>
+        <div>
+          <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 4px; font-weight: 600;">Total Held</label>
+          <input type="number" min="0" class="form-input-box edit-all-tot-input" data-subject="${s.replace(/"/g, '&quot;')}" value="${subStat.hasRecords ? subStat.total : ''}" placeholder="0" style="padding: 8px 10px; font-size: 0.88rem; font-weight: 800; color: #fff;">
+        </div>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+
+  openModal('modalEditAllAttendance');
+}
+
+function saveAllSubjectAttendance() {
+  const attInputs = document.querySelectorAll('.edit-all-att-input');
+  const totInputs = document.querySelectorAll('.edit-all-tot-input');
+
+  const updates = [];
+
+  for (let i = 0; i < attInputs.length; i++) {
+    const subject = attInputs[i].getAttribute('data-subject');
+    const attVal = attInputs[i].value.trim();
+    const totVal = totInputs[i].value.trim();
+
+    if (totVal === '' && attVal === '') {
+      continue;
+    }
+
+    const att = parseInt(attVal, 10) || 0;
+    const tot = parseInt(totVal, 10) || 0;
+
+    if (att > tot) {
+      alert(`For "${subject}": Classes attended (${att}) cannot be greater than Total classes held (${tot}).`);
+      return;
+    }
+
+    updates.push({ subject, att, tot });
+  }
+
+  updates.forEach(u => {
+    state.setSubjectAttendance(u.subject, u.att, u.tot);
+  });
+
+  state.save();
+  closeModal('modalEditAllAttendance');
+  renderDashboard();
+  renderHistory();
+  updateUpcomingBanner();
+  showBottomToast(`🎉 Successfully updated attendance for ${updates.length} subjects!`, 'Dismiss', hideBottomToast);
 }
 
 // ================= UNIFIED TIMETABLE CREATOR (AI PHOTO SCAN + INSTANT TEXT) =================
@@ -2224,6 +2338,8 @@ window.removeAiParsedItem = removeDetectedItem;
 window.selectElectiveOption = selectElectiveOption;
 window.selectDailyLabOption = selectDailyLabOption;
 window.format12h = format12h;
+window.openEditAllAttendanceModal = openEditAllAttendanceModal;
+window.saveAllSubjectAttendance = saveAllSubjectAttendance;
 window.confirmScheduleImport = confirmScheduleImport;
 window.confirmQuickScheduleImport = confirmScheduleImport;
 window.confirmAiScheduleImport = confirmScheduleImport;

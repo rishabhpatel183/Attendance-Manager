@@ -14,12 +14,12 @@
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" type="image/png" href="icon-192.png">
 
-  <link rel="stylesheet" href="styles.css?v=29">
+  <link rel="stylesheet" href="styles.css?v=30">
 
   <!-- Immediate Auto-Update Engine (Forces clean update on mobile devices) -->
   <script>
     (function() {
-      const APP_BUILD_VER = 'v29_live';
+      const APP_BUILD_VER = 'v30_live';
       if (localStorage.getItem('attendance_app_build') !== APP_BUILD_VER) {
         localStorage.setItem('attendance_app_build', APP_BUILD_VER);
         if ('caches' in window) {
@@ -123,12 +123,14 @@
 
       <!-- Subject Breakdown Section (Hidden when no subjects exist) -->
       <div id="subjectBreakdownSection" style="display: none;">
-        <div class="section-header">
-          <h2 class="section-title">Subject Breakdown</h2>
-          <div style="display: flex; gap: 6px;">
-            <button id="btnDashAiTimetable" class="btn-chip btn-chip-ai">✨ AI Schedule</button>
-            <button id="btnDashAddLec" class="btn-chip btn-chip-blue">+ Add Lecture</button>
+        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 8px;">
+          <div>
+            <h2 class="section-title" style="margin-bottom: 2px;">All Subjects Attendance</h2>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">1-Tap to mark Present or Absent directly:</div>
           </div>
+          <button class="btn-chip btn-chip-slate" onclick="openEditAllAttendanceModal()" style="font-size: 0.76rem; font-weight: 800; padding: 7px 12px; border-radius: 9px; white-space: nowrap;">
+            📝 Edit All Attendance
+          </button>
         </div>
         <div id="subjectListContainer">
           <!-- Injected via app.js -->
@@ -448,6 +450,29 @@
     </div>
   </div>
 
+  <!-- Modal: Edit All Subject Attendance Sheet -->
+  <div id="modalEditAllAttendance" class="modal-overlay">
+    <div class="bottom-sheet" style="max-height: 88vh; display: flex; flex-direction: column;">
+      <div class="sheet-handle"></div>
+      <div class="modal-title-bar">
+        <h3 class="modal-heading">📝 Edit All Attendance</h3>
+        <button class="btn-close-modal" onclick="closeModal('modalEditAllAttendance')">&times;</button>
+      </div>
+
+      <p style="font-size: 0.80rem; color: var(--text-muted); margin-bottom: 12px;">
+        Quickly update your attended and total class counts for all subjects in one place:
+      </p>
+
+      <div id="editAllSubsList" style="flex: 1; overflow-y: auto; padding-right: 4px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+        <!-- Injected dynamically by app.js -->
+      </div>
+
+      <button type="button" class="btn-cta-primary" style="background: linear-gradient(135deg, #00d68f, #00ab72); color: #000; font-weight: 900;" onclick="saveAllSubjectAttendance()">
+        ✅ Save All Attendance
+      </button>
+    </div>
+  </div>
+
   <!-- Unified Timetable Schedule Creator Modal (Photo AI Scan + Smart Text Import) -->
   <div id="modalScheduleCreator" class="modal-overlay">
     <div class="bottom-sheet" style="max-height: 92vh; display: flex; flex-direction: column;">
@@ -585,6 +610,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=29"></script>
+  <script src="app.js?v=30"></script>
 </body>
 </html>

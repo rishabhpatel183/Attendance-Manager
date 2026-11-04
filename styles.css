@@ -542,6 +542,24 @@ body {
   gap: 6px;
 }
 
+.sub-action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.edit-all-sub-row {
+  background: #111;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 12px;
+  transition: border-color 0.2s ease;
+}
+
+.edit-all-sub-row:focus-within {
+  border-color: var(--color-present);
+}
+
 .btn-chip {
   padding: 6px 12px;
   border-radius: 10px;

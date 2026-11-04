@@ -1,9 +1,9 @@
-const CACHE_NAME = 'attendance-v29-live';
+const CACHE_NAME = 'attendance-v30-live';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './styles.css?v=29',
-  './app.js?v=29',
+  './styles.css?v=30',
+  './app.js?v=30',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
