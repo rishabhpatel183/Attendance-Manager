@@ -14,12 +14,12 @@
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" type="image/png" href="icon-192.png">
 
-  <link rel="stylesheet" href="styles.css?v=35">
+  <link rel="stylesheet" href="styles.css?v=36">
 
   <!-- Immediate Auto-Update Engine (Forces clean update on mobile devices) -->
   <script>
     (function() {
-      const APP_BUILD_VER = 'v35_live';
+      const APP_BUILD_VER = 'v36_live';
       if (localStorage.getItem('attendance_app_build') !== APP_BUILD_VER) {
         localStorage.setItem('attendance_app_build', APP_BUILD_VER);
         if ('caches' in window) {
@@ -68,7 +68,11 @@
       </div>
     </div>
     <div class="header-actions">
-      <button id="btnNotifyPermission" class="btn-icon-round" title="Enable Notifications">🔔</button>
+      <button id="btnTogglePopup" class="btn-popup-toggle" title="Turn Lecture Pop-ups On or Off">
+        <span id="popupToggleIcon">🔔</span>
+        <span id="popupToggleText" class="popup-toggle-label">Pop-ups ON</span>
+      </button>
+      <button id="btnNotifyPermission" class="btn-icon-round" title="Enable System Notifications">📲</button>
       <button id="btnQuickTestPrompt" class="btn-icon-round" title="Test Pop-up Alert">⚡</button>
     </div>
   </header>
@@ -96,10 +100,13 @@
     <!-- TAB 1: DASHBOARD (FOCUSED ON UPCOMING CLASS & BUNK PREDICTOR) -->
     <section id="tab-dashboard" class="tab-pane active">
 
-      <!-- Dashboard Top Header Bar with direct Quick Import and Add buttons -->
-      <div class="section-header" style="margin-bottom: 12px;">
+      <!-- Dashboard Top Header Bar with direct Quick Import, Add buttons and Whole Day Absent -->
+      <div class="section-header" style="margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
         <h2 class="section-title">Dashboard</h2>
-        <div style="display: flex; gap: 6px; align-items: center;">
+        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+          <button id="btnMarkDayAbsent" class="btn-chip btn-chip-red" title="Mark Absent for entire day">
+            <span>🚫</span> Absent Today
+          </button>
           <button id="btnDashTopAi" class="btn-chip btn-chip-ai" title="AI Timetable Scanner">✨ AI Timetable</button>
           <button id="btnDashTopAdd" class="btn-chip btn-chip-blue" title="Add Lecture Slot">+ Add Lecture</button>
         </div>
@@ -281,7 +288,7 @@
   <div id="modalLecturePrompt" class="modal-overlay">
     <div class="bottom-sheet prompt-sheet">
       <div class="sheet-handle"></div>
-      <span class="prompt-tag">🔔 LECTURE ATTENDANCE</span>
+      <span id="promptQueueTag" class="prompt-tag">🔔 LECTURE ATTENDANCE</span>
       <h2 id="promptSubject" class="prompt-subject-name">Subject Name</h2>
       <p id="promptTimeRoom" class="prompt-meta-text">10:00 - 11:00 • Room 101</p>
 
@@ -614,6 +621,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=35"></script>
+  <script src="app.js?v=36"></script>
 </body>
 </html>

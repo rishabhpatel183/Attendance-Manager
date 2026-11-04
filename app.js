@@ -10,7 +10,8 @@ const DEFAULT_STATE = {
     targetPercentage: 75,
     includeSaturday: false,
     soundEnabled: true,
-    snoozeMinutes: 10
+    snoozeMinutes: 10,
+    popupEnabled: true
   },
   timetable: {
     Monday: [],
@@ -22,7 +23,8 @@ const DEFAULT_STATE = {
   },
   baseAttendance: {}, // { [subject]: { attended: number, total: number } }
   records: [],
-  promptedHistory: {}
+  promptedHistory: {},
+  dayAbsent: {} // { [dateStr]: true }
 };
 
 // 12-Hour Clock Formatter (e.g. "13:40" -> "01:40 PM", "08:30" -> "08:30 AM")
@@ -86,7 +88,8 @@ class AppState {
           ...parsed,
           settings: { ...DEFAULT_STATE.settings, ...parsed.settings },
           timetable: { ...DEFAULT_STATE.timetable, ...parsed.timetable },
-          baseAttendance: { ...(parsed.baseAttendance || {}) }
+          baseAttendance: { ...(parsed.baseAttendance || {}) },
+          dayAbsent: { ...(parsed.dayAbsent || {}) }
         };
 
         // Self-healing migration: Ensure every lecture slot has a guaranteed unique ID
@@ -668,31 +671,33 @@ function playNotificationChime() {
   }
 }
 
-// Background Time Monitor for Lecture Start Attendance Alerts
-function checkLectureTimes() {
+// Get all unrecorded lectures scheduled for today whose start time has arrived
+function getPendingLecturesToday() {
   const now = new Date();
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const dayName = days[now.getDay()];
 
   const isMonitored = (dayName !== 'Sunday') && (dayName !== 'Saturday' || state.data.settings.includeSaturday);
-  if (!isMonitored) return;
+  if (!isMonitored) return [];
+  if (state.data.settings.popupEnabled === false) return [];
 
   const todayStr = now.toISOString().split('T')[0];
+  if (state.data.dayAbsent && state.data.dayAbsent[todayStr]) return [];
+
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
   const timetableToday = state.data.timetable[dayName] || [];
   const sortedToday = [...timetableToday].sort((a, b) => timeStrToMinutes(a.startTime) - timeStrToMinutes(b.startTime));
+
+  const pending = [];
 
   sortedToday.forEach((lec, idx) => {
     if (!lec.startTime) return;
 
     const promptKey = `${todayStr}_${lec.id}`;
-
-    // If already marked completed, never prompt again
     if (state.data.promptedHistory && state.data.promptedHistory[promptKey] === 'completed') {
       return;
     }
 
-    // Check if user already marked attendance manually today for this subject
     const subLower = lec.subject.trim().toLowerCase();
     const loggedCountToday = state.data.records.filter(r => 
       r.date === todayStr && r.subject.trim().toLowerCase() === subLower
@@ -705,41 +710,51 @@ function checkLectureTimes() {
       if (state.snoozeQueue) delete state.snoozeQueue[promptKey];
       if (!state.data.promptedHistory) state.data.promptedHistory = {};
       state.data.promptedHistory[promptKey] = 'completed';
-      state.save();
       return;
     }
 
-    // If snoozed, check if 10-minute snooze period has elapsed
     if (state.snoozeQueue && state.snoozeQueue[promptKey]) {
       const snoozeExpiry = new Date(state.snoozeQueue[promptKey]);
       if (now < snoozeExpiry) {
-        return; // Still in snooze
+        return; // still in snooze
       }
     }
 
     const startMinutes = timeStrToMinutes(lec.startTime);
-    const endMinutes = timeStrToMinutes(lec.endTime);
     if (startMinutes < 0) return;
 
-    // Trigger condition:
-    // Lecture has started (currentMinutes >= startMinutes)
-    // Within alert window (e.g. from startTime up to endMinutes + 180 min, or startTime + 240 min)
-    const maxWindow = (endMinutes > 0 && endMinutes >= startMinutes) ? (endMinutes + 180) : (startMinutes + 240);
-
-    if (currentMinutes >= startMinutes && currentMinutes <= maxWindow) {
-      // Don't duplicate if already actively open
-      if (state.activePrompt && state.activePrompt.promptKey === promptKey) {
-        return;
-      }
-      const modal = document.getElementById('modalLecturePrompt');
-      if (modal && modal.classList.contains('open')) {
-        return;
-      }
-
-      triggerLecturePrompt(lec, todayStr, promptKey);
+    // Has lecture started today?
+    if (currentMinutes >= startMinutes) {
+      pending.push({ lecture: lec, date: todayStr, promptKey: promptKey });
     }
   });
 
+  return pending;
+}
+
+// Background Time Monitor for Lecture Start Attendance Alerts
+function checkLectureTimes() {
+  if (state.data.settings.popupEnabled === false) {
+    updateUpcomingBanner();
+    return;
+  }
+
+  const pending = getPendingLecturesToday();
+  if (pending.length === 0) {
+    updateUpcomingBanner();
+    return;
+  }
+
+  // If a prompt modal is currently open on screen, do not disrupt the user
+  const modal = document.getElementById('modalLecturePrompt');
+  if (modal && modal.classList.contains('open') && state.activePrompt) {
+    updateUpcomingBanner();
+    return;
+  }
+
+  // Take the first pending lecture in the queue!
+  const nextItem = pending[0];
+  triggerLecturePrompt(nextItem.lecture, nextItem.date, nextItem.promptKey, pending.length);
   updateUpcomingBanner();
 }
 
@@ -756,10 +771,19 @@ function updateUpcomingBanner() {
 }
 
 // Trigger Bottom Sheet Prompt
-function triggerLecturePrompt(lec, dateStr, promptKey) {
+function triggerLecturePrompt(lec, dateStr, promptKey, queueCount = 1) {
   state.activePrompt = { lecture: lec, date: dateStr, promptKey };
   document.getElementById('promptSubject').textContent = lec.subject;
   document.getElementById('promptTimeRoom').textContent = `${format12h(lec.startTime)} - ${format12h(lec.endTime)} • ${lec.room || 'No Room Specified'}`;
+
+  const queueTag = document.getElementById('promptQueueTag');
+  if (queueTag) {
+    if (queueCount > 1) {
+      queueTag.textContent = `🔔 LECTURE ATTENDANCE • 1 OF ${queueCount} PENDING`;
+    } else {
+      queueTag.textContent = `🔔 LECTURE ATTENDANCE`;
+    }
+  }
 
   // Live Attendance Impact Calculation for this lecture (Smart Action Tile)
   const stats = state.calculateStats();
@@ -834,20 +858,29 @@ function handlePromptChoice(status) {
   updateUpcomingBanner();
 
   const label = status === 'present' ? 'Present ✅' : (status === 'absent' ? 'Absent ❌' : 'Cancelled ⚪');
-  
-  showBottomToast(`Marked ${lec.subject} as ${label}`, '↩️ Undo', () => {
-    state.deleteRecord(rec.id);
-    renderDashboard();
-    renderHistory();
-    updateUpcomingBanner();
-    showBottomToast(`Undone: ${lec.subject}`, '↪️ Redo', () => {
-      state.addRecord(lec.subject, status, rec.date, rec.time);
+
+  // Check if there are more pending lectures in the queue today!
+  const remaining = getPendingLecturesToday();
+  if (remaining.length > 0) {
+    // Sequentially present next lecture 1-by-1 smoothly!
+    setTimeout(() => {
+      checkLectureTimes();
+    }, 280);
+  } else {
+    showBottomToast(`Marked ${lec.subject} as ${label}`, '↩️ Undo', () => {
+      state.deleteRecord(rec.id);
       renderDashboard();
       renderHistory();
       updateUpcomingBanner();
-      hideBottomToast();
+      showBottomToast(`Undone: ${lec.subject}`, '↪️ Redo', () => {
+        state.addRecord(lec.subject, status, rec.date, rec.time);
+        renderDashboard();
+        renderHistory();
+        updateUpcomingBanner();
+        hideBottomToast();
+      });
     });
-  });
+  }
 }
 
 function handlePromptSnooze() {
@@ -860,8 +893,113 @@ function handlePromptSnooze() {
   showBottomToast(`Snoozed for 10 minutes ⏱`, 'Dismiss', hideBottomToast);
 }
 
+// Mark Absent for entire day
+function markDayAbsent() {
+  const now = new Date();
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const dayName = days[now.getDay()];
+
+  if (dayName === 'Sunday') {
+    showBottomToast('Today is Sunday! No classes scheduled.', 'Dismiss', hideBottomToast);
+    return;
+  }
+  if (dayName === 'Saturday' && !state.data.settings.includeSaturday) {
+    showBottomToast('Saturday is not in your active schedule.', 'Dismiss', hideBottomToast);
+    return;
+  }
+
+  const todayStr = now.toISOString().split('T')[0];
+  const timetableToday = state.data.timetable[dayName] || [];
+
+  if (timetableToday.length === 0) {
+    showBottomToast(`No lectures scheduled for today (${dayName}).`, 'Dismiss', hideBottomToast);
+    return;
+  }
+
+  if (state.data.dayAbsent && state.data.dayAbsent[todayStr]) {
+    showBottomToast(`Already marked absent for all lectures today! 🏖`, 'Dismiss', hideBottomToast);
+    return;
+  }
+
+  const confirmMsg = `Mark yourself Absent for ALL ${timetableToday.length} scheduled lectures today (${dayName})?\n\nThis will log Absent for each lecture and disable attendance pop-ups for today.`;
+  if (!confirm(confirmMsg)) return;
+
+  const addedRecIds = [];
+  timetableToday.forEach(lec => {
+    const promptKey = `${todayStr}_${lec.id}`;
+    const rec = state.addRecord(lec.subject, 'absent', todayStr, lec.startTime, 'Whole Day Absent');
+    addedRecIds.push(rec.id);
+
+    if (state.snoozeQueue) delete state.snoozeQueue[promptKey];
+    if (!state.data.promptedHistory) state.data.promptedHistory = {};
+    state.data.promptedHistory[promptKey] = 'completed';
+  });
+
+  if (!state.data.dayAbsent) state.data.dayAbsent = {};
+  state.data.dayAbsent[todayStr] = true;
+  state.save();
+
+  closeModal('modalLecturePrompt');
+  state.activePrompt = null;
+
+  renderDashboard();
+  renderHistory();
+  updateUpcomingBanner();
+
+  showBottomToast(`Marked Absent for all ${timetableToday.length} lectures today! 🚫`, '↩️ Undo', () => {
+    addedRecIds.forEach(id => state.deleteRecord(id));
+    if (state.data.dayAbsent) delete state.data.dayAbsent[todayStr];
+    timetableToday.forEach(lec => {
+      const promptKey = `${todayStr}_${lec.id}`;
+      if (state.data.promptedHistory) delete state.data.promptedHistory[promptKey];
+    });
+    state.save();
+    renderDashboard();
+    renderHistory();
+    updateUpcomingBanner();
+    showBottomToast('Full day absent undone.', 'Dismiss', hideBottomToast);
+  });
+}
+
+// Pop-up Alert ON/OFF Toggle
+function updatePopupToggleButton() {
+  const btn = document.getElementById('btnTogglePopup');
+  const icon = document.getElementById('popupToggleIcon');
+  const text = document.getElementById('popupToggleText');
+  if (!btn || !icon || !text) return;
+
+  const isEnabled = state.data.settings.popupEnabled !== false;
+  if (isEnabled) {
+    btn.classList.remove('is-off');
+    icon.textContent = '🔔';
+    text.textContent = 'Pop-ups ON';
+    btn.title = 'Lecture pop-ups are currently ON. Tap to turn OFF.';
+  } else {
+    btn.classList.add('is-off');
+    icon.textContent = '🔕';
+    text.textContent = 'Pop-ups OFF';
+    btn.title = 'Lecture pop-ups are currently OFF. Tap to turn ON.';
+  }
+}
+
+function toggleLecturePopups() {
+  state.data.settings.popupEnabled = !(state.data.settings.popupEnabled !== false);
+  state.save();
+  updatePopupToggleButton();
+
+  if (state.data.settings.popupEnabled) {
+    showBottomToast('Lecture Pop-ups turned ON 🔔', 'Dismiss', hideBottomToast);
+    checkLectureTimes();
+  } else {
+    closeModal('modalLecturePrompt');
+    state.activePrompt = null;
+    showBottomToast('Lecture Pop-ups turned OFF 🔕', 'Dismiss', hideBottomToast);
+  }
+}
+
 // UI Rendering Functions
 function renderDashboard() {
+  updatePopupToggleButton();
   const uniqueSubs = state.getUniqueSubjects();
   const heroContainer = document.getElementById('heroFocusContainer');
   const lastContainer = document.getElementById('lastUpdatedContainer');
@@ -2866,6 +3004,15 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // Pop-up Alert ON/OFF Toggle Button
+  const btnToggle = document.getElementById('btnTogglePopup');
+  if (btnToggle) btnToggle.addEventListener('click', toggleLecturePopups);
+  updatePopupToggleButton();
+
+  // Mark Whole Day Absent Button on Dashboard
+  const btnDayAbs = document.getElementById('btnMarkDayAbsent');
+  if (btnDayAbs) btnDayAbs.addEventListener('click', markDayAbsent);
 
   // Notification Permission
   document.getElementById('btnNotifyPermission').addEventListener('click', () => {
