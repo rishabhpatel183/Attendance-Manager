@@ -14,12 +14,12 @@
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" type="image/png" href="icon-192.png">
 
-  <link rel="stylesheet" href="styles.css?v=33">
+  <link rel="stylesheet" href="styles.css?v=34">
 
   <!-- Immediate Auto-Update Engine (Forces clean update on mobile devices) -->
   <script>
     (function() {
-      const APP_BUILD_VER = 'v33_live';
+      const APP_BUILD_VER = 'v34_live';
       if (localStorage.getItem('attendance_app_build') !== APP_BUILD_VER) {
         localStorage.setItem('attendance_app_build', APP_BUILD_VER);
         if ('caches' in window) {
@@ -285,18 +285,19 @@
       <h2 id="promptSubject" class="prompt-subject-name">Subject Name</h2>
       <p id="promptTimeRoom" class="prompt-meta-text">10:00 - 11:00 • Room 101</p>
 
-      <p style="font-size: 0.95rem; font-weight: 800; margin-bottom: 12px; color: #fff;">
+      <p style="font-size: 0.95rem; font-weight: 800; margin-bottom: 16px; color: #fff;">
         Were you present or absent today?
       </p>
 
       <!-- Action Choice Buttons -->
       <div id="promptActionView">
-        <div id="promptImpactStrip" class="sub-projection-strip" style="margin-bottom: 14px;">
-          <!-- Dynamically populated via triggerLecturePrompt -->
-        </div>
         <div class="prompt-grid-btns">
-          <button id="btnPromptPresent" class="btn-touch-present">✅ Present</button>
-          <button id="btnPromptAbsent" class="btn-touch-absent">❌ Absent</button>
+          <button id="btnPromptPresent" class="btn-touch-present">
+            <span style="font-size: 0.95rem; font-weight: 800;">✅ Present</span>
+          </button>
+          <button id="btnPromptAbsent" class="btn-touch-absent">
+            <span style="font-size: 0.95rem; font-weight: 800;">❌ Absent</span>
+          </button>
         </div>
         <div class="prompt-sub-row">
           <button id="btnPromptCancel" class="btn-prompt-link">⚪ Cancelled / Free</button>
@@ -613,6 +614,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=33"></script>
+  <script src="app.js?v=34"></script>
 </body>
 </html>

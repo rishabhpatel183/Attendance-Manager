@@ -544,39 +544,66 @@ body {
   gap: 6px;
 }
 
-.sub-projection-strip {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  padding: 6px 10px;
-  margin-bottom: 8px;
-}
-
-.projection-cell {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.proj-lbl {
-  font-size: 0.67rem;
-  color: var(--text-muted);
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.proj-val {
-  font-size: 0.82rem;
-  font-weight: 900;
-}
-
+/* Smart Action Tiles (Option 1: 2-Line Action Buttons with Live Projection) */
 .sub-action-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 10px;
+}
+
+.btn-action-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  width: 100%;
+}
+
+.tile-main-label {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tile-sub-metric {
+  font-size: 0.74rem;
+  font-weight: 700;
+  margin-top: 3px;
+  letter-spacing: -0.01em;
+}
+
+.tile-present {
+  background: #141f17;
+  border: 1px solid #285437;
+  color: #ffffff;
+}
+
+.tile-present:hover, .tile-present:active {
+  background: #1a2c1f;
+  border-color: #22c55e;
+  transform: scale(0.97);
+}
+
+.tile-absent {
+  background: #241416;
+  border: 1px solid #54282e;
+  color: #ffffff;
+}
+
+.tile-absent:hover, .tile-absent:active {
+  background: #30171a;
+  border-color: #ef4444;
+  transform: scale(0.97);
 }
 
 .edit-all-sub-row {
@@ -1159,31 +1186,45 @@ body {
 }
 
 .btn-touch-present {
-  background: linear-gradient(135deg, var(--color-present), var(--color-present-dark));
+  background: #141f17;
+  border: 1px solid #285437;
   color: #fff;
-  border: none;
-  padding: 14px;
+  padding: 12px 10px;
   border-radius: 14px;
-  font-size: 1.05rem;
-  font-weight: 800;
-  box-shadow: 0 4px 14px rgba(0, 214, 143, 0.35);
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  transition: all 0.15s ease;
+}
+
+.btn-touch-present:hover, .btn-touch-present:active {
+  background: #1a2c1f;
+  border-color: #22c55e;
+  transform: scale(0.97);
 }
 
 .btn-touch-absent {
-  background: linear-gradient(135deg, var(--color-absent), var(--color-absent-dark));
+  background: #241416;
+  border: 1px solid #54282e;
   color: #fff;
-  border: none;
-  padding: 14px;
+  padding: 12px 10px;
   border-radius: 14px;
-  font-size: 1.05rem;
-  font-weight: 800;
-  box-shadow: 0 4px 14px rgba(255, 59, 92, 0.35);
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  transition: all 0.15s ease;
 }
 
-.btn-touch-present:active, .btn-touch-absent:active {
-  transform: scale(0.96);
+.btn-touch-absent:hover, .btn-touch-absent:active {
+  background: #30171a;
+  border-color: #ef4444;
+  transform: scale(0.97);
 }
 
 .prompt-sub-row {
