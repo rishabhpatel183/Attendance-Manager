@@ -113,6 +113,33 @@ class AppState {
     return Array.from(subs).sort((a, b) => a.localeCompare(b));
   }
 
+  // Get real-time cumulative stats for a single subject before any edit
+  getCurrentSubjectStats(subject) {
+    const s = (subject || '').trim();
+    const base = (this.data.baseAttendance && this.data.baseAttendance[s]) || { attended: 0, total: 0 };
+    let att = base.attended || 0;
+    let tot = base.total || 0;
+
+    (this.data.records || []).forEach(r => {
+      if ((r.subject || '').trim().toLowerCase() !== s.toLowerCase()) return;
+      if (r.archived || r.type === 'adjustment' || r.status === 'edited') return;
+      const st = (r.status || '').toLowerCase();
+      if (st === 'present') {
+        att++;
+        tot++;
+      } else if (st === 'absent') {
+        tot++;
+      }
+    });
+
+    return {
+      attended: att,
+      total: tot,
+      absent: Math.max(0, tot - att),
+      hasRecords: tot > 0
+    };
+  }
+
   calculateStats() {
     const target = (this.data.settings.targetPercentage || 75) / 100;
     const overall = { attended: 0, absent: 0, cancelled: 0, total: 0, pct: null, canBunk: 0, needAttend: 0, hasRecords: false };
@@ -147,6 +174,9 @@ class AppState {
       const s = (r.subject || '').trim();
       // Only process records for subjects currently active in the schedule
       if (!subjects[s]) return;
+
+      // Skip adjustment/edit records and archived records to prevent double-counting on baseAttendance!
+      if (r.archived || r.type === 'adjustment' || r.status === 'edited') return;
 
       const st = (r.status || '').toLowerCase();
       if (st === 'present') {
@@ -301,6 +331,7 @@ class AppState {
   toggleRecordStatus(id) {
     const rec = this.data.records.find(r => r.id === id);
     if (rec) {
+      if (rec.type === 'adjustment' || rec.status === 'edited') return null;
       if (rec.status === 'present') rec.status = 'absent';
       else if (rec.status === 'absent') rec.status = 'present';
       else rec.status = 'present';
@@ -312,6 +343,24 @@ class AppState {
 
   deleteRecord(id) {
     const rec = this.data.records.find(r => r.id === id);
+    if (!rec) return null;
+
+    if (rec.type === 'adjustment') {
+      const s = rec.subject;
+      if (rec.hadBase) {
+        if (!this.data.baseAttendance) this.data.baseAttendance = {};
+        this.data.baseAttendance[s] = { attended: rec.prevBaseAttended, total: rec.prevBaseTotal };
+      } else {
+        if (this.data.baseAttendance) delete this.data.baseAttendance[s];
+      }
+      // Unarchive prior records for this subject
+      (this.data.records || []).forEach(r => {
+        if ((r.subject || '').trim().toLowerCase() === (s || '').trim().toLowerCase() && r.id !== id) {
+          r.archived = false;
+        }
+      });
+    }
+
     this.data.records = this.data.records.filter(r => r.id !== id);
     this.save();
     return rec;
@@ -354,21 +403,73 @@ class AppState {
     this.save();
   }
 
-  setSubjectAttendance(subject, attended, total) {
+  setSubjectAttendance(subject, attended, total, reason = 'Direct Attendance Edit') {
     const s = subject.trim();
     if (!this.data.baseAttendance) this.data.baseAttendance = {};
-    const att = Math.max(0, parseInt(attended) || 0);
-    const tot = Math.max(att, parseInt(total) || 0);
 
-    if (tot === 0 && att === 0) {
-      delete this.data.baseAttendance[s];
-    } else {
-      this.data.baseAttendance[s] = { attended: att, total: tot };
+    const prev = this.getCurrentSubjectStats(s);
+    const newAtt = Math.max(0, parseInt(attended) || 0);
+    const newTot = Math.max(newAtt, parseInt(total) || 0);
+    const newAbs = Math.max(0, newTot - newAtt);
+
+    // If identical to current counts, avoid generating redundant log
+    if (prev.hasRecords && prev.attended === newAtt && prev.total === newTot) {
+      return null;
     }
 
-    // Clear individual historical records for this subject since base attendance reflects cumulative past state
-    this.data.records = this.data.records.filter(r => (r.subject || '').trim().toLowerCase() !== s.toLowerCase());
+    const prevAtt = prev.attended || 0;
+    const prevTot = prev.total || 0;
+    const prevAbs = prev.absent || 0;
+    const diffAtt = newAtt - prevAtt;
+    const diffAbs = newAbs - prevAbs;
+
+    const hadBase = Boolean(this.data.baseAttendance && this.data.baseAttendance[s]);
+    const prevBaseAtt = hadBase ? (this.data.baseAttendance[s].attended || 0) : 0;
+    const prevBaseTot = hadBase ? (this.data.baseAttendance[s].total || 0) : 0;
+
+    // Archive prior individual records for this subject so they don't double count on top of baseAttendance
+    if (Array.isArray(this.data.records)) {
+      this.data.records.forEach(r => {
+        if ((r.subject || '').trim().toLowerCase() === s.toLowerCase() && r.type !== 'adjustment') {
+          r.archived = true;
+        }
+      });
+    }
+
+    if (newTot === 0 && newAtt === 0) {
+      delete this.data.baseAttendance[s];
+    } else {
+      this.data.baseAttendance[s] = { attended: newAtt, total: newTot };
+    }
+
+    // Insert clear single adjustment block into History
+    const now = new Date();
+    const editRec = {
+      id: 'rec-edit-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+      type: 'adjustment',
+      status: 'edited',
+      subject: s,
+      date: now.toISOString().split('T')[0],
+      time: now.toTimeString().slice(0, 5),
+      prevAttended: prevAtt,
+      prevTotal: prevTot,
+      prevAbsent: prevAbs,
+      newAttended: newAtt,
+      newTotal: newTot,
+      newAbsent: newAbs,
+      diffAttended: diffAtt,
+      diffAbsent: diffAbs,
+      hadPriorRecords: prev.hasRecords,
+      hadBase: hadBase,
+      prevBaseAttended: prevBaseAtt,
+      prevBaseTotal: prevBaseTot,
+      notes: reason
+    };
+
+    if (!Array.isArray(this.data.records)) this.data.records = [];
+    this.data.records.unshift(editRec);
     this.save();
+    return editRec;
   }
 
   deleteSubjectCompletely(subject) {
@@ -733,25 +834,44 @@ function renderDashboard() {
     `;
   }
 
-  // 3. Last Class Updated Strip (Only if last record belongs to an active subject)
+  // 3. Last Action Updated Strip (Only if last record belongs to an active subject)
   if (lastRecord && uniqueSubs.includes(lastRecord.subject)) {
-    const isPres = lastRecord.status === 'present';
-    const stIcon = isPres ? '✅' : (lastRecord.status === 'absent' ? '❌' : '⚪');
-    const stColor = isPres ? 'var(--color-present)' : (lastRecord.status === 'absent' ? 'var(--color-absent)' : 'var(--text-muted)');
-    const stText = isPres ? 'Present' : (lastRecord.status === 'absent' ? 'Absent' : 'Cancelled');
+    const isEdit = lastRecord.type === 'adjustment' || lastRecord.status === 'edited';
 
-    lastContainer.innerHTML = `
-      <div class="last-updated-strip">
-        <div class="last-up-left">
-          <span class="last-up-icon">${stIcon}</span>
-          <div>
-            <div class="last-up-title">Last Class: ${lastRecord.subject} (${stText})</div>
-            <div class="last-up-time">📅 ${lastRecord.date} at ${lastRecord.time}</div>
+    if (isEdit) {
+      const att = lastRecord.newAttended || 0;
+      const tot = lastRecord.newTotal || 0;
+      const safeSub = lastRecord.subject.replace(/'/g, "\\'");
+      lastContainer.innerHTML = `
+        <div class="last-updated-strip">
+          <div class="last-up-left">
+            <span class="last-up-icon">✏️</span>
+            <div>
+              <div class="last-up-title">${lastRecord.subject}: Adjusted to ${att}/${tot}</div>
+              <div class="last-up-time">📅 ${lastRecord.date} at ${format12h(lastRecord.time)}</div>
+            </div>
           </div>
+          <button class="btn-link-edit" onclick="openDirectAttendanceModal('${safeSub}')" title="Edit attendance numbers">✏️ Edit</button>
         </div>
-        <button class="btn-toggle-quick" onclick="toggleRecord('${lastRecord.id}')" title="1-Tap Toggle">🔄 Toggle</button>
-      </div>
-    `;
+      `;
+    } else {
+      const isPres = lastRecord.status === 'present';
+      const stIcon = isPres ? '✅' : (lastRecord.status === 'absent' ? '❌' : '⚪');
+      const stText = isPres ? 'Present' : (lastRecord.status === 'absent' ? 'Absent' : 'Cancelled');
+
+      lastContainer.innerHTML = `
+        <div class="last-updated-strip">
+          <div class="last-up-left">
+            <span class="last-up-icon">${stIcon}</span>
+            <div>
+              <div class="last-up-title">Last Class: ${lastRecord.subject} (${stText})</div>
+              <div class="last-up-time">📅 ${lastRecord.date} at ${format12h(lastRecord.time)}</div>
+            </div>
+          </div>
+          <button class="btn-toggle-quick" onclick="toggleRecord('${lastRecord.id}')" title="1-Tap Toggle">🔄 Toggle</button>
+        </div>
+      `;
+    }
   } else {
     lastContainer.innerHTML = ``;
   }
@@ -902,10 +1022,14 @@ function renderHistory() {
 
   let records = [...state.data.records];
   if (subFilter && subFilter !== 'All') {
-    records = records.filter(r => r.subject === subFilter);
+    records = records.filter(r => (r.subject || '').trim() === subFilter);
   }
   if (statusFilter && statusFilter !== 'All') {
-    records = records.filter(r => r.status === statusFilter);
+    if (statusFilter === 'edited') {
+      records = records.filter(r => r.status === 'edited' || r.type === 'adjustment');
+    } else {
+      records = records.filter(r => r.status === statusFilter && r.type !== 'adjustment');
+    }
   }
 
   if (records.length === 0) {
@@ -913,14 +1037,74 @@ function renderHistory() {
       <div class="empty-state-box">
         <div class="empty-state-icon">📝</div>
         <div class="empty-state-title">No Attendance Records Yet</div>
-        <div class="empty-state-sub">As your lectures finish, pop-ups will record your attendance here. You can also add past entries manually.</div>
-        <button class="btn-chip btn-chip-blue" style="margin: 0 auto; padding: 10px 20px;" onclick="openAddManualRecord()">+ Add Past Entry</button>
+        <div class="empty-state-sub">Marking attendance from the Dashboard, upcoming class alerts, and attendance edits will automatically appear here.</div>
       </div>
     `;
     return;
   }
 
   records.forEach(r => {
+    // 1. Direct Attendance Edit / Adjustment Single Block
+    if (r.type === 'adjustment' || r.status === 'edited') {
+      const prevAtt = r.prevAttended || 0;
+      const prevTot = r.prevTotal || 0;
+      const prevAbs = r.prevAbsent ?? Math.max(0, prevTot - prevAtt);
+      const prevPct = prevTot > 0 ? ((prevAtt / prevTot) * 100).toFixed(1) + '%' : '0.0%';
+
+      const newAtt = r.newAttended || 0;
+      const newTot = r.newTotal || 0;
+      const newAbs = r.newAbsent ?? Math.max(0, newTot - newAtt);
+      const newPct = newTot > 0 ? ((newAtt / newTot) * 100).toFixed(1) + '%' : '0.0%';
+
+      const diffAtt = r.diffAttended ?? (newAtt - prevAtt);
+      const diffAbs = r.diffAbsent ?? (newAbs - prevAbs);
+
+      let deltaText = '';
+      if (!r.hadPriorRecords && prevTot === 0) {
+        deltaText = `Initial Setup: ${newAtt} Present, ${newAbs} Absent (${newAtt}/${newTot})`;
+      } else {
+        const attSign = diffAtt >= 0 ? `+${diffAtt}` : `${diffAtt}`;
+        const absSign = diffAbs >= 0 ? `+${diffAbs}` : `${diffAbs}`;
+        deltaText = `Edited afterwards: ${attSign} Present, ${absSign} Absent`;
+      }
+
+      const card = document.createElement('div');
+      card.className = 'history-edit-block';
+      card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <div style="font-weight: 800; font-size: 0.96rem; color: #fff;">
+            ${r.subject}
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="status-badge badge-edited">✏️ EDITED</span>
+            <button class="btn-icon-subtle" onclick="deleteRecordItem('${r.id}')" title="Delete this edit log" style="font-size: 0.85rem;">🗑️</button>
+          </div>
+        </div>
+
+        <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 5px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.78rem;">
+            <span style="color: var(--text-muted);">Attendance Before Edit:</span>
+            <span style="font-weight: 700; color: #d4d4d8;">${r.hadPriorRecords ? `${prevAtt} / ${prevTot} (${prevPct})` : 'No prior records (0/0)'}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.78rem;">
+            <span style="color: var(--text-muted);">New Attendance Set:</span>
+            <span style="font-weight: 800; color: #fff;">${newAtt} / ${newTot} (${newPct})</span>
+          </div>
+          <div style="border-top: 1px dashed rgba(255, 255, 255, 0.12); padding-top: 5px; margin-top: 2px; font-size: 0.76rem; color: var(--accent-cyan); font-weight: 800;">
+            📊 ${deltaText}
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">
+          <span>📅 ${r.date} • ${format12h(r.time)}</span>
+          <span style="font-style: italic;">${r.notes || 'Direct Edit'}</span>
+        </div>
+      `;
+      container.appendChild(card);
+      return;
+    }
+
+    // 2. Regular Individual Class Record
     const row = document.createElement('div');
     row.className = 'history-card-row';
 
@@ -929,15 +1113,20 @@ function renderHistory() {
     if (r.status === 'absent') { badgeClass = 'badge-absent'; badgeText = 'ABSENT'; }
     else if (r.status === 'cancelled') { badgeClass = 'badge-cancelled'; badgeText = 'CANCELLED'; }
 
+    const time12 = format12h(r.time);
+    const metaNote = r.archived 
+      ? `• <span style="color: var(--text-muted); font-style: italic;">(Prior to edit)</span>` 
+      : (r.notes ? `• ${r.notes}` : '');
+
     row.innerHTML = `
       <div class="hist-left">
         <div class="hist-subject-name">${r.subject}</div>
-        <div class="hist-timestamp">📅 ${r.date} ${r.time} ${r.notes ? '• ' + r.notes : ''}</div>
+        <div class="hist-timestamp">📅 ${r.date} at ${time12} ${metaNote}</div>
       </div>
       <div class="hist-right-actions">
         <span class="status-badge ${badgeClass}">${badgeText}</span>
-        <button class="btn-toggle-quick" onclick="toggleRecord('${r.id}')" title="1-Tap Toggle between Present and Absent">🔄 Toggle</button>
-        <button class="btn-chip btn-chip-blue" onclick="openEditRecord('${r.id}')">✏️</button>
+        ${!r.archived ? `<button class="btn-toggle-quick" onclick="toggleRecord('${r.id}')" title="1-Tap Toggle between Present and Absent">🔄 Toggle</button>` : ''}
+        ${!r.archived ? `<button class="btn-chip btn-chip-blue" onclick="openEditRecord('${r.id}')">✏️</button>` : ''}
         <button class="btn-chip btn-chip-red" onclick="deleteRecordItem('${r.id}')">🗑️</button>
       </div>
     `;
@@ -964,8 +1153,14 @@ function deleteRecordItem(id) {
   renderDashboard();
   renderHistory();
   if (deleted) {
-    showBottomToast(`Deleted record for ${deleted.subject}`, '↩️ Undo', () => {
-      state.addRecord(deleted.subject, deleted.status, deleted.date, deleted.time, deleted.notes);
+    const isAdj = deleted.type === 'adjustment';
+    const msg = isAdj ? `Deleted edit log for ${deleted.subject}` : `Deleted record for ${deleted.subject}`;
+    showBottomToast(msg, '↩️ Undo', () => {
+      if (isAdj) {
+        state.setSubjectAttendance(deleted.subject, deleted.newAttended, deleted.newTotal, deleted.notes || 'Restored Edit');
+      } else {
+        state.addRecord(deleted.subject, deleted.status, deleted.date, deleted.time, deleted.notes);
+      }
       renderDashboard();
       renderHistory();
     });
@@ -1216,7 +1411,7 @@ function saveAllSubjectAttendance() {
   }
 
   updates.forEach(u => {
-    state.setSubjectAttendance(u.subject, u.att, u.tot);
+    state.setSubjectAttendance(u.subject, u.att, u.tot, 'Bulk Master Attendance Edit');
   });
 
   state.save();
@@ -2553,7 +2748,7 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('Classes attended cannot exceed total classes held.');
         return;
       }
-      state.setSubjectAttendance(sub, pastAtt, pastTot);
+      state.setSubjectAttendance(sub, pastAtt, pastTot, 'Schedule Past Attendance Setup');
     }
 
     state.activeDay = day;
@@ -2582,7 +2777,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    state.setSubjectAttendance(sub, att, tot);
+    state.setSubjectAttendance(sub, att, tot, 'Dashboard Direct Edit');
     closeModal('modalSetAttendance');
     renderDashboard();
     renderHistory();
@@ -2613,7 +2808,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnConfirmAi) btnConfirmAi.addEventListener('click', confirmScheduleImport);
 
   // Form Record
-  document.getElementById('btnAddManualRecord').addEventListener('click', openAddManualRecord);
+  const btnAddManual = document.getElementById('btnAddManualRecord');
+  if (btnAddManual) btnAddManual.addEventListener('click', openAddManualRecord);
   document.getElementById('formRecord').addEventListener('submit', (e) => {
     e.preventDefault();
     const id = document.getElementById('recEditId').value;

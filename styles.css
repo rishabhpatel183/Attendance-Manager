@@ -809,34 +809,77 @@ body {
 }
 
 .status-badge {
-  font-size: 0.7rem;
+  font-size: 0.70rem;
   font-weight: 800;
-  padding: 4px 7px;
+  padding: 3px 8px;
   border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.badge-present { background: rgba(0, 214, 143, 0.16); color: var(--color-present); }
-.badge-absent { background: rgba(255, 59, 92, 0.16); color: var(--color-absent); }
-.badge-cancelled { background: rgba(142, 155, 176, 0.16); color: var(--text-muted); }
+.badge-present {
+  background: rgba(34, 197, 94, 0.14);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.32);
+}
+
+.badge-absent {
+  background: rgba(239, 68, 68, 0.14);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.32);
+}
+
+.badge-cancelled {
+  background: rgba(255, 255, 255, 0.08);
+  color: #a1a1aa;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.badge-edited {
+  background: rgba(234, 179, 8, 0.14);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.32);
+}
+
+/* Single Block for Attendance Adjustments / Direct Edits */
+.history-edit-block {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.15s ease;
+}
+
+.history-edit-block:hover {
+  border-color: var(--border-active);
+}
 
 /* The 1-Tap Toggle Button */
 .btn-toggle-quick {
-  background: #facc15;
-  border: none;
-  color: #000;
-  font-size: 0.76rem;
+  background: #1e1b10;
+  border: 1px solid #4a3e14;
+  color: #facc15;
+  font-size: 0.74rem;
   font-weight: 800;
-  padding: 5px 9px;
+  padding: 4px 8px;
   border-radius: 8px;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
-  box-shadow: 0 2px 8px rgba(250, 204, 21, 0.25);
+  transition: all 0.15s ease;
 }
 
-.btn-toggle-quick:active {
-  transform: scale(0.9);
+.btn-toggle-quick:hover, .btn-toggle-quick:active {
+  background: #2a2512;
+  border-color: #facc15;
+  transform: scale(0.95);
 }
 
 /* ================= BOTTOM NAVIGATION BAR - TIGHT FIT ================= */
