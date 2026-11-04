@@ -1490,6 +1490,281 @@ function deleteLectureSlot(id) {
   showBottomToast(removedSubject ? `Removed ${removedSubject} from schedule & dashboard` : `Removed lecture slot`, 'Dismiss', hideBottomToast);
 }
 
+// ================= WEEKLY ATTENDANCE MATRIX LOGIC =================
+let weeklyOffset = 0;
+let activeSlotContext = null;
+
+function toLocalDateStr(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function getWeekDateRange(offset = 0) {
+  const now = new Date();
+  const day = now.getDay(); // 0 is Sunday, 1 is Monday ...
+  const diffToMonday = (day === 0 ? -6 : 1) - day;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diffToMonday + (offset * 7));
+  monday.setHours(0, 0, 0, 0);
+
+  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const weekDates = {};
+
+  daysOfWeek.forEach((dName, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    weekDates[dName] = {
+      dateStr: toLocalDateStr(d),
+      displayDate: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      fullDate: d
+    };
+  });
+
+  const satOrFri = state.data.settings.includeSaturday ? weekDates['Saturday'] : weekDates['Friday'];
+  const label = `${weekDates['Monday'].displayDate} – ${satOrFri.displayDate}${offset === 0 ? ' (This Week)' : (offset === -1 ? ' (Last Week)' : (offset === 1 ? ' (Next Week)' : ''))}`;
+
+  return { monday, weekDates, label };
+}
+
+function getSlotRecord(lec, dayLectures, dateStr) {
+  const subLower = lec.subject.trim().toLowerCase();
+  const dayRecords = state.data.records.filter(r => r.date === dateStr && r.subject.trim().toLowerCase() === subLower);
+  if (dayRecords.length === 0) return null;
+
+  // Try matching by exact time if available
+  const matchByTime = dayRecords.find(r => r.time === lec.startTime || r.time === lec.endTime);
+  if (matchByTime) return matchByTime;
+
+  // Otherwise match by chronological occurrence
+  const sameSubLectures = dayLectures.filter(l => l.subject.trim().toLowerCase() === subLower);
+  const myIndexInSub = sameSubLectures.indexOf(lec);
+  const sortedDayRecs = [...dayRecords].sort((a, b) => timeStrToMinutes(a.time) - timeStrToMinutes(b.time));
+  return sortedDayRecs[myIndexInSub] || sortedDayRecs[0];
+}
+
+function renderWeeklyMatrix() {
+  const container = document.getElementById('weeklyMatrixContainer');
+  const summaryStrip = document.getElementById('weeklySummaryStrip');
+  const rangeLabel = document.getElementById('weeklyRangeLabel');
+  if (!container) return;
+
+  const { weekDates, label } = getWeekDateRange(weeklyOffset);
+  if (rangeLabel) rangeLabel.textContent = label;
+
+  const now = new Date();
+  const todayStr = toLocalDateStr(now);
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const target = state.data.settings.targetPercentage || 75;
+
+  const daysToShow = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+  if (state.data.settings.includeSaturday) daysToShow.push('Saturday');
+
+  let weekTotalAttended = 0;
+  let weekTotalHeld = 0;
+  let weekTotalScheduled = 0;
+
+  let matrixHtml = '';
+
+  daysToShow.forEach(dayName => {
+    const dayInfo = weekDates[dayName];
+    const dateStr = dayInfo.dateStr;
+    const isToday = dateStr === todayStr;
+    const isFutureDay = dateStr > todayStr;
+
+    const timetableList = state.data.timetable[dayName] || [];
+    const sortedLectures = [...timetableList].sort((a, b) => timeStrToMinutes(a.startTime) - timeStrToMinutes(b.startTime));
+
+    let dayAttended = 0;
+    let dayHeld = 0;
+    let slotsHtml = '';
+
+    if (sortedLectures.length === 0) {
+      slotsHtml = `
+        <div style="font-size: 0.78rem; color: var(--text-muted); font-style: italic; padding: 6px 4px;">
+          No lectures scheduled on ${dayName}.
+        </div>
+      `;
+    } else {
+      sortedLectures.forEach(lec => {
+        weekTotalScheduled++;
+        const rec = getSlotRecord(lec, sortedLectures, dateStr);
+
+        let status = 'upcoming'; // default
+        let badgeText = '⏳ Scheduled';
+        let blockClass = 'slot-block-upcoming';
+
+        if (rec) {
+          if (rec.status === 'present') {
+            status = 'present';
+            badgeText = '✅ Present';
+            blockClass = 'slot-block-present';
+            dayAttended++;
+            dayHeld++;
+            weekTotalAttended++;
+            weekTotalHeld++;
+          } else if (rec.status === 'absent') {
+            status = 'absent';
+            badgeText = '❌ Absent';
+            blockClass = 'slot-block-absent';
+            dayHeld++;
+            weekTotalHeld++;
+          } else if (rec.status === 'cancelled') {
+            status = 'cancelled';
+            badgeText = '⚪ Free / Cancelled';
+            blockClass = 'slot-block-cancelled';
+          }
+        } else {
+          // No record logged yet
+          const startMin = timeStrToMinutes(lec.startTime);
+          if (isFutureDay || (isToday && startMin > currentMinutes)) {
+            // Hasn't happened yet -> Clean White as requested
+            status = 'upcoming';
+            badgeText = '⏳ Upcoming';
+            blockClass = 'slot-block-upcoming';
+          } else {
+            // Past or ongoing but unrecorded -> White box
+            status = 'unrecorded';
+            badgeText = '⏳ Not Marked';
+            blockClass = 'slot-block-upcoming';
+          }
+        }
+
+        const safeSub = lec.subject.replace(/'/g, "\\'");
+        const safeRoom = (lec.room || '').replace(/'/g, "\\'");
+        const recId = rec ? rec.id : '';
+
+        slotsHtml += `
+          <div class="slot-block ${blockClass}" onclick="openSlotDetailsModal('${safeSub}', '${dayName}', '${dateStr}', '${lec.startTime}', '${lec.endTime}', '${safeRoom}', '${status}', '${recId}')">
+            <div class="slot-left">
+              <div class="slot-title">${lec.subject}</div>
+              <div class="slot-time">⏰ ${format12h(lec.startTime)} - ${format12h(lec.endTime)} • 📍 ${lec.room || 'No Room'}</div>
+            </div>
+            <div class="slot-badge">${badgeText}</div>
+          </div>
+        `;
+      });
+    }
+
+    const dayStatText = dayHeld > 0 
+      ? `${dayAttended}/${dayHeld} attended (${Math.round((dayAttended/dayHeld)*100)}%)`
+      : `${sortedLectures.length} scheduled`;
+
+    matrixHtml += `
+      <div class="week-day-group ${isToday ? 'is-today' : ''}">
+        <div class="week-day-header">
+          <div class="week-day-name">
+            ${dayName} • <span style="font-weight: 600; color: var(--text-muted); margin-left: 4px;">${dayInfo.displayDate}</span>
+            ${isToday ? '<span class="week-day-badge-today">TODAY</span>' : ''}
+          </div>
+          <div class="week-day-stat">${dayStatText}</div>
+        </div>
+        <div class="week-slots-list">
+          ${slotsHtml}
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = matrixHtml;
+
+  // Render Weekly Summary Strip
+  if (summaryStrip) {
+    const weekPct = weekTotalHeld > 0 ? (weekTotalAttended / weekTotalHeld) * 100 : null;
+    const pctColor = weekPct === null ? 'var(--text-muted)' : (weekPct >= target ? 'var(--color-present)' : 'var(--color-absent)');
+    const pctText = weekPct === null ? 'N/A' : `${weekPct.toFixed(1)}%`;
+
+    summaryStrip.innerHTML = `
+      <div class="weekly-stat-box">
+        <div class="weekly-stat-val" style="color: ${pctColor};">${pctText}</div>
+        <div class="weekly-stat-lbl">Week Score</div>
+      </div>
+      <div class="weekly-stat-box" style="text-align: center;">
+        <div class="weekly-stat-val" style="color: #fff;">${weekTotalAttended} / ${weekTotalHeld}</div>
+        <div class="weekly-stat-lbl">Attended / Held</div>
+      </div>
+      <div class="weekly-stat-box" style="text-align: right;">
+        <div class="weekly-stat-val" style="color: #93c5fd;">${weekTotalScheduled}</div>
+        <div class="weekly-stat-lbl">Total Scheduled</div>
+      </div>
+    `;
+  }
+}
+
+// Open Slot Details Bottom Sheet (DOES NOT TOGGLE, opens full details and edit options)
+function openSlotDetailsModal(subject, dayName, dateStr, startTime, endTime, room, currentStatus, recordId) {
+  activeSlotContext = { subject, dayName, dateStr, startTime, endTime, room, currentStatus, recordId };
+
+  document.getElementById('slotModalSubject').textContent = subject;
+  document.getElementById('slotModalMeta').textContent = `${dayName}, ${dateStr} • ${format12h(startTime)} - ${format12h(endTime)} • 📍 ${room || 'No Room Specified'}`;
+
+  const statusContainer = document.getElementById('slotModalStatusPill');
+  if (statusContainer) {
+    let pillHtml = '';
+    if (currentStatus === 'present') {
+      pillHtml = `<span style="font-size: 0.82rem; font-weight: 800; padding: 5px 12px; border-radius: 20px; background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; color: #4ade80;">Current Status: ✅ Present</span>`;
+    } else if (currentStatus === 'absent') {
+      pillHtml = `<span style="font-size: 0.82rem; font-weight: 800; padding: 5px 12px; border-radius: 20px; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #f87171;">Current Status: ❌ Absent</span>`;
+    } else if (currentStatus === 'cancelled') {
+      pillHtml = `<span style="font-size: 0.82rem; font-weight: 800; padding: 5px 12px; border-radius: 20px; background: rgba(113, 113, 122, 0.15); border: 1px solid #71717a; color: #a1a1aa;">Current Status: ⚪ Free / Cancelled</span>`;
+    } else {
+      pillHtml = `<span style="font-size: 0.82rem; font-weight: 800; padding: 5px 12px; border-radius: 20px; background: #1c1c1e; border: 1px solid #ffffff; color: #ffffff;">Current Status: ⏳ Haven't Happened / Scheduled</span>`;
+    }
+    statusContainer.innerHTML = pillHtml;
+  }
+
+  openModal('modalSlotDetails');
+}
+
+function saveSlotAttendance(status) {
+  if (!activeSlotContext) return;
+
+  const { subject, dateStr, startTime, recordId } = activeSlotContext;
+
+  if (recordId) {
+    const rec = state.data.records.find(r => r.id === recordId);
+    if (rec) {
+      rec.status = status;
+      state.save();
+    } else {
+      state.addRecord(subject, status, dateStr, startTime);
+    }
+  } else {
+    state.addRecord(subject, status, dateStr, startTime);
+  }
+
+  closeModal('modalSlotDetails');
+  activeSlotContext = null;
+
+  renderWeeklyMatrix();
+  renderDashboard();
+  renderHistory();
+  updateUpcomingBanner();
+
+  const label = status === 'present' ? 'Present ✅' : (status === 'absent' ? 'Absent ❌' : 'Cancelled ⚪');
+  showBottomToast(`Updated ${subject} to ${label}`, 'Dismiss', hideBottomToast);
+}
+
+function clearSlotAttendance() {
+  if (!activeSlotContext) return;
+
+  const { subject, recordId } = activeSlotContext;
+  if (recordId) {
+    state.deleteRecord(recordId);
+  }
+
+  closeModal('modalSlotDetails');
+  activeSlotContext = null;
+
+  renderWeeklyMatrix();
+  renderDashboard();
+  renderHistory();
+  updateUpcomingBanner();
+
+  showBottomToast(`Cleared attendance record for ${subject}`, 'Dismiss', hideBottomToast);
+}
+
 // Modal Helpers
 function openModal(modalId) {
   let id = modalId;
@@ -2962,6 +3237,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (btn.dataset.tab === 'dashboard') renderDashboard();
       if (btn.dataset.tab === 'timetable') renderTimetable();
+      if (btn.dataset.tab === 'weekly') renderWeeklyMatrix();
       if (btn.dataset.tab === 'history') renderHistory();
     });
   });
@@ -3185,8 +3461,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Weekly Matrix Controls
+  const btnPrevW = document.getElementById('btnWeeklyPrev');
+  if (btnPrevW) btnPrevW.addEventListener('click', () => { weeklyOffset--; renderWeeklyMatrix(); });
+
+  const btnNextW = document.getElementById('btnWeeklyNext');
+  if (btnNextW) btnNextW.addEventListener('click', () => { weeklyOffset++; renderWeeklyMatrix(); });
+
+  const btnThisW = document.getElementById('btnWeeklyThisWeek');
+  if (btnThisW) btnThisW.addEventListener('click', () => { weeklyOffset = 0; renderWeeklyMatrix(); });
+
+  const btnSlotPres = document.getElementById('btnSlotMarkPresent');
+  if (btnSlotPres) btnSlotPres.addEventListener('click', () => saveSlotAttendance('present'));
+
+  const btnSlotAbs = document.getElementById('btnSlotMarkAbsent');
+  if (btnSlotAbs) btnSlotAbs.addEventListener('click', () => saveSlotAttendance('absent'));
+
+  const btnSlotCanc = document.getElementById('btnSlotMarkCancelled');
+  if (btnSlotCanc) btnSlotCanc.addEventListener('click', () => saveSlotAttendance('cancelled'));
+
+  const btnSlotClr = document.getElementById('btnSlotClearRecord');
+  if (btnSlotClr) btnSlotClr.addEventListener('click', clearSlotAttendance);
+
   renderDashboard();
   renderTimetable();
+  renderWeeklyMatrix();
   renderHistory();
   updateUpcomingBanner();
 

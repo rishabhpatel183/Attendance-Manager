@@ -14,12 +14,12 @@
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" type="image/png" href="icon-192.png">
 
-  <link rel="stylesheet" href="styles.css?v=36">
+  <link rel="stylesheet" href="styles.css?v=37">
 
   <!-- Immediate Auto-Update Engine (Forces clean update on mobile devices) -->
   <script>
     (function() {
-      const APP_BUILD_VER = 'v36_live';
+      const APP_BUILD_VER = 'v37_live';
       if (localStorage.getItem('attendance_app_build') !== APP_BUILD_VER) {
         localStorage.setItem('attendance_app_build', APP_BUILD_VER);
         if ('caches' in window) {
@@ -170,6 +170,44 @@
       </div>
     </section>
 
+    <!-- TAB: WEEKLY ATTENDANCE MATRIX -->
+    <section id="tab-weekly" class="tab-pane">
+      <div class="section-header" style="margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+        <div>
+          <h2 class="section-title" style="margin-bottom: 2px;">Weekly Chart</h2>
+          <div style="font-size: 0.72rem; color: var(--text-muted);">Visual weekly matrix & lecture tracker</div>
+        </div>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <button id="btnWeeklyThisWeek" class="btn-chip btn-chip-blue" style="font-size: 0.74rem; padding: 6px 10px;">Today</button>
+        </div>
+      </div>
+
+      <!-- Week Switcher Bar -->
+      <div class="week-switcher-bar">
+        <button id="btnWeeklyPrev" class="week-nav-btn" title="Previous Week">◀</button>
+        <div id="weeklyRangeLabel" class="week-range-text">This Week</div>
+        <button id="btnWeeklyNext" class="week-nav-btn" title="Next Week">▶</button>
+      </div>
+
+      <!-- Week Performance Summary Strip -->
+      <div id="weeklySummaryStrip" class="weekly-summary-strip">
+        <!-- Injected via app.js -->
+      </div>
+
+      <!-- Legend Pill Bar -->
+      <div class="weekly-legend-bar">
+        <span class="legend-chip legend-present"><span class="legend-dot"></span> Present</span>
+        <span class="legend-chip legend-absent"><span class="legend-dot"></span> Absent</span>
+        <span class="legend-chip legend-upcoming"><span class="legend-dot"></span> Upcoming</span>
+        <span class="legend-chip legend-cancelled"><span class="legend-dot"></span> Free</span>
+      </div>
+
+      <!-- Dynamic Matrix Container -->
+      <div id="weeklyMatrixContainer" class="weekly-matrix-container">
+        <!-- Injected via app.js -->
+      </div>
+    </section>
+
     <!-- TAB 3: HISTORY & CORRECTIONS -->
     <section id="tab-history" class="tab-pane">
       <div class="section-header">
@@ -264,6 +302,10 @@
       <span class="nav-tab-icon">📅</span>
       <span>Schedule</span>
     </button>
+    <button class="nav-tab-btn" data-tab="weekly">
+      <span class="nav-tab-icon">🗓️</span>
+      <span>Week</span>
+    </button>
     <button class="nav-tab-btn" data-tab="history">
       <span class="nav-tab-icon">📝</span>
       <span>History</span>
@@ -310,6 +352,41 @@
           <button id="btnPromptCancel" class="btn-prompt-link">⚪ Cancelled / Free</button>
           <button id="btnPromptSnooze" class="btn-prompt-link">⏱ Snooze 10m</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weekly Matrix Slot Details & Edit Modal (Bottom Sheet) -->
+  <div id="modalSlotDetails" class="modal-overlay">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="modal-title-bar" style="margin-bottom: 10px;">
+        <div>
+          <h3 id="slotModalSubject" class="modal-heading" style="font-size: 1.15rem; color: #fff;">Subject Name</h3>
+          <p id="slotModalMeta" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 3px;">Day, Date • Time • Room</p>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modalSlotDetails')">&times;</button>
+      </div>
+
+      <div id="slotModalStatusPill" style="margin-bottom: 16px;">
+        <!-- Injected status pill -->
+      </div>
+
+      <p style="font-size: 0.85rem; font-weight: 700; color: #fff; margin-bottom: 12px;">
+        Update or set attendance for this slot:
+      </p>
+
+      <div class="prompt-grid-btns" style="margin-bottom: 10px;">
+        <button id="btnSlotMarkPresent" class="btn-touch-present">
+          <span style="font-size: 0.95rem; font-weight: 800;">✅ Mark Present</span>
+        </button>
+        <button id="btnSlotMarkAbsent" class="btn-touch-absent">
+          <span style="font-size: 0.95rem; font-weight: 800;">❌ Mark Absent</span>
+        </button>
+      </div>
+      <div class="prompt-sub-row" style="margin-bottom: 8px;">
+        <button id="btnSlotMarkCancelled" class="btn-prompt-link">⚪ Cancelled / Free</button>
+        <button id="btnSlotClearRecord" class="btn-prompt-link" style="color: #f87171;">🗑️ Clear Record</button>
       </div>
     </div>
   </div>
@@ -621,6 +698,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=36"></script>
+  <script src="app.js?v=37"></script>
 </body>
 </html>
