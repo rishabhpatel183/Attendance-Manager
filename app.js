@@ -764,23 +764,26 @@ function renderDashboard() {
     const card = document.createElement('div');
     card.className = 'subject-card';
 
-    let badgeColor = 'var(--text-muted)';
+    let badgeStyle = 'background: rgba(255, 255, 255, 0.08); color: #d4d4d8; border: 1px solid rgba(255, 255, 255, 0.16);';
     let badgeText = 'No records';
     let bunkAdviceText = '0 lectures conducted';
     let bunkAdviceColor = 'var(--text-muted)';
     let progressPct = 0;
+    let progressColor = 'rgba(255, 255, 255, 0.15)';
 
     if (sub.hasRecords) {
       progressPct = sub.pct;
       badgeText = `${sub.pct.toFixed(1)}%`;
       if (sub.pct >= target) {
-        badgeColor = 'var(--color-present)';
+        badgeStyle = 'background: rgba(34, 197, 94, 0.14); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.32);';
+        progressColor = '#22c55e';
         bunkAdviceText = `😎 Safe to bunk: ${sub.canBunk} class${sub.canBunk === 1 ? '' : 'es'}`;
-        bunkAdviceColor = 'var(--color-present)';
+        bunkAdviceColor = '#4ade80';
       } else {
-        badgeColor = sub.pct < (target - 10) ? 'var(--color-absent)' : 'var(--color-warn)';
+        badgeStyle = 'background: rgba(239, 68, 68, 0.14); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.32);';
+        progressColor = '#ef4444';
         bunkAdviceText = `⚠️ Must attend: ${sub.needAttend} class${sub.needAttend === 1 ? '' : 'es'}`;
-        bunkAdviceColor = badgeColor;
+        bunkAdviceColor = '#f87171';
       }
     }
 
@@ -795,13 +798,13 @@ function renderDashboard() {
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 6px;">
-          <span class="sub-pct-chip" style="background: ${badgeColor};">${badgeText}</span>
+          <span class="sub-pct-chip" style="${badgeStyle}; padding: 3px 9px; border-radius: 8px; font-size: 0.76rem; font-weight: 800;">${badgeText}</span>
           <button class="btn-icon-subtle" onclick="confirmDeleteSubject('${safeSub}')" title="Delete subject from schedule">🗑️</button>
         </div>
       </div>
 
       <div class="progress-track" style="margin: 10px 0 6px 0;">
-        <div class="progress-fill" style="width: ${progressPct}%; background: ${badgeColor};"></div>
+        <div class="progress-fill" style="width: ${progressPct}%; background: ${progressColor};"></div>
       </div>
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.75rem;">
