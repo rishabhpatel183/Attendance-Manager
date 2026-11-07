@@ -278,6 +278,141 @@ const DEFAULT_STATE = {
       ]
     }
   },
+  placementsData: [
+    {
+      id: 'drive-cisco',
+      company: 'Cisco Systems',
+      logo: '🌐',
+      role: 'Software Engineer (Cloud & Networks)',
+      ctc: '₹14.5 LPA',
+      type: 'On-Campus (Dream)',
+      location: 'Bangalore / Pune',
+      minCgpa: 8.0,
+      minAttendance: 75,
+      deadline: 'Nov 16, 2026 • 5:00 PM',
+      pptDate: 'Nov 17, 2026 • 10:00 AM',
+      applied: true,
+      currentRound: 'Online Coding Assessment (OA)',
+      description: 'Role involves distributed systems development, cloud infrastructure automation, and network protocol engineering. Looking for strong fundamentals in C++, Data Structures, OS, and Computer Networks.',
+      rounds: [
+        { name: 'Pod.ai Registration & Shortlisting', status: 'completed' },
+        { name: 'Online Coding & MCQ Assessment (OA)', status: 'active', date: 'Nov 18 • 6:00 PM' },
+        { name: 'Technical Interview (Core CS & DSA)', status: 'pending' },
+        { name: 'Managerial & System Design Round', status: 'pending' },
+        { name: 'HR Round & Final Offer Letter', status: 'pending' }
+      ]
+    },
+    {
+      id: 'drive-impetus',
+      company: 'Impetus Technologies',
+      logo: '⚡',
+      role: 'Big Data & AI Software Engineer',
+      ctc: '₹9.0 LPA',
+      type: 'On-Campus (Indore)',
+      location: 'Crystal IT Park, Indore',
+      minCgpa: 7.5,
+      minAttendance: 75,
+      deadline: 'Nov 14, 2026 • 11:59 PM',
+      pptDate: 'Wednesday • 11:30 AM (Audi-2)',
+      clashSlot: 'Data Science Lab (Wed 11:10 - 12:50)',
+      applied: true,
+      currentRound: 'Pre-Placement Talk (PPT Attendance Mandatory)',
+      description: 'Impetus is hiring engineering graduates for its Big Data and Generative AI practice. Candidate will work with Apache Spark, Kafka, Python, and scalable cloud pipelines.',
+      rounds: [
+        { name: 'Pod.ai Registration & Shortlisting', status: 'completed' },
+        { name: 'Mandatory Pre-Placement Talk (Audi-2)', status: 'active', date: 'Wednesday • 11:30 AM' },
+        { name: 'Aptitude & Technical Online Test', status: 'pending' },
+        { name: 'Technical Interview (Python & SQL)', status: 'pending' },
+        { name: 'HR Final Round', status: 'pending' }
+      ]
+    },
+    {
+      id: 'drive-tcs',
+      company: 'TCS Digital',
+      logo: '🏢',
+      role: 'Systems Engineer (Digital)',
+      ctc: '₹7.5 LPA',
+      type: 'On-Campus Drive',
+      location: 'Pan India / Indore Center',
+      minCgpa: 7.0,
+      minAttendance: 70,
+      deadline: 'Nov 20, 2026 • 6:00 PM',
+      pptDate: 'Nov 21, 2026',
+      applied: false,
+      currentRound: 'Registration Open',
+      description: 'TCS Digital hiring through National Qualifier Test (NQT) for high-impact innovation projects across Cloud, AI, and Cybersecurity.',
+      rounds: [
+        { name: 'Pod.ai Registration Verification', status: 'pending' },
+        { name: 'TCS NQT Advanced Coding Round', status: 'pending' },
+        { name: 'Technical + Managerial Interview', status: 'pending' },
+        { name: 'HR Discussion & Offer Rollout', status: 'pending' }
+      ]
+    },
+    {
+      id: 'drive-persistent',
+      company: 'Persistent Systems',
+      logo: '💠',
+      role: 'Software Developer — Full Stack',
+      ctc: '₹6.5 LPA',
+      type: 'On-Campus Drive',
+      location: 'Pune / Indore / Nagpur',
+      minCgpa: 6.8,
+      minAttendance: 75,
+      deadline: 'Nov 22, 2026 • 5:00 PM',
+      pptDate: 'Nov 23, 2026',
+      applied: false,
+      currentRound: 'Registration Open',
+      description: 'Persistent Systems hiring 2026 batch for enterprise application modernization, Java/Spring Boot, React, and cloud native architectures.',
+      rounds: [
+        { name: 'Pod.ai Registration', status: 'pending' },
+        { name: 'Online Assessment (DSA & English)', status: 'pending' },
+        { name: 'Technical Interview', status: 'pending' },
+        { name: 'HR Round', status: 'pending' }
+      ]
+    },
+    {
+      id: 'drive-morgan',
+      company: 'Morgan Stanley',
+      logo: '🏛️',
+      role: 'Technology Summer Analyst (Dream)',
+      ctc: '₹25.0 LPA (₹1.25 L/mo stipend)',
+      type: 'Off-Campus Challenge',
+      location: 'Mumbai / Bangalore',
+      minCgpa: 8.8,
+      minAttendance: 80,
+      deadline: 'Nov 28, 2026 • 11:59 PM',
+      applied: false,
+      currentRound: 'Registration Locked',
+      description: 'Prestigious global investment bank technology program. High compensation, rigorous technical challenge, algorithmic problem solving, and low-latency systems.',
+      rounds: [
+        { name: 'Resume Shortlisting (Cutoff 8.8 CGPA)', status: 'pending' },
+        { name: 'Online Coding Challenge (Hackerrank)', status: 'pending' },
+        { name: 'Virtual Superday Interviews (3 Rounds)', status: 'pending' },
+        { name: 'Final Summer Internship Offer', status: 'pending' }
+      ]
+    },
+    {
+      id: 'drive-sih',
+      company: 'Smart India Hackathon (SIH 2026)',
+      logo: '🏆',
+      role: 'National Ministry Hackathon + PPIs',
+      ctc: '₹1.0 Lakh Prize + Direct Interviews',
+      type: 'National Hackathon',
+      location: 'National Grand Finale',
+      minCgpa: 6.0,
+      minAttendance: 70,
+      deadline: 'Nov 30, 2026',
+      applied: false,
+      currentRound: 'College Internal Screening',
+      description: 'Government of India national hackathon. Medi-Caps internal college selection for smart solutions in AI, Healthcare, and Agriculture. Top teams get direct Pre-Placement Interviews (PPIs).',
+      rounds: [
+        { name: 'Internal College Idea Submission', status: 'pending' },
+        { name: 'Medi-Caps Internal Hackathon Evaluation', status: 'pending' },
+        { name: 'National Round Shortlisting', status: 'pending' },
+        { name: '36-Hour Grand Finale & Cash Award', status: 'pending' }
+      ]
+    }
+  ],
   records: [],
   promptedHistory: {},
   dayAbsent: {} // { [dateStr]: true }
@@ -354,6 +489,7 @@ class AppState {
           notices: (parsed.notices && parsed.notices.length) ? parsed.notices : DEFAULT_STATE.notices,
           studentAcademics: parsed.studentAcademics || DEFAULT_STATE.studentAcademics,
           studyHubData: parsed.studyHubData || DEFAULT_STATE.studyHubData,
+          placementsData: (parsed.placementsData && parsed.placementsData.length) ? parsed.placementsData : DEFAULT_STATE.placementsData,
           settings: { ...DEFAULT_STATE.settings, ...parsed.settings },
           timetable: { ...DEFAULT_STATE.timetable, ...parsed.timetable },
           baseAttendance: { ...(parsed.baseAttendance || {}) },
@@ -924,6 +1060,10 @@ function hideBottomToast() {
   const toastContainer = document.getElementById('bottomToast');
   if (toastContainer) toastContainer.classList.remove('active');
   if (toastTimer) clearTimeout(toastTimer);
+}
+
+function showToast(message) {
+  showBottomToast(message, 'Dismiss', hideBottomToast);
 }
 
 // Web Audio API Synthesizer chime for alerts
@@ -3710,11 +3850,15 @@ function updateDigitalIdCard() {
     const rollNum = session.userId || '104';
     if (cardName) cardName.textContent = session.name || 'Rishabh Patel';
     if (cardRoll) cardRoll.textContent = rollNum;
-    if (cardPrn) cardPrn.textContent = `EN24CS${rollNum}08`;
+    if (cardPrn) cardPrn.textContent = `EN22CS301${rollNum}`;
     if (cardDegree) cardDegree.textContent = 'B.Tech — Computer Science & Engineering';
     if (cardSem) cardSem.textContent = '5th Semester';
     if (cardBatch) cardBatch.textContent = (parseInt(rollNum, 10) % 2 === 0) ? 'Batch A1' : 'Batch A2';
     if (cardAdvisor) cardAdvisor.textContent = 'Dr. Neha Verma';
+    const clgEl = document.querySelector('.id-card-college');
+    if (clgEl) clgEl.textContent = 'MEDI-CAPS UNIVERSITY • INDORE';
+    const deptEl = document.querySelector('.id-card-dept');
+    if (deptEl) deptEl.textContent = 'FACULTY OF ENGINEERING • CSE DEPARTMENT';
   }
 }
 
@@ -4551,6 +4695,385 @@ function addCustomStudyNote() {
 
   if (titleEl) titleEl.value = '';
   if (urlEl) urlEl.value = '';
+}
+
+/* ================= 5. MEDI-CAPS POD.AI PLACEMENTS & DRIVES ENGINE ================= */
+let activeDriveFilter = 'all';
+
+function getCurrentStudentCgpa() {
+  const academics = state.data.studentAcademics || {};
+  const subjects = Object.keys(academics);
+  if (subjects.length === 0) return 8.65;
+
+  let totalCredits = 0;
+  let totalGradePoints = 0;
+  const gradePointMap = { 'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5 };
+
+  subjects.forEach(s => {
+    const it = academics[s];
+    const cr = it.credits || 3;
+    totalCredits += cr;
+    totalGradePoints += (gradePointMap[it.targetGrade || 'A+'] || 9) * cr;
+  });
+
+  return totalCredits > 0 ? (totalGradePoints / totalCredits) : 8.65;
+}
+
+function getCurrentStudentAttendancePct() {
+  const stats = state.calculateStats();
+  if (stats && stats.overall && stats.overall.hasRecords && stats.overall.total > 0) {
+    return (stats.overall.attended / stats.overall.total) * 100;
+  }
+  return 82.0; // Clean baseline
+}
+
+function renderPlacementsTab() {
+  const feedEl = document.getElementById('placementsFeedList');
+  if (!feedEl) return;
+
+  const drives = state.data.placementsData || [];
+  const currentCgpa = getCurrentStudentCgpa();
+  const currentAttPct = getCurrentStudentAttendancePct();
+
+  // Top Metrics Strip
+  const activeCountEl = document.getElementById('tpoStatActiveCount');
+  const appliedCountEl = document.getElementById('tpoStatAppliedCount');
+  const maxCtcEl = document.getElementById('tpoStatMaxCtc');
+  const eligRateEl = document.getElementById('tpoStatEligibility');
+
+  const appliedDrives = drives.filter(d => d.applied);
+  const eligibleDrives = drives.filter(d => currentCgpa >= (d.minCgpa || 0) && currentAttPct >= (d.minAttendance || 0));
+
+  if (activeCountEl) activeCountEl.textContent = drives.length;
+  if (appliedCountEl) appliedCountEl.textContent = appliedDrives.length;
+  if (maxCtcEl) maxCtcEl.textContent = '25.0 L';
+  if (eligRateEl) {
+    const rate = drives.length > 0 ? Math.round((eligibleDrives.length / drives.length) * 100) : 83;
+    eligRateEl.textContent = `${rate}%`;
+  }
+
+  // Filter drives
+  let filtered = [...drives];
+  if (activeDriveFilter === 'eligible') {
+    filtered = drives.filter(d => currentCgpa >= (d.minCgpa || 0) && currentAttPct >= (d.minAttendance || 0));
+  } else if (activeDriveFilter === 'high_ctc') {
+    filtered = drives.filter(d => (parseFloat(d.ctc.replace(/[^0-9.]/g, '')) || 0) >= 8.0);
+  } else if (activeDriveFilter === 'applied') {
+    filtered = drives.filter(d => d.applied);
+  } else if (activeDriveFilter === 'offcampus') {
+    filtered = drives.filter(d => d.type.toLowerCase().includes('off-campus') || d.type.toLowerCase().includes('hackathon'));
+  }
+
+  if (filtered.length === 0) {
+    feedEl.innerHTML = `
+      <div style="background: #12131d; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 24px 16px; text-align: center; color: #94a3b8; font-size: 0.8rem;">
+        No campus drives match this filter criteria right now.
+      </div>
+    `;
+    return;
+  }
+
+  let html = '';
+  filtered.forEach(drive => {
+    const isEligible = (currentCgpa >= (drive.minCgpa || 0)) && (currentAttPct >= (drive.minAttendance || 0));
+    const cgpaDiff = (drive.minCgpa || 0) - currentCgpa;
+    const attDiff = (drive.minAttendance || 0) - currentAttPct;
+
+    let eligibilityHtml = '';
+    if (isEligible) {
+      eligibilityHtml = `
+        <div class="drive-eligibility-strip eligibility-safe">
+          <span>🟢 <strong>Eligible to Apply:</strong> ${currentCgpa.toFixed(2)} CGPA (≥ ${drive.minCgpa}) • ${currentAttPct.toFixed(0)}% Att (≥ ${drive.minAttendance}%)</span>
+          <span style="font-size: 0.65rem; color: #4ade80; font-weight: 800;">POD VERIFIED</span>
+        </div>
+      `;
+    } else {
+      let unlockMsg = '';
+      if (cgpaDiff > 0 && attDiff > 0) {
+        unlockMsg = `Need +${cgpaDiff.toFixed(2)} CGPA and +${attDiff.toFixed(0)}% Attendance to unlock`;
+      } else if (cgpaDiff > 0) {
+        unlockMsg = `Need +${cgpaDiff.toFixed(2)} CGPA. Score well in Final Exam to unlock!`;
+      } else {
+        unlockMsg = `Need +${attDiff.toFixed(0)}% Attendance to qualify. Attend upcoming lectures!`;
+      }
+
+      eligibilityHtml = `
+        <div class="drive-eligibility-strip eligibility-lock">
+          <span>🔴 <strong>Ineligible:</strong> ${unlockMsg} (Cutoff: ${drive.minCgpa} CGPA & ${drive.minAttendance}% Att)</span>
+          <button type="button" class="btn-chip" onclick="openCgpaModal()" style="font-size: 0.62rem; padding: 2px 6px; background: rgba(239,68,68,0.25); color: #fca5a5; font-weight: 800;">Simulate</button>
+        </div>
+      `;
+    }
+
+    // Clash Slot Alert
+    let clashHtml = '';
+    if (drive.clashSlot) {
+      clashHtml = `
+        <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 6px 10px; font-size: 0.70rem; color: #fde68a; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <span>⚠️ <strong>Schedule Clash:</strong> PPT on ${escapeHtml(drive.pptDate)} conflicts with <strong>${escapeHtml(drive.clashSlot)}</strong></span>
+          <button type="button" class="btn-chip" onclick="openDutyLeaveModal('${drive.id}')" style="font-size: 0.64rem; padding: 2px 7px; background: rgba(245, 158, 11, 0.25); color: #fbbf24; font-weight: 800;">Request OD Slip</button>
+        </div>
+      `;
+    }
+
+    // Apply Button
+    let applyBtnHtml = '';
+    if (drive.applied) {
+      applyBtnHtml = `
+        <button type="button" class="btn-applied-pod" onclick="openDriveDetailsModal('${drive.id}')">
+          <span>✅ Applied (${escapeHtml(drive.currentRound || 'In Review')})</span>
+        </button>
+      `;
+    } else if (isEligible) {
+      applyBtnHtml = `
+        <button type="button" class="btn-apply-pod" onclick="applyToDrive('${drive.id}')">
+          <span>📝 Apply on Pod.ai</span>
+        </button>
+      `;
+    } else {
+      applyBtnHtml = `
+        <button type="button" class="btn-details-pod" onclick="openCgpaModal()" style="flex: 1; text-align: center; color: #f87171; border-color: rgba(239,68,68,0.3);">
+          <span>🔒 Unlock Requirements</span>
+        </button>
+      `;
+    }
+
+    html += `
+      <div class="drive-card">
+        <div class="drive-top-row">
+          <div class="drive-company-badge-row">
+            <div class="drive-logo-circle">${drive.logo || '🏢'}</div>
+            <div>
+              <h3 class="drive-role-title">${escapeHtml(drive.role)}</h3>
+              <div class="drive-company-name">${escapeHtml(drive.company)} • <span style="color: #94a3b8; font-weight: 600;">${escapeHtml(drive.type)}</span></div>
+            </div>
+          </div>
+          <div class="drive-ctc-pill">${escapeHtml(drive.ctc)}</div>
+        </div>
+
+        <div class="drive-meta-grid">
+          <div>📍 <strong>Location:</strong> ${escapeHtml(drive.location || 'Pan India')}</div>
+          <div>⏳ <strong>Deadline:</strong> ${escapeHtml(drive.deadline)}</div>
+          <div>🎯 <strong>Eligibility:</strong> ${drive.minCgpa}+ CGPA • ${drive.minAttendance}% Att</div>
+          <div>🕒 <strong>PPT Date:</strong> ${escapeHtml(drive.pptDate || 'TBA')}</div>
+        </div>
+
+        ${clashHtml}
+        ${eligibilityHtml}
+
+        <div class="drive-actions-row">
+          ${applyBtnHtml}
+          <button type="button" class="btn-details-pod" onclick="openDriveDetailsModal('${drive.id}')">
+            <span>Rounds & Prep ➔</span>
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  feedEl.innerHTML = html;
+}
+
+function filterDrivesBy(filterKey, btn) {
+  activeDriveFilter = filterKey;
+  document.querySelectorAll('.btn-tpo-filter').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderPlacementsTab();
+}
+
+function applyToDrive(driveId) {
+  const drives = state.data.placementsData || [];
+  const drive = drives.find(d => d.id === driveId);
+  if (!drive) return;
+
+  drive.applied = true;
+  if (drive.rounds && drive.rounds.length > 0) {
+    drive.rounds[0].status = 'completed';
+    if (drive.rounds.length > 1) {
+      drive.rounds[1].status = 'active';
+      drive.currentRound = drive.rounds[1].name;
+    }
+  }
+
+  state.save();
+  renderPlacementsTab();
+  showToast(`🎉 Registered for ${drive.company} on Medi-Caps Pod.ai!`);
+}
+
+let activeDetailDriveId = '';
+
+function openDriveDetailsModal(driveId) {
+  activeDetailDriveId = driveId;
+  const drives = state.data.placementsData || [];
+  const drive = drives.find(d => d.id === driveId);
+  if (!drive) return;
+
+  const modal = document.getElementById('modalDriveDetails');
+  const heading = document.getElementById('driveDetailHeading');
+  const sub = document.getElementById('driveDetailSub');
+  const body = document.getElementById('driveDetailBody');
+
+  if (heading) heading.textContent = `${drive.company} — ${drive.role}`;
+  if (sub) sub.textContent = `${drive.type} • Package: ${drive.ctc}`;
+
+  if (body) {
+    let roundsHtml = '';
+    (drive.rounds || []).forEach((r, idx) => {
+      let statusClass = '';
+      let statusBadge = '';
+      if (r.status === 'completed') {
+        statusClass = 'completed';
+        statusBadge = `<span style="font-size: 0.65rem; color: #4ade80; font-weight: 800;">Completed ✅</span>`;
+      } else if (r.status === 'active') {
+        statusClass = 'active';
+        statusBadge = `<span style="font-size: 0.65rem; color: #38bdf8; font-weight: 800;">In Progress / Scheduled ⏳</span>`;
+      } else {
+        statusBadge = `<span style="font-size: 0.65rem; color: #94a3b8; font-weight: 700;">Upcoming</span>`;
+      }
+
+      roundsHtml += `
+        <div class="pipeline-step-item ${statusClass}">
+          <div class="pipeline-step-num">${idx + 1}</div>
+          <div style="flex: 1;">
+            <div style="font-size: 0.80rem; font-weight: 800; color: #fff;">${escapeHtml(r.name)}</div>
+            ${r.date ? `<div style="font-size: 0.68rem; color: #38bdf8; font-weight: 600;">📅 ${escapeHtml(r.date)}</div>` : ''}
+          </div>
+          ${statusBadge}
+        </div>
+      `;
+    });
+
+    body.innerHTML = `
+      <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; margin-bottom: 14px;">
+        <h4 style="font-size: 0.82rem; font-weight: 800; color: #cbd5e1; margin: 0 0 6px 0;">Job Overview</h4>
+        <p style="font-size: 0.74rem; color: #94a3b8; line-height: 1.45; margin: 0 0 8px 0;">${escapeHtml(drive.description || 'Full-time graduate placement drive at Medi-Caps University.')}</p>
+        <div style="display: flex; gap: 8px; font-size: 0.70rem; color: #cbd5e1;">
+          <span>📍 <strong>Location:</strong> ${escapeHtml(drive.location)}</span>
+          <span>•</span>
+          <span>⏳ <strong>Deadline:</strong> ${escapeHtml(drive.deadline)}</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 14px;">
+        <h4 style="font-size: 0.82rem; font-weight: 800; color: #cbd5e1; margin: 0 0 8px 0; display: flex; align-items: center; justify-content: space-between;">
+          <span>Pod.ai Round-by-Round Pipeline:</span>
+          ${drive.applied ? `<button type="button" class="btn-chip btn-chip-blue" onclick="advanceDriveRound('${drive.id}')" style="font-size: 0.65rem; padding: 3px 8px;">Advance Round ➔</button>` : ''}
+        </h4>
+        <div style="display: flex; flex-direction: column;">
+          ${roundsHtml}
+        </div>
+      </div>
+
+      <div style="background: rgba(59, 130, 246, 0.1); border: 1px dashed rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-size: 0.80rem; font-weight: 800; color: #93c5fd;">📚 Prepare with Study Hub</div>
+          <div style="font-size: 0.68rem; color: #94a3b8;">Review CS fundamentals, DSA & previous year interview questions</div>
+        </div>
+        <button type="button" class="btn-chip btn-chip-blue" onclick="closeModal('modalDriveDetails'); openStudyHubModal('Data Science');" style="font-size: 0.70rem; padding: 6px 10px;">Open Prep</button>
+      </div>
+    `;
+  }
+
+  if (modal) modal.classList.add('active');
+}
+
+function advanceDriveRound(driveId) {
+  const drives = state.data.placementsData || [];
+  const drive = drives.find(d => d.id === driveId);
+  if (!drive || !drive.rounds) return;
+
+  const currentIdx = drive.rounds.findIndex(r => r.status === 'active');
+  if (currentIdx !== -1) {
+    drive.rounds[currentIdx].status = 'completed';
+    if (currentIdx + 1 < drive.rounds.length) {
+      drive.rounds[currentIdx + 1].status = 'active';
+      drive.currentRound = drive.rounds[currentIdx + 1].name;
+      showToast(`Advanced to: ${drive.currentRound}`);
+    } else {
+      drive.currentRound = 'Final Offer Extended 🎉';
+      showToast('🎉 Congratulations! Placement Offer Secured!');
+    }
+    state.save();
+    renderPlacementsTab();
+    openDriveDetailsModal(driveId);
+  }
+}
+
+let activeOdDrive = null;
+
+function openDutyLeaveModal(driveId) {
+  const drives = state.data.placementsData || [];
+  const drive = drives.find(d => d.id === driveId) || drives[0];
+  activeOdDrive = drive;
+
+  const modal = document.getElementById('modalDutyLeave');
+  const body = document.getElementById('dutyLeaveSlipBody');
+
+  const session = getAuthSession();
+  const studentName = session ? session.name : 'Rishabh Patel';
+  const rollNum = session ? session.userId : '104';
+  const enrollNum = `EN22CS301${rollNum}`;
+
+  if (body) {
+    body.innerHTML = `
+      <div style="text-align: center; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 8px; margin-bottom: 10px;">
+        <div style="font-weight: 900; color: #fff; font-size: 0.86rem;">MEDI-CAPS UNIVERSITY, INDORE</div>
+        <div style="font-size: 0.68rem; color: #38bdf8; font-weight: 700;">TRAINING & PLACEMENT OFFICE • ON-DUTY (OD) EXEMPTION SLIP</div>
+      </div>
+
+      <div style="margin-bottom: 8px;">
+        <div><strong>To:</strong> Prof. Rajesh Kumar (HOD, CSE) / Dr. Neha Verma (Faculty Advisor)</div>
+        <div><strong>From:</strong> ${escapeHtml(studentName)} • Roll #${escapeHtml(rollNum)} • Enrollment: <strong>${escapeHtml(enrollNum)}</strong></div>
+        <div><strong>Semester:</strong> 5th Sem, Batch A1 • Dept of Computer Science & Engineering</div>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.04); padding: 8px 10px; border-radius: 8px; margin-bottom: 8px;">
+        <div><strong>Placement Drive:</strong> ${escapeHtml(drive.company)} (${escapeHtml(drive.role)})</div>
+        <div><strong>Event / Session:</strong> ${escapeHtml(drive.pptDate || 'Interview Round')}</div>
+        <div><strong>Affected Academic Slot:</strong> <span style="color: #f87171; font-weight: 700;">${escapeHtml(drive.clashSlot || 'Scheduled Lecture')}</span></div>
+      </div>
+
+      <p style="margin: 0 0 8px 0; font-size: 0.72rem; color: #94a3b8;">
+        This certifies that the student has been officially registered/shortlisted for the above recruitment activity on Pod.ai. Attendance waiver / OD is requested for the affected academic slot as per university placement policy.
+      </p>
+
+      <div style="display: flex; justify-content: space-between; border-top: 1px dashed rgba(255,255,255,0.12); padding-top: 8px; font-size: 0.68rem; color: #cbd5e1;">
+        <span>Verified by: <strong>Medi-Caps TPO (Pod.ai)</strong></span>
+        <span>Date: <strong>${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</strong></span>
+      </div>
+    `;
+  }
+
+  if (modal) modal.classList.add('active');
+}
+
+function printDutyLeaveSlip() {
+  window.print();
+}
+
+function emailDutyLeaveAdvisor() {
+  if (!activeOdDrive) return;
+  const session = getAuthSession();
+  const studentName = session ? session.name : 'Rishabh Patel';
+  const rollNum = session ? session.userId : '104';
+  const enrollNum = `EN22CS301${rollNum}`;
+
+  const subject = encodeURIComponent(`Duty Leave (OD) Request - ${studentName} (${enrollNum}) for ${activeOdDrive.company}`);
+  const body = encodeURIComponent(
+    `Respected Dr. Neha Verma,\n\n` +
+    `I am ${studentName}, student of CSE 5th Semester Batch A1 (Enrollment: ${enrollNum}).\n\n` +
+    `I am registered for the campus recruitment drive of ${activeOdDrive.company} on ${activeOdDrive.pptDate || 'upcoming schedule'}.\n` +
+    `This session clashes with our scheduled class: ${activeOdDrive.clashSlot || 'lecture'}.\n\n` +
+    `Kindly grant me Duty Leave (OD) so that my attendance remains unaffected, as per Medi-Caps University placement policy.\n\n` +
+    `Thank you,\n${studentName}\nRoll #${rollNum}`
+  );
+
+  window.location.href = `mailto:neha.verma@college.edu?subject=${subject}&body=${body}`;
+}
+
+function syncPodDrives() {
+  showToast('🔄 Synchronized with Medi-Caps TPO Pod.ai Network! All 6 drives are up to date.');
+  renderPlacementsTab();
 }
 
 // ================= AUTHENTICATION & ROLE ISOLATION =================
@@ -5674,6 +6197,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById(tabId).classList.add('active');
 
       if (btn.dataset.tab === 'dashboard') renderDashboard();
+      if (btn.dataset.tab === 'placements') renderPlacementsTab();
       if (btn.dataset.tab === 'timetable') renderTimetable();
       if (btn.dataset.tab === 'weekly') renderWeeklyMatrix();
       if (btn.dataset.tab === 'history') renderHistory();
@@ -6058,3 +6582,12 @@ window.toggleLabExperiment = toggleLabExperiment;
 window.promptAddSyllabusUnit = promptAddSyllabusUnit;
 window.promptAddLabExperiment = promptAddLabExperiment;
 window.addCustomStudyNote = addCustomStudyNote;
+window.renderPlacementsTab = renderPlacementsTab;
+window.filterDrivesBy = filterDrivesBy;
+window.applyToDrive = applyToDrive;
+window.openDriveDetailsModal = openDriveDetailsModal;
+window.advanceDriveRound = advanceDriveRound;
+window.openDutyLeaveModal = openDutyLeaveModal;
+window.printDutyLeaveSlip = printDutyLeaveSlip;
+window.emailDutyLeaveAdvisor = emailDutyLeaveAdvisor;
+window.syncPodDrives = syncPodDrives;

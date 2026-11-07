@@ -228,8 +228,8 @@
           <div style="display: flex; align-items: center; gap: 8px;">
             <span style="font-size: 1.15rem;">🏛️</span>
             <div>
-              <div class="id-card-college">APEX INSTITUTE OF TECHNOLOGY</div>
-              <div class="id-card-dept">DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING</div>
+              <div class="id-card-college">MEDI-CAPS UNIVERSITY • INDORE</div>
+              <div class="id-card-dept">FACULTY OF ENGINEERING • CSE DEPARTMENT</div>
             </div>
           </div>
           <span class="id-card-badge-active"><span style="color: #4ade80; font-size: 0.7rem;">●</span> ACTIVE STUDENT</span>
@@ -241,7 +241,7 @@
             <h2 class="id-student-name" id="cardStudentName">Rishabh Patel</h2>
             <div class="id-meta-row">
               <span class="id-meta-pill">Roll #<strong id="cardStudentRoll">104</strong></span>
-              <span class="id-meta-pill">PRN: <strong id="cardStudentPrn">EN24CS10408</strong></span>
+              <span class="id-meta-pill">Enrollment: <strong id="cardStudentPrn">EN22CS301104</strong></span>
             </div>
             <div class="id-degree-text" id="cardStudentDegree">B.Tech — Computer Science & Engineering</div>
             <div class="id-sem-text">
@@ -407,6 +407,64 @@
         <div id="assignedTeachersList" class="assigned-teachers-grid">
           <!-- Injected via renderAssignedTeachers() -->
         </div>
+      </div>
+    </section>
+
+    <!-- TAB: PLACEMENTS & DRIVES (MEDI-CAPS POD.AI ECOSYSTEM) -->
+    <section id="tab-placements" class="tab-pane">
+      <div class="section-header" style="flex-wrap: wrap; gap: 8px;">
+        <div>
+          <h2 class="section-title">Campus Placements & Drives</h2>
+          <div style="font-size: 0.72rem; color: var(--text-muted);">Medi-Caps University TPO • Powered by Pod.ai Network</div>
+        </div>
+        <button type="button" class="btn-chip btn-chip-blue" onclick="syncPodDrives()" style="font-size: 0.72rem; padding: 6px 10px;">
+          🔄 Sync Drives
+        </button>
+      </div>
+
+      <!-- TPO Quick Analytics Strip -->
+      <div class="tpo-stats-strip">
+        <div class="tpo-stat-box">
+          <div class="tpo-stat-val" id="tpoStatActiveCount">6</div>
+          <div class="tpo-stat-lbl">Active Drives</div>
+        </div>
+        <div class="tpo-stat-box">
+          <div class="tpo-stat-val" id="tpoStatAppliedCount" style="color: #4ade80;">2</div>
+          <div class="tpo-stat-lbl">Applied</div>
+        </div>
+        <div class="tpo-stat-box">
+          <div class="tpo-stat-val" id="tpoStatMaxCtc" style="color: #fbbf24;">14.5 L</div>
+          <div class="tpo-stat-lbl">Top Package</div>
+        </div>
+        <div class="tpo-stat-box">
+          <div class="tpo-stat-val" id="tpoStatEligibility" style="color: #2dd4bf;">83%</div>
+          <div class="tpo-stat-lbl">Eligibility</div>
+        </div>
+      </div>
+
+      <!-- Medi-Caps TPO Notice Alert -->
+      <div class="tpo-alert-banner">
+        <span style="font-size: 1.3rem;">📢</span>
+        <div style="flex: 1;">
+          <div style="font-size: 0.80rem; font-weight: 800; color: #38bdf8;">Medi-Caps TPO Official Notice</div>
+          <div style="font-size: 0.72rem; color: #cbd5e1; margin-top: 2px;">
+            Pre-Placement Talk (PPT) for Impetus Technologies tomorrow at 11:30 AM in Audi-2. Attendance is strictly monitored for Round 1 shortlisting.
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Chips Row -->
+      <div class="tpo-filter-row">
+        <button type="button" class="btn-tpo-filter active" onclick="filterDrivesBy('all', this)">🌐 All Drives</button>
+        <button type="button" class="btn-tpo-filter" onclick="filterDrivesBy('eligible', this)">🟢 Eligible Only</button>
+        <button type="button" class="btn-tpo-filter" onclick="filterDrivesBy('high_ctc', this)">💰 8+ LPA High CTC</button>
+        <button type="button" class="btn-tpo-filter" onclick="filterDrivesBy('applied', this)">📌 Applied</button>
+        <button type="button" class="btn-tpo-filter" onclick="filterDrivesBy('offcampus', this)">🚀 Off-Campus & SIH</button>
+      </div>
+
+      <!-- Drives Feed List -->
+      <div id="placementsFeedList">
+        <!-- Injected via renderPlacementsTab() -->
       </div>
     </section>
 
@@ -705,6 +763,10 @@
     <button class="nav-tab-btn active" data-tab="dashboard">
       <span class="nav-tab-icon">📊</span>
       <span>Dashboard</span>
+    </button>
+    <button class="nav-tab-btn" data-tab="placements">
+      <span class="nav-tab-icon">💼</span>
+      <span>Drives</span>
     </button>
     <button class="nav-tab-btn" data-tab="timetable">
       <span class="nav-tab-icon">📅</span>
@@ -1324,6 +1386,51 @@
           </div>
           <button type="button" class="btn-chip btn-chip-blue" onclick="addCustomStudyNote()" style="width: 100%; justify-content: center; padding: 6px;">Save Resource</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Pod.ai Drive Details & Application Pipeline -->
+  <div id="modalDriveDetails" class="modal-overlay">
+    <div class="bottom-sheet" style="max-height: 88vh; overflow-y: auto;">
+      <div class="sheet-handle"></div>
+      <div class="modal-title-bar" style="margin-bottom: 8px;">
+        <div>
+          <h3 class="modal-heading" id="driveDetailHeading">Company Drive Details</h3>
+          <span style="font-size: 0.70rem; color: #38bdf8;" id="driveDetailSub">Medi-Caps University On-Campus Drive</span>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modalDriveDetails')">&times;</button>
+      </div>
+
+      <div id="driveDetailBody">
+        <!-- Injected dynamically via openDriveDetailsModal() -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Duty Leave (OD) Application Slip for Placements -->
+  <div id="modalDutyLeave" class="modal-overlay">
+    <div class="bottom-sheet" style="max-height: 88vh; overflow-y: auto;">
+      <div class="sheet-handle"></div>
+      <div class="modal-title-bar" style="margin-bottom: 8px;">
+        <div>
+          <h3 class="modal-heading">🏛️ Duty Leave (OD) Slip</h3>
+          <span style="font-size: 0.70rem; color: #94a3b8;">Medi-Caps University Placement Exemption Slip</span>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modalDutyLeave')">&times;</button>
+      </div>
+
+      <div id="dutyLeaveSlipBody" style="background: #111422; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 14px; font-size: 0.76rem; color: #cbd5e1; line-height: 1.5; margin-bottom: 14px;">
+        <!-- Injected via openDutyLeaveModal() -->
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <button type="button" class="btn-cta-primary" onclick="printDutyLeaveSlip()" style="flex: 1; background: linear-gradient(135deg, #0284c7, #0369a1); font-weight: 900;">
+          🖨️ Print / Save PDF
+        </button>
+        <button type="button" class="btn-chip" onclick="emailDutyLeaveAdvisor()" style="background: rgba(255,255,255,0.08); padding: 10px 14px; color: #fff; font-weight: 700;">
+          ✉️ Email Advisor
+        </button>
       </div>
     </div>
   </div>
