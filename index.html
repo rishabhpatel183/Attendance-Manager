@@ -217,6 +217,11 @@
         </div>
       </div>
 
+      <!-- 1. Live Campus Radar Widget (Real-time "Where Should I Be Right Now?") -->
+      <div id="studentLiveRadar" class="live-radar-card">
+        <!-- Injected via renderLiveCampusRadar() -->
+      </div>
+
       <!-- Digital Student ID Card Widget -->
       <div id="studentDigitalIdCard" class="student-id-card">
         <div class="id-card-top-strip">
@@ -307,6 +312,84 @@
         </div>
         <div id="subjectListContainer">
           <!-- Injected via app.js -->
+        </div>
+      </div>
+
+      <!-- 2. Interactive "What-If" Bunk & Attendance Simulator -->
+      <div id="studentSimulatorCard" class="simulator-card">
+        <div class="sim-header-row">
+          <div>
+            <h3 class="sim-title"><span>🔮</span> "What-If" Bunk Simulator</h3>
+            <span style="font-size: 0.70rem; color: #cbd5e1;">Test future leaves before skipping any lectures</span>
+          </div>
+          <button type="button" class="btn-chip" onclick="resetWhatIfSimulator()" style="font-size: 0.65rem; padding: 3px 8px; background: rgba(255,255,255,0.08); color: #cbd5e1;">Reset</button>
+        </div>
+
+        <div style="margin-bottom: 10px;">
+          <label style="font-size: 0.68rem; color: #a1a1aa; font-weight: 700; margin-bottom: 4px; display: block;">Select Target Subject:</label>
+          <select id="simSubjectSelect" class="form-input-box" onchange="runWhatIfSimulation()" style="font-size: 0.82rem; padding: 6px 10px;">
+            <!-- Injected via renderWhatIfSimulator() -->
+          </select>
+        </div>
+
+        <div class="sim-controls-grid">
+          <div class="sim-control-box">
+            <span class="sim-control-lbl">❌ Miss / Bunk Classes:</span>
+            <div class="sim-counter-row">
+              <button type="button" class="btn-sim-count" onclick="adjustSimCount('miss', -1)">-</button>
+              <span id="simMissCount" class="sim-counter-val" style="color: #f87171;">1</span>
+              <button type="button" class="btn-sim-count" onclick="adjustSimCount('miss', 1)">+</button>
+            </div>
+          </div>
+          <div class="sim-control-box">
+            <span class="sim-control-lbl">✅ Attend Classes:</span>
+            <div class="sim-counter-row">
+              <button type="button" class="btn-sim-count" onclick="adjustSimCount('attend', -1)">-</button>
+              <span id="simAttendCount" class="sim-counter-val" style="color: #4ade80;">0</span>
+              <button type="button" class="btn-sim-count" onclick="adjustSimCount('attend', 1)">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sim-presets-row">
+          <span style="font-size: 0.65rem; color: #a1a1aa; width: 100%; margin-bottom: 2px;">⚡ Quick Presets:</span>
+          <button type="button" class="btn-sim-preset" onclick="applySimPreset('tomorrow')">🌴 Bunk Tomorrow</button>
+          <button type="button" class="btn-sim-preset" onclick="applySimPreset('sick')">🤒 3-Day Sick</button>
+          <button type="button" class="btn-sim-preset" onclick="applySimPreset('recover')">🎯 Attend Next 5</button>
+        </div>
+
+        <div id="simResultBox" class="sim-result-box">
+          <!-- Injected via runWhatIfSimulation() -->
+        </div>
+      </div>
+
+      <!-- 3. Academic Internals & CGPA Goal Calculator Card -->
+      <div id="studentAcademicsCard" class="academics-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div>
+            <h3 style="font-size: 0.95rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 6px;">
+              <span>🎯</span> Internals & CGPA Goal Predictor
+            </h3>
+            <span style="font-size: 0.70rem; color: #94a3b8;">Track Mid-Terms, Sessional scores & Final Exam target</span>
+          </div>
+          <button type="button" class="btn-chip btn-chip-blue" onclick="openCgpaModal()" style="font-size: 0.68rem; padding: 4px 10px;">
+            📊 Open Calculator
+          </button>
+        </div>
+
+        <div class="academics-metrics-row">
+          <div class="academic-metric-box">
+            <div class="academic-metric-val" id="metricProjectedSgpa">8.65</div>
+            <div class="academic-metric-lbl">Projected SGPA</div>
+          </div>
+          <div class="academic-metric-box">
+            <div class="academic-metric-val" id="metricTotalCredits" style="color: #38bdf8;">20</div>
+            <div class="academic-metric-lbl">Total Credits</div>
+          </div>
+          <div class="academic-metric-box">
+            <div class="academic-metric-val" id="metricInternalAvg" style="color: #a78bfa;">86%</div>
+            <div class="academic-metric-lbl">Internals Avg</div>
+          </div>
         </div>
       </div>
 
@@ -1150,6 +1233,98 @@
           💾 Save Reminder
         </button>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal: Mid-Term Internals & CGPA Goal Predictor -->
+  <div id="modalCgpaCalculator" class="modal-overlay">
+    <div class="bottom-sheet" style="max-height: 88vh; overflow-y: auto;">
+      <div class="sheet-handle"></div>
+      <div class="modal-title-bar" style="margin-bottom: 8px;">
+        <div>
+          <h3 class="modal-heading">🎯 Internals & CGPA Goal Predictor</h3>
+          <span style="font-size: 0.70rem; color: #94a3b8;">Calculate required Final Exam marks to secure your dream GPA</span>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modalCgpaCalculator')">&times;</button>
+      </div>
+
+      <div style="background: rgba(20, 184, 166, 0.12); border: 1px solid rgba(20, 184, 166, 0.3); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-size: 0.68rem; color: #94a3b8; text-transform: uppercase;">Projected Semester SGPA</div>
+          <div id="cgpaModalProjectedScore" style="font-size: 1.5rem; font-weight: 900; color: #2dd4bf;">8.65 <span style="font-size: 0.85rem; color: #94a3b8;">/ 10.0</span></div>
+        </div>
+        <div style="text-align: right;">
+          <span class="badge-faculty-tag" style="background: rgba(20, 184, 166, 0.2); color: #5eead4;">Grade: A+ (Target)</span>
+          <div id="cgpaModalTotalCredits" style="font-size: 0.70rem; color: #cbd5e1; margin-top: 4px;">20 Academic Credits</div>
+        </div>
+      </div>
+
+      <div id="cgpaSubjectInputsList" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+        <!-- Injected dynamically via renderCgpaModal() -->
+      </div>
+
+      <button type="button" class="btn-cta-primary" onclick="saveCgpaInputs()" style="background: linear-gradient(135deg, #14b8a6, #0d9488); color: #000; font-weight: 900;">
+        💾 Save Internal Scores & Targets
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal: Subject Study Hub (Syllabus, Lab Practicals & PYQs) -->
+  <div id="modalStudyHub" class="modal-overlay">
+    <div class="bottom-sheet" style="max-height: 88vh; overflow-y: auto;">
+      <div class="sheet-handle"></div>
+      <div class="modal-title-bar" style="margin-bottom: 8px;">
+        <div>
+          <h3 class="modal-heading" id="studyHubSubjectTitle">📚 Study Hub</h3>
+          <span style="font-size: 0.70rem; color: #94a3b8;">Syllabus tracker, lab manuals, and previous year exam papers</span>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modalStudyHub')">&times;</button>
+      </div>
+
+      <!-- Segmented Hub Navigation Tabs -->
+      <div class="study-hub-nav">
+        <button type="button" class="study-hub-tab-btn active" id="tabStudySyllabus" onclick="switchStudyHubTab('syllabus')">📑 Syllabus</button>
+        <button type="button" class="study-hub-tab-btn" id="tabStudyLabs" onclick="switchStudyHubTab('labs')">🔬 Lab Practicals</button>
+        <button type="button" class="study-hub-tab-btn" id="tabStudyPyqs" onclick="switchStudyHubTab('pyqs')">📄 PYQs & Notes</button>
+      </div>
+
+      <!-- Tab Content 1: Syllabus -->
+      <div id="studyHubPaneSyllabus" style="display: block;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 0.72rem; color: #cbd5e1; font-weight: 700;">Curriculum Progress:</span>
+          <span id="studySyllabusProgressText" style="font-size: 0.72rem; color: #38bdf8; font-weight: 800;">60% Completed</span>
+        </div>
+        <div class="progress-track" style="margin-bottom: 12px;">
+          <div id="studySyllabusProgressBar" class="progress-fill" style="width: 60%; background: #38bdf8;"></div>
+        </div>
+        <div id="studySyllabusUnitsList">
+          <!-- Injected via app.js -->
+        </div>
+        <button type="button" class="btn-chip btn-chip-blue" onclick="promptAddSyllabusUnit()" style="width: 100%; justify-content: center; margin-top: 6px; padding: 7px;">+ Add Topic / Unit</button>
+      </div>
+
+      <!-- Tab Content 2: Lab Practicals -->
+      <div id="studyHubPaneLabs" style="display: none;">
+        <div id="studyLabExperimentsList">
+          <!-- Injected via app.js -->
+        </div>
+        <button type="button" class="btn-chip btn-chip-blue" onclick="promptAddLabExperiment()" style="width: 100%; justify-content: center; margin-top: 6px; padding: 7px;">+ Add Lab Experiment</button>
+      </div>
+
+      <!-- Tab Content 3: PYQs & Notes -->
+      <div id="studyHubPanePyqs" style="display: none;">
+        <div id="studyPyqVaultList">
+          <!-- Injected via app.js -->
+        </div>
+        <div style="background: rgba(255,255,255,0.04); border: 1px dashed rgba(255,255,255,0.15); border-radius: 10px; padding: 10px; margin-top: 10px;">
+          <span style="font-size: 0.72rem; font-weight: 800; color: #fff; margin-bottom: 6px; display: block;">+ Add Custom Study Link</span>
+          <div style="display: flex; gap: 6px; margin-bottom: 6px;">
+            <input type="text" id="inputCustomNoteTitle" class="form-input-box" placeholder="Resource Title (e.g. Unit 3 Slides)" style="flex: 1; font-size: 0.74rem;">
+            <input type="text" id="inputCustomNoteUrl" class="form-input-box" placeholder="URL / Drive Link" style="flex: 1; font-size: 0.74rem;">
+          </div>
+          <button type="button" class="btn-chip btn-chip-blue" onclick="addCustomStudyNote()" style="width: 100%; justify-content: center; padding: 6px;">Save Resource</button>
+        </div>
+      </div>
     </div>
   </div>
 

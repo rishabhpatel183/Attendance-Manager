@@ -2731,3 +2731,415 @@ body {
 .fac-nav-dock-btn.active {
   color: #60a5fa;
 }
+
+/* ================= 1. LIVE CAMPUS RADAR WIDGET ================= */
+.live-radar-card {
+  background: linear-gradient(135deg, #0e1626 0%, #0a0e1a 100%);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.live-radar-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.radar-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+
+.radar-live-badge {
+  background: rgba(34, 197, 94, 0.16);
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  color: #4ade80;
+}
+
+.radar-free-badge {
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  color: #fbbf24;
+}
+
+.radar-done-badge {
+  background: rgba(148, 163, 184, 0.16);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #cbd5e1;
+}
+
+.radar-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: radar-pulse-anim 1.8s infinite;
+  display: inline-block;
+}
+
+@keyframes radar-pulse-anim {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgba(34, 197, 94, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+.radar-time-pill {
+  font-size: 0.70rem;
+  color: var(--accent-cyan);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.radar-main-title {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #fff;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.2px;
+}
+
+.radar-meta-row {
+  font-size: 0.76rem;
+  color: #94a3b8;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.radar-actions-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.btn-radar-action {
+  flex: 1;
+  padding: 7px 10px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+
+.btn-radar-present {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.25), rgba(34, 197, 94, 0.15));
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #86efac;
+}
+
+.btn-radar-present:hover {
+  background: #22c55e;
+  color: #000;
+}
+
+.btn-radar-absent {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(239, 68, 68, 0.15));
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+.btn-radar-absent:hover {
+  background: #ef4444;
+  color: #fff;
+}
+
+/* ================= 2. WHAT-IF BUNK SIMULATOR ================= */
+.simulator-card {
+  background: linear-gradient(135deg, #131422 0%, #0d0e18 100%);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.sim-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.sim-title {
+  font-size: 0.98rem;
+  font-weight: 900;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.sim-controls-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.sim-control-box {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.sim-control-lbl {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #cbd5e1;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.sim-counter-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-sim-count {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #27273a;
+  color: #fff;
+  font-weight: 900;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sim-counter-val {
+  flex: 1;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 900;
+  color: #fff;
+}
+
+.sim-presets-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.btn-sim-preset {
+  background: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: #d8b4fe;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-sim-preset:hover {
+  background: rgba(168, 85, 247, 0.25);
+}
+
+.sim-result-box {
+  background: #191a29;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.sim-compare-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.sim-compare-val {
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.sim-compare-lbl {
+  font-size: 0.66rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.sim-verdict-box {
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.sim-verdict-safe {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  color: #86efac;
+}
+
+.sim-verdict-danger {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+}
+
+/* ================= 3. ACADEMIC INTERNALS & SGPA TARGET ================= */
+.academics-card {
+  background: linear-gradient(135deg, #111e1c 0%, #0d1615 100%);
+  border: 1px solid rgba(20, 184, 166, 0.35);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.academics-metrics-row {
+  display: flex;
+  gap: 12px;
+  margin: 10px 0 12px 0;
+}
+
+.academic-metric-box {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 8px 10px;
+  text-align: center;
+}
+
+.academic-metric-val {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #2dd4bf;
+}
+
+.academic-metric-lbl {
+  font-size: 0.65rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* ================= 4. STUDY HUB DRAWER & CHECKLISTS ================= */
+.study-hub-nav {
+  display: flex;
+  gap: 6px;
+  background: #111116;
+  padding: 4px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+
+.study-hub-tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #a1a1aa;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 6px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.study-hub-tab-btn.active {
+  background: #272738;
+  color: #fff;
+  font-weight: 800;
+}
+
+.study-checklist-item {
+  background: #181822;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.15s ease;
+}
+
+.study-checklist-item.checked {
+  opacity: 0.65;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.study-checklist-item.checked .study-item-title {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+.study-item-checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  accent-color: #38bdf8;
+  cursor: pointer;
+}
+
+.study-item-title {
+  font-size: 0.80rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  flex: 1;
+}
+
+.study-vault-item {
+  background: #181822;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.study-vault-item:hover {
+  background: #20202e;
+  border-color: rgba(59, 130, 246, 0.45);
+}

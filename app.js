@@ -238,6 +238,46 @@ const DEFAULT_STATE = {
     'Neural Networks': { attended: 9, total: 11 },
     'Data Mining': { attended: 7, total: 8 }
   },
+  studentAcademics: {
+    'Data Science': { credits: 4, mst1: 24, mst2: 26, assignments: 18, maxInternal: 50, targetGrade: 'A+' },
+    'Data Science Lab': { credits: 2, mst1: 18, mst2: 19, assignments: 19, maxInternal: 50, targetGrade: 'O' },
+    'Artificial Intelligence': { credits: 4, mst1: 22, mst2: 25, assignments: 17, maxInternal: 50, targetGrade: 'A+' },
+    'Machine Learning': { credits: 4, mst1: 25, mst2: 27, assignments: 19, maxInternal: 50, targetGrade: 'A+' },
+    'Neural Networks': { credits: 3, mst1: 21, mst2: 23, assignments: 16, maxInternal: 50, targetGrade: 'A' },
+    'Data Mining': { credits: 3, mst1: 23, mst2: 24, assignments: 18, maxInternal: 50, targetGrade: 'A+' }
+  },
+  studyHubData: {
+    'Data Science': {
+      units: [
+        { id: 'u1', name: 'Unit 1: Introduction to Data Science & EDA', completed: true },
+        { id: 'u2', name: 'Unit 2: Probability & Inferential Statistics', completed: true },
+        { id: 'u3', name: 'Unit 3: Regression & Classification Models', completed: false },
+        { id: 'u4', name: 'Unit 4: Feature Engineering & Dimensionality Reduction', completed: false },
+        { id: 'u5', name: 'Unit 5: Big Data Tools & Spark Integration', completed: false }
+      ],
+      experiments: [],
+      notes: [
+        { title: 'Unit 1 & 2 Handouts (Prof. Neha Verma)', url: '#' },
+        { title: 'Mid-Term 2025 PYQ Paper + Solutions', url: '#' },
+        { title: 'Pandas & NumPy Quick Formula Sheet', url: '#' }
+      ]
+    },
+    'Data Science Lab': {
+      units: [],
+      experiments: [
+        { id: 'exp1', name: 'Exp 1: Data Cleaning & Wrangling using Pandas', completed: true, verified: true },
+        { id: 'exp2', name: 'Exp 2: Exploratory Data Analysis & Seaborn Plots', completed: true, verified: true },
+        { id: 'exp3', name: 'Exp 3: Multiple Linear Regression Model', completed: true, verified: false },
+        { id: 'exp4', name: 'Exp 4: Logistic Regression on Titanic Dataset', completed: false, verified: false },
+        { id: 'exp5', name: 'Exp 5: Decision Tree & Random Forest Classifier', completed: false, verified: false },
+        { id: 'exp6', name: 'Exp 6: K-Means Clustering on Customer Segmentation', completed: false, verified: false }
+      ],
+      notes: [
+        { title: 'Lab Manual LV224 (Official Dept PDF)', url: '#' },
+        { title: 'Sample Viva Questions & Code Snippets', url: '#' }
+      ]
+    }
+  },
   records: [],
   promptedHistory: {},
   dayAbsent: {} // { [dateStr]: true }
@@ -312,6 +352,8 @@ class AppState {
           batchAttendance: parsed.batchAttendance || {},
           cancelledLectures: parsed.cancelledLectures || {},
           notices: (parsed.notices && parsed.notices.length) ? parsed.notices : DEFAULT_STATE.notices,
+          studentAcademics: parsed.studentAcademics || DEFAULT_STATE.studentAcademics,
+          studyHubData: parsed.studyHubData || DEFAULT_STATE.studyHubData,
           settings: { ...DEFAULT_STATE.settings, ...parsed.settings },
           timetable: { ...DEFAULT_STATE.timetable, ...parsed.timetable },
           baseAttendance: { ...(parsed.baseAttendance || {}) },
@@ -1531,7 +1573,10 @@ function renderDashboard() {
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.75rem;">
         <span style="color: ${bunkAdviceColor}; font-weight: 700;">${bunkAdviceText}</span>
-        <button class="btn-link-edit" onclick="openDirectAttendanceModal('${safeSub}')" style="font-size: 0.75rem; color: var(--accent-cyan); font-weight: 700; padding: 2px 4px;">✏️ Edit</button>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <button class="btn-link-edit" onclick="openStudyHubModal('${safeSub}')" style="font-size: 0.72rem; color: #a78bfa; font-weight: 700; padding: 2px 6px; background: rgba(167, 139, 250, 0.12); border-radius: 6px; border: 1px solid rgba(167, 139, 250, 0.25);">📚 Study Hub</button>
+          <button class="btn-link-edit" onclick="openDirectAttendanceModal('${safeSub}')" style="font-size: 0.75rem; color: var(--accent-cyan); font-weight: 700; padding: 2px 4px;">✏️ Edit</button>
+        </div>
       </div>
 
       <div class="sub-action-grid">
@@ -1566,6 +1611,9 @@ function renderDashboard() {
   updateDigitalIdCard();
   renderNoticeboard();
   renderAssignedTeachers();
+  renderLiveCampusRadar();
+  renderWhatIfSimulator();
+  renderStudentAcademicsSummary();
 }
 
 function quickAddAttendance(subject, status) {
@@ -3785,6 +3833,726 @@ function deleteNotice(id) {
   showToast('Reminder dismissed');
 }
 
+/* ================= 1. LIVE CAMPUS RADAR ENGINE ================= */
+function renderLiveCampusRadar() {
+  const container = document.getElementById('studentLiveRadar');
+  if (!container) return;
+
+  const now = new Date();
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const todayName = days[now.getDay()];
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  // If weekend or no schedule for today
+  const todaySchedule = (state.data.timetable && state.data.timetable[todayName]) || [];
+  if (todaySchedule.length === 0) {
+    container.innerHTML = `
+      <div class="live-radar-top-row">
+        <span class="radar-badge radar-done-badge">🏖️ CAMPUS OFF</span>
+        <span class="radar-time-pill">${todayName} • Campus Idle</span>
+      </div>
+      <h3 class="radar-main-title">No Lectures Scheduled Today</h3>
+      <div class="radar-meta-row">
+        <span>Enjoy your weekend or revise syllabus notes in Study Hub.</span>
+      </div>
+    `;
+    return;
+  }
+
+  // Sort lectures by start time
+  const sorted = [...todaySchedule].sort((a, b) => timeStrToMinutes(a.startTime) - timeStrToMinutes(b.startTime));
+
+  // Check for currently active lecture
+  let activeLec = null;
+  let nextLec = null;
+
+  for (const lec of sorted) {
+    const sMin = timeStrToMinutes(lec.startTime);
+    const eMin = timeStrToMinutes(lec.endTime);
+    if (sMin !== -1 && eMin !== -1) {
+      if (currentMinutes >= sMin && currentMinutes < eMin) {
+        activeLec = lec;
+        break;
+      } else if (currentMinutes < sMin && !nextLec) {
+        nextLec = lec;
+      }
+    }
+  }
+
+  if (activeLec) {
+    const fac = getAssignedFacultyForSubject(activeLec.subject);
+    const eMin = timeStrToMinutes(activeLec.endTime);
+    const minsLeft = Math.max(1, eMin - currentMinutes);
+    const safeSub = activeLec.subject.replace(/'/g, "\\'");
+
+    // Check if substituted today
+    const activeSub = (state.data.substitutions || []).find(s => 
+      s.status === 'accepted' && 
+      s.day === todayName && 
+      s.subject.trim().toLowerCase() === activeLec.subject.trim().toLowerCase()
+    );
+
+    container.innerHTML = `
+      <div class="live-radar-top-row">
+        <span class="radar-badge radar-live-badge"><span class="radar-pulse-dot"></span> LIVE CLASS NOW</span>
+        <span class="radar-time-pill">⏳ ${minsLeft}m left • Until ${format12h(activeLec.endTime)}</span>
+      </div>
+      <h3 class="radar-main-title">${escapeHtml(activeLec.subject)}</h3>
+      <div class="radar-meta-row">
+        <span>📍 <strong>${escapeHtml(activeLec.room || 'Classroom')}</strong></span>
+        <span>•</span>
+        <span>👨‍🏫 ${escapeHtml(activeSub ? activeSub.toFacultyName + ' (Substitute)' : fac.name)}</span>
+        <span>•</span>
+        <span>🏢 ${escapeHtml(fac.cabin || 'CS Block')}</span>
+      </div>
+      <div class="radar-actions-row">
+        <button type="button" class="btn-radar-action btn-radar-present" onclick="quickAddAttendance('${safeSub}', 'present')">
+          <span>✅ Mark Attended</span>
+        </button>
+        <button type="button" class="btn-radar-action btn-radar-absent" onclick="quickAddAttendance('${safeSub}', 'absent')">
+          <span>❌ Mark Bunked</span>
+        </button>
+      </div>
+    `;
+  } else if (nextLec) {
+    const fac = getAssignedFacultyForSubject(nextLec.subject);
+    const sMin = timeStrToMinutes(nextLec.startTime);
+    const minsUntil = Math.max(1, sMin - currentMinutes);
+
+    container.innerHTML = `
+      <div class="live-radar-top-row">
+        <span class="radar-badge radar-free-badge">☕ BREAK / FREE SLOT NOW</span>
+        <span class="radar-time-pill">Next in ${minsUntil}m</span>
+      </div>
+      <h3 class="radar-main-title">Next: ${escapeHtml(nextLec.subject)}</h3>
+      <div class="radar-meta-row">
+        <span>🕒 Starts at <strong>${format12h(nextLec.startTime)}</strong></span>
+        <span>•</span>
+        <span>📍 ${escapeHtml(nextLec.room || 'Room')}</span>
+        <span>•</span>
+        <span>👨‍🏫 ${escapeHtml(fac.name)}</span>
+      </div>
+    `;
+  } else {
+    // All lectures completed for today
+    container.innerHTML = `
+      <div class="live-radar-top-row">
+        <span class="radar-badge radar-done-badge">🎉 CLASSES DONE TODAY</span>
+        <span class="radar-time-pill">${todayName} Schedule Completed</span>
+      </div>
+      <h3 class="radar-main-title">All Classes Finished for Today!</h3>
+      <div class="radar-meta-row">
+        <span>All ${sorted.length} scheduled lectures for today have concluded. Great work!</span>
+      </div>
+    `;
+  }
+}
+
+/* ================= 2. WHAT-IF BUNK SIMULATOR ENGINE ================= */
+let simMissCount = 1;
+let simAttendCount = 0;
+
+function renderWhatIfSimulator() {
+  const sel = document.getElementById('simSubjectSelect');
+  if (!sel) return;
+
+  const currentVal = sel.value;
+  const subjects = state.getUniqueSubjects();
+
+  let html = `<option value="__all__">🌐 All Subjects (Entire Day / Combined)</option>`;
+  subjects.forEach(sub => {
+    html += `<option value="${escapeHtml(sub)}">${escapeHtml(sub)}</option>`;
+  });
+  sel.innerHTML = html;
+
+  if (currentVal && (subjects.includes(currentVal) || currentVal === '__all__')) {
+    sel.value = currentVal;
+  }
+
+  runWhatIfSimulation();
+}
+
+function adjustSimCount(type, delta) {
+  if (type === 'miss') {
+    simMissCount = Math.max(0, simMissCount + delta);
+    const el = document.getElementById('simMissCount');
+    if (el) el.textContent = simMissCount;
+  } else if (type === 'attend') {
+    simAttendCount = Math.max(0, simAttendCount + delta);
+    const el = document.getElementById('simAttendCount');
+    if (el) el.textContent = simAttendCount;
+  }
+  runWhatIfSimulation();
+}
+
+function applySimPreset(presetKey) {
+  if (presetKey === 'tomorrow') {
+    simMissCount = 3;
+    simAttendCount = 0;
+  } else if (presetKey === 'sick') {
+    simMissCount = 6;
+    simAttendCount = 0;
+  } else if (presetKey === 'recover') {
+    simMissCount = 0;
+    simAttendCount = 5;
+  }
+  const elM = document.getElementById('simMissCount');
+  const elA = document.getElementById('simAttendCount');
+  if (elM) elM.textContent = simMissCount;
+  if (elA) elA.textContent = simAttendCount;
+  runWhatIfSimulation();
+}
+
+function resetWhatIfSimulator() {
+  simMissCount = 1;
+  simAttendCount = 0;
+  const elM = document.getElementById('simMissCount');
+  const elA = document.getElementById('simAttendCount');
+  if (elM) elM.textContent = simMissCount;
+  if (elA) elA.textContent = simAttendCount;
+  runWhatIfSimulation();
+}
+
+function runWhatIfSimulation() {
+  const resultBox = document.getElementById('simResultBox');
+  if (!resultBox) return;
+
+  const sel = document.getElementById('simSubjectSelect');
+  const selectedSubject = sel ? sel.value : '__all__';
+  const target = state.data.settings.targetPercentage || 75;
+
+  const stats = state.calculateStats();
+  if (selectedSubject === '__all__') {
+    // Combined overall simulation
+    const overall = stats.overall;
+    const currAtt = overall.attended;
+    const currTot = overall.total;
+    const currPct = currTot > 0 ? (currAtt / currTot) * 100 : 0;
+
+    const simAtt = currAtt + simAttendCount;
+    const simTot = currTot + simMissCount + simAttendCount;
+    const simPct = simTot > 0 ? (simAtt / simTot) * 100 : 0;
+    const delta = simPct - currPct;
+    const deltaSign = delta >= 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`;
+    const deltaColor = delta >= 0 ? '#4ade80' : '#f87171';
+
+    let verdictHtml = '';
+    if (simPct >= target) {
+      const safeMargin = Math.floor((simAtt - (target / 100) * simTot) / (target / 100));
+      verdictHtml = `
+        <div class="sim-verdict-box sim-verdict-safe">
+          🟢 <strong>SAFE LEAVE:</strong> Your overall attendance will be <strong>${simPct.toFixed(1)}%</strong> (${deltaSign}). You stay above the ${target}% threshold with a safe cushion of <strong>${safeMargin}</strong> future bunks.
+        </div>
+      `;
+    } else {
+      const needed = Math.ceil(((target / 100) * simTot - simAtt) / (1 - (target / 100)));
+      verdictHtml = `
+        <div class="sim-verdict-box sim-verdict-danger">
+          🔴 <strong>DEFAULTER DANGER:</strong> Attendance falls to <strong>${simPct.toFixed(1)}%</strong> (${deltaSign})! You will drop below ${target}%. To fix this, you must attend the next <strong>${needed}</strong> consecutive classes without missing.
+        </div>
+      `;
+    }
+
+    resultBox.innerHTML = `
+      <div class="sim-compare-grid">
+        <div>
+          <div class="sim-compare-lbl">Current</div>
+          <div class="sim-compare-val" style="color: #cbd5e1;">${currPct.toFixed(1)}%</div>
+          <div style="font-size: 0.65rem; color: #94a3b8;">${currAtt}/${currTot} attended</div>
+        </div>
+        <div style="font-size: 1.1rem; color: #a78bfa;">➔</div>
+        <div>
+          <div class="sim-compare-lbl">Simulated</div>
+          <div class="sim-compare-val" style="color: ${simPct >= target ? '#4ade80' : '#f87171'};">${simPct.toFixed(1)}%</div>
+          <div style="font-size: 0.65rem; color: ${deltaColor}; font-weight: 700;">${deltaSign} change</div>
+        </div>
+      </div>
+      ${verdictHtml}
+    `;
+  } else {
+    // Single subject simulation
+    const subStats = state.getCurrentSubjectStats(selectedSubject);
+    const currAtt = subStats.attended || 0;
+    const currTot = subStats.total || 0;
+    const currPct = currTot > 0 ? (currAtt / currTot) * 100 : 0;
+
+    const simAtt = currAtt + simAttendCount;
+    const simTot = currTot + simMissCount + simAttendCount;
+    const simPct = simTot > 0 ? (simAtt / simTot) * 100 : 0;
+    const delta = simPct - currPct;
+    const deltaSign = delta >= 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`;
+    const deltaColor = delta >= 0 ? '#4ade80' : '#f87171';
+
+    let verdictHtml = '';
+    if (simPct >= target) {
+      const safeMargin = Math.floor((simAtt - (target / 100) * simTot) / (target / 100));
+      verdictHtml = `
+        <div class="sim-verdict-box sim-verdict-safe">
+          🟢 <strong>SAFE IN ${escapeHtml(selectedSubject)}:</strong> Projected at <strong>${simPct.toFixed(1)}%</strong> (${deltaSign}). You remain eligible for semester exams with <strong>${safeMargin}</strong> bunks cushion.
+        </div>
+      `;
+    } else {
+      const needed = Math.ceil(((target / 100) * simTot - simAtt) / (1 - (target / 100)));
+      verdictHtml = `
+        <div class="sim-verdict-box sim-verdict-danger">
+          🔴 <strong>DEFAULTER RISK IN ${escapeHtml(selectedSubject)}:</strong> Drops to <strong>${simPct.toFixed(1)}%</strong> (${deltaSign})! You will need to attend <strong>${needed}</strong> consecutive ${escapeHtml(selectedSubject)} classes to reach ${target}%.
+        </div>
+      `;
+    }
+
+    resultBox.innerHTML = `
+      <div class="sim-compare-grid">
+        <div>
+          <div class="sim-compare-lbl">Current</div>
+          <div class="sim-compare-val" style="color: #cbd5e1;">${currPct.toFixed(1)}%</div>
+          <div style="font-size: 0.65rem; color: #94a3b8;">${currAtt}/${currTot} attended</div>
+        </div>
+        <div style="font-size: 1.1rem; color: #a78bfa;">➔</div>
+        <div>
+          <div class="sim-compare-lbl">Simulated</div>
+          <div class="sim-compare-val" style="color: ${simPct >= target ? '#4ade80' : '#f87171'};">${simPct.toFixed(1)}%</div>
+          <div style="font-size: 0.65rem; color: ${deltaColor}; font-weight: 700;">${deltaSign} change</div>
+        </div>
+      </div>
+      ${verdictHtml}
+    `;
+  }
+}
+
+/* ================= 3. ACADEMIC INTERNALS & CGPA GOAL ENGINE ================= */
+function renderStudentAcademicsSummary() {
+  const metricsEl = document.getElementById('metricProjectedSgpa');
+  const creditsEl = document.getElementById('metricTotalCredits');
+  const avgEl = document.getElementById('metricInternalAvg');
+  if (!metricsEl) return;
+
+  const academics = state.data.studentAcademics || {};
+  const subjects = Object.keys(academics);
+
+  if (subjects.length === 0) {
+    metricsEl.textContent = '8.50';
+    if (creditsEl) creditsEl.textContent = '20';
+    if (avgEl) avgEl.textContent = '85%';
+    return;
+  }
+
+  let totalCredits = 0;
+  let totalGradePoints = 0;
+  let totalInternalGot = 0;
+  let totalInternalMax = 0;
+
+  const gradePointMap = { 'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5 };
+
+  subjects.forEach(sub => {
+    const data = academics[sub];
+    const cr = data.credits || 3;
+    totalCredits += cr;
+    const gp = gradePointMap[data.targetGrade || 'A+'] || 9;
+    totalGradePoints += gp * cr;
+
+    const got = (data.mst1 || 0) + (data.mst2 || 0) + (data.assignments || 0);
+    const max = data.maxInternal || 50;
+    totalInternalGot += got;
+    totalInternalMax += max;
+  });
+
+  const sgpa = totalCredits > 0 ? (totalGradePoints / totalCredits) : 8.5;
+  const avgPct = totalInternalMax > 0 ? Math.round((totalInternalGot / totalInternalMax) * 100) : 85;
+
+  metricsEl.textContent = sgpa.toFixed(2);
+  if (creditsEl) creditsEl.textContent = totalCredits;
+  if (avgEl) avgEl.textContent = `${avgPct}%`;
+}
+
+function openCgpaModal() {
+  const modal = document.getElementById('modalCgpaCalculator');
+  if (!modal) return;
+  renderCgpaModal();
+  modal.classList.add('active');
+}
+
+function renderCgpaModal() {
+  const listEl = document.getElementById('cgpaSubjectInputsList');
+  if (!listEl) return;
+
+  // Initialize academics for subjects in timetable if not present
+  if (!state.data.studentAcademics) state.data.studentAcademics = {};
+  const uniqueSubs = state.getUniqueSubjects();
+
+  uniqueSubs.forEach(sub => {
+    if (!state.data.studentAcademics[sub]) {
+      const isLab = sub.toLowerCase().includes('lab');
+      state.data.studentAcademics[sub] = {
+        credits: isLab ? 2 : 4,
+        mst1: isLab ? 18 : 22,
+        mst2: isLab ? 19 : 23,
+        assignments: isLab ? 19 : 17,
+        maxInternal: 50,
+        targetGrade: 'A+'
+      };
+    }
+  });
+
+  const academics = state.data.studentAcademics;
+  const subs = Object.keys(academics);
+
+  let html = '';
+  subs.forEach(sub => {
+    const item = academics[sub];
+    const internalSum = (item.mst1 || 0) + (item.mst2 || 0) + (item.assignments || 0);
+    const maxInt = item.maxInternal || 50;
+
+    // Calculate marks needed in Final University Exam (out of 100) for target grade:
+    const gradeThresholds = { 'O': 90, 'A+': 80, 'A': 70, 'B+': 60 };
+    const targetThreshold = gradeThresholds[item.targetGrade || 'A+'] || 80;
+    const neededInFinal = Math.max(0, 2 * (targetThreshold - internalSum));
+
+    let examNeededChip = '';
+    if (neededInFinal > 100) {
+      examNeededChip = `<span style="font-size: 0.66rem; color: #f87171; font-weight: 700;">⚠️ Impossible (>100 needed)</span>`;
+    } else if (neededInFinal <= 0) {
+      examNeededChip = `<span style="font-size: 0.66rem; color: #4ade80; font-weight: 700;">🎉 Secured (Need passing marks)</span>`;
+    } else {
+      examNeededChip = `<span style="font-size: 0.66rem; color: #38bdf8; font-weight: 800;">Target: Need <strong>${neededInFinal}</strong>/100 in Final Exam</span>`;
+    }
+
+    const safeKey = encodeURIComponent(sub);
+
+    html += `
+      <div style="background: #161622; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div>
+            <div style="font-size: 0.88rem; font-weight: 800; color: #fff;">${escapeHtml(sub)}</div>
+            <div style="font-size: 0.68rem; color: #94a3b8;">Credits: <strong>${item.credits}</strong> • Internal Total: <strong style="color: #2dd4bf;">${internalSum}/${maxInt}</strong></div>
+          </div>
+          <div style="text-align: right;">
+            <label style="font-size: 0.62rem; color: #94a3b8; display: block;">Target Grade</label>
+            <select class="form-input-box" id="grade_${safeKey}" onchange="recalcCgpaRow('${safeKey}')" style="font-size: 0.72rem; padding: 3px 6px; width: 85px;">
+              <option value="O" ${item.targetGrade === 'O' ? 'selected' : ''}>O (10)</option>
+              <option value="A+" ${item.targetGrade === 'A+' ? 'selected' : ''}>A+ (9.0)</option>
+              <option value="A" ${item.targetGrade === 'A' ? 'selected' : ''}>A (8.0)</option>
+              <option value="B+" ${item.targetGrade === 'B+' ? 'selected' : ''}>B+ (7.0)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+          <div>
+            <label style="font-size: 0.64rem; color: #cbd5e1; display: block; margin-bottom: 2px;">MST 1 (Max 25):</label>
+            <input type="number" id="mst1_${safeKey}" value="${item.mst1 || 0}" min="0" max="25" class="form-input-box" oninput="recalcCgpaRow('${safeKey}')" style="font-size: 0.78rem; padding: 5px;">
+          </div>
+          <div>
+            <label style="font-size: 0.64rem; color: #cbd5e1; display: block; margin-bottom: 2px;">MST 2 (Max 25):</label>
+            <input type="number" id="mst2_${safeKey}" value="${item.mst2 || 0}" min="0" max="25" class="form-input-box" oninput="recalcCgpaRow('${safeKey}')" style="font-size: 0.78rem; padding: 5px;">
+          </div>
+          <div>
+            <label style="font-size: 0.64rem; color: #cbd5e1; display: block; margin-bottom: 2px;">Lab/Assign (Max 20):</label>
+            <input type="number" id="assign_${safeKey}" value="${item.assignments || 0}" min="0" max="20" class="form-input-box" oninput="recalcCgpaRow('${safeKey}')" style="font-size: 0.78rem; padding: 5px;">
+          </div>
+        </div>
+
+        <div id="examChip_${safeKey}" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 6px; margin-top: 4px;">
+          ${examNeededChip}
+        </div>
+      </div>
+    `;
+  });
+
+  listEl.innerHTML = html;
+}
+
+function recalcCgpaRow(safeKey) {
+  const sub = decodeURIComponent(safeKey);
+  const mst1El = document.getElementById(`mst1_${safeKey}`);
+  const mst2El = document.getElementById(`mst2_${safeKey}`);
+  const assignEl = document.getElementById(`assign_${safeKey}`);
+  const gradeEl = document.getElementById(`grade_${safeKey}`);
+  const chipEl = document.getElementById(`examChip_${safeKey}`);
+
+  if (!state.data.studentAcademics[sub]) return;
+
+  const mst1 = parseInt(mst1El.value, 10) || 0;
+  const mst2 = parseInt(mst2El.value, 10) || 0;
+  const assign = parseInt(assignEl.value, 10) || 0;
+  const targetGrade = gradeEl.value;
+
+  state.data.studentAcademics[sub].mst1 = mst1;
+  state.data.studentAcademics[sub].mst2 = mst2;
+  state.data.studentAcademics[sub].assignments = assign;
+  state.data.studentAcademics[sub].targetGrade = targetGrade;
+
+  const internalSum = mst1 + mst2 + assign;
+  const gradeThresholds = { 'O': 90, 'A+': 80, 'A': 70, 'B+': 60 };
+  const targetThreshold = gradeThresholds[targetGrade] || 80;
+  const neededInFinal = Math.max(0, 2 * (targetThreshold - internalSum));
+
+  if (chipEl) {
+    if (neededInFinal > 100) {
+      chipEl.innerHTML = `<span style="font-size: 0.66rem; color: #f87171; font-weight: 700;">⚠️ Impossible (>100 needed)</span>`;
+    } else if (neededInFinal <= 0) {
+      chipEl.innerHTML = `<span style="font-size: 0.66rem; color: #4ade80; font-weight: 700;">🎉 Secured (Need passing marks)</span>`;
+    } else {
+      chipEl.innerHTML = `<span style="font-size: 0.66rem; color: #38bdf8; font-weight: 800;">Target: Need <strong>${neededInFinal}</strong>/100 in Final Exam</span>`;
+    }
+  }
+
+  // Recalculate top modal header SGPA
+  const academics = state.data.studentAcademics;
+  let totalCredits = 0;
+  let totalGradePoints = 0;
+  const gradePointMap = { 'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5 };
+
+  Object.keys(academics).forEach(s => {
+    const it = academics[s];
+    const cr = it.credits || 3;
+    totalCredits += cr;
+    totalGradePoints += (gradePointMap[it.targetGrade || 'A+'] || 9) * cr;
+  });
+
+  const sgpa = totalCredits > 0 ? (totalGradePoints / totalCredits) : 8.5;
+  const modalScore = document.getElementById('cgpaModalProjectedScore');
+  if (modalScore) modalScore.innerHTML = `${sgpa.toFixed(2)} <span style="font-size: 0.85rem; color: #94a3b8;">/ 10.0</span>`;
+}
+
+function saveCgpaInputs() {
+  state.save();
+  renderStudentAcademicsSummary();
+  closeModal('modalCgpaCalculator');
+  showToast('Academic targets & internal marks saved!');
+}
+
+/* ================= 4. SUBJECT STUDY HUB ENGINE ================= */
+let currentStudyHubSubject = '';
+let currentStudyHubTab = 'syllabus';
+
+function openStudyHubModal(subject) {
+  currentStudyHubSubject = subject;
+  const modal = document.getElementById('modalStudyHub');
+  if (!modal) return;
+
+  const titleEl = document.getElementById('studyHubSubjectTitle');
+  if (titleEl) titleEl.textContent = `📚 Study Hub: ${subject}`;
+
+  // Ensure subject study data exists
+  if (!state.data.studyHubData) state.data.studyHubData = {};
+  if (!state.data.studyHubData[subject]) {
+    const isLab = subject.toLowerCase().includes('lab');
+    state.data.studyHubData[subject] = {
+      units: isLab ? [] : [
+        { id: 'u1', name: 'Unit 1: Fundamentals & System Overview', completed: true },
+        { id: 'u2', name: 'Unit 2: Architecture & Mathematical Modeling', completed: true },
+        { id: 'u3', name: 'Unit 3: Core Algorithms & Frameworks', completed: false },
+        { id: 'u4', name: 'Unit 4: Optimization & Real-World Use Cases', completed: false },
+        { id: 'u5', name: 'Unit 5: Advanced Research & Emerging Frontiers', completed: false }
+      ],
+      experiments: isLab ? [
+        { id: 'exp1', name: 'Exp 1: Environment Setup & Tool Verification', completed: true, verified: true },
+        { id: 'exp2', name: 'Exp 2: Data Preprocessing & Exploratory Testing', completed: true, verified: true },
+        { id: 'exp3', name: 'Exp 3: Core Implementation & Baseline Metrics', completed: true, verified: false },
+        { id: 'exp4', name: 'Exp 4: Hyperparameter Tuning & Evaluation', completed: false, verified: false },
+        { id: 'exp5', name: 'Exp 5: Final Submission & Performance Benchmark', completed: false, verified: false }
+      ] : [],
+      notes: [
+        { title: `Official Syllabus & Course Handout (${subject})`, url: '#' },
+        { title: `Mid-Term 2025 Solved PYQ Paper`, url: '#' },
+        { title: `Formula Sheet & Quick Viva Revision Questions`, url: '#' }
+      ]
+    };
+  }
+
+  // If lab subject, default to labs tab; otherwise syllabus tab
+  const isLab = subject.toLowerCase().includes('lab');
+  switchStudyHubTab(isLab ? 'labs' : 'syllabus');
+
+  modal.classList.add('active');
+}
+
+function switchStudyHubTab(tabName) {
+  currentStudyHubTab = tabName;
+  const btnSyllabus = document.getElementById('tabStudySyllabus');
+  const btnLabs = document.getElementById('tabStudyLabs');
+  const btnPyqs = document.getElementById('tabStudyPyqs');
+
+  const paneSyllabus = document.getElementById('studyHubPaneSyllabus');
+  const paneLabs = document.getElementById('studyHubPaneLabs');
+  const panePyqs = document.getElementById('studyHubPanePyqs');
+
+  if (btnSyllabus) btnSyllabus.classList.toggle('active', tabName === 'syllabus');
+  if (btnLabs) btnLabs.classList.toggle('active', tabName === 'labs');
+  if (btnPyqs) btnPyqs.classList.toggle('active', tabName === 'pyqs');
+
+  if (paneSyllabus) paneSyllabus.style.display = tabName === 'syllabus' ? 'block' : 'none';
+  if (paneLabs) paneLabs.style.display = tabName === 'labs' ? 'block' : 'none';
+  if (panePyqs) panePyqs.style.display = tabName === 'pyqs' ? 'block' : 'none';
+
+  renderStudyHubModal();
+}
+
+function renderStudyHubModal() {
+  if (!currentStudyHubSubject || !state.data.studyHubData) return;
+  const data = state.data.studyHubData[currentStudyHubSubject];
+  if (!data) return;
+
+  // 1. Syllabus Pane
+  const unitsListEl = document.getElementById('studySyllabusUnitsList');
+  const progTextEl = document.getElementById('studySyllabusProgressText');
+  const progBarEl = document.getElementById('studySyllabusProgressBar');
+
+  if (unitsListEl) {
+    const units = data.units || [];
+    if (units.length === 0) {
+      unitsListEl.innerHTML = `<div style="font-size: 0.75rem; color: #94a3b8; padding: 12px 0;">Practical/Lab subject. Click 'Lab Practicals' tab to track experiments.</div>`;
+      if (progTextEl) progTextEl.textContent = 'Practical Course';
+      if (progBarEl) progBarEl.style.width = '100%';
+    } else {
+      const compCount = units.filter(u => u.completed).length;
+      const pct = Math.round((compCount / units.length) * 100);
+      if (progTextEl) progTextEl.textContent = `${pct}% Completed (${compCount}/${units.length} Units)`;
+      if (progBarEl) progBarEl.style.width = `${pct}%`;
+
+      let uHtml = '';
+      units.forEach(u => {
+        uHtml += `
+          <div class="study-checklist-item ${u.completed ? 'checked' : ''}">
+            <input type="checkbox" class="study-item-checkbox" ${u.completed ? 'checked' : ''} onchange="toggleSyllabusUnit('${u.id}')">
+            <span class="study-item-title">${escapeHtml(u.name)}</span>
+            <span style="font-size: 0.65rem; color: ${u.completed ? '#4ade80' : '#a1a1aa'}; font-weight: 700;">
+              ${u.completed ? 'Done ✅' : 'Pending'}
+            </span>
+          </div>
+        `;
+      });
+      unitsListEl.innerHTML = uHtml;
+    }
+  }
+
+  // 2. Labs Pane
+  const labsListEl = document.getElementById('studyLabExperimentsList');
+  if (labsListEl) {
+    const exps = data.experiments || [];
+    if (exps.length === 0) {
+      labsListEl.innerHTML = `<div style="font-size: 0.75rem; color: #94a3b8; padding: 12px 0;">Theory course. Check the 'Syllabus' tab for curriculum units.</div>`;
+    } else {
+      let lHtml = '';
+      exps.forEach(e => {
+        lHtml += `
+          <div class="study-checklist-item ${e.completed ? 'checked' : ''}">
+            <input type="checkbox" class="study-item-checkbox" ${e.completed ? 'checked' : ''} onchange="toggleLabExperiment('${e.id}')">
+            <div style="flex: 1;">
+              <div class="study-item-title">${escapeHtml(e.name)}</div>
+              <div style="font-size: 0.64rem; color: ${e.verified ? '#4ade80' : '#f59e0b'}; font-weight: 700; margin-top: 2px;">
+                ${e.verified ? 'Verified by Faculty ✅' : 'Verification Pending ✍️'}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      labsListEl.innerHTML = lHtml;
+    }
+  }
+
+  // 3. PYQs & Notes Pane
+  const pyqListEl = document.getElementById('studyPyqVaultList');
+  if (pyqListEl) {
+    const notes = data.notes || [];
+    let nHtml = '';
+    notes.forEach(n => {
+      nHtml += `
+        <a href="${n.url || '#'}" target="_blank" class="study-vault-item">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.1rem;">📑</span>
+            <div>
+              <div style="font-size: 0.80rem; font-weight: 800; color: #fff;">${escapeHtml(n.title)}</div>
+              <div style="font-size: 0.65rem; color: #38bdf8;">Click to view / download</div>
+            </div>
+          </div>
+          <span style="font-size: 0.80rem; color: #94a3b8;">➔</span>
+        </a>
+      `;
+    });
+    pyqListEl.innerHTML = nHtml;
+  }
+}
+
+function toggleSyllabusUnit(unitId) {
+  if (!currentStudyHubSubject || !state.data.studyHubData) return;
+  const data = state.data.studyHubData[currentStudyHubSubject];
+  const unit = (data.units || []).find(u => u.id === unitId);
+  if (unit) {
+    unit.completed = !unit.completed;
+    state.save();
+    renderStudyHubModal();
+  }
+}
+
+function toggleLabExperiment(expId) {
+  if (!currentStudyHubSubject || !state.data.studyHubData) return;
+  const data = state.data.studyHubData[currentStudyHubSubject];
+  const exp = (data.experiments || []).find(e => e.id === expId);
+  if (exp) {
+    exp.completed = !exp.completed;
+    if (exp.completed) exp.verified = true;
+    state.save();
+    renderStudyHubModal();
+  }
+}
+
+function promptAddSyllabusUnit() {
+  const name = prompt('Enter topic or unit title:');
+  if (!name || !name.trim()) return;
+  const data = state.data.studyHubData[currentStudyHubSubject];
+  if (!data.units) data.units = [];
+  data.units.push({
+    id: 'u-' + Date.now(),
+    name: name.trim(),
+    completed: false
+  });
+  state.save();
+  renderStudyHubModal();
+  showToast('Topic added to syllabus!');
+}
+
+function promptAddLabExperiment() {
+  const name = prompt('Enter experiment title (e.g. Exp 6: K-Means Clustering):');
+  if (!name || !name.trim()) return;
+  const data = state.data.studyHubData[currentStudyHubSubject];
+  if (!data.experiments) data.experiments = [];
+  data.experiments.push({
+    id: 'exp-' + Date.now(),
+    name: name.trim(),
+    completed: false,
+    verified: false
+  });
+  state.save();
+  renderStudyHubModal();
+  showToast('Experiment added to practicals!');
+}
+
+function addCustomStudyNote() {
+  const titleEl = document.getElementById('inputCustomNoteTitle');
+  const urlEl = document.getElementById('inputCustomNoteUrl');
+  const title = titleEl ? titleEl.value.trim() : '';
+  const url = urlEl ? urlEl.value.trim() : '';
+
+  if (!title) {
+    showToast('Please enter a resource title');
+    return;
+  }
+
+  const data = state.data.studyHubData[currentStudyHubSubject];
+  if (!data.notes) data.notes = [];
+  data.notes.unshift({
+    title,
+    url: url || '#'
+  });
+  state.save();
+  renderStudyHubModal();
+  showToast('Study resource saved!');
+
+  if (titleEl) titleEl.value = '';
+  if (urlEl) urlEl.value = '';
+}
+
 // ================= AUTHENTICATION & ROLE ISOLATION =================
 function getAuthSession() {
   if (!state.data.authSession) {
@@ -5240,6 +6008,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   setInterval(checkLectureTimes, 5000);
+  setInterval(renderLiveCampusRadar, 15000);
 });
 
 // Global scope bindings for inline HTML handlers
@@ -5270,3 +6039,22 @@ window.renderNoticeboard = renderNoticeboard;
 window.openAddNoticeModal = openAddNoticeModal;
 window.submitNewNotice = submitNewNotice;
 window.deleteNotice = deleteNotice;
+window.renderLiveCampusRadar = renderLiveCampusRadar;
+window.renderWhatIfSimulator = renderWhatIfSimulator;
+window.adjustSimCount = adjustSimCount;
+window.applySimPreset = applySimPreset;
+window.resetWhatIfSimulator = resetWhatIfSimulator;
+window.runWhatIfSimulation = runWhatIfSimulation;
+window.renderStudentAcademicsSummary = renderStudentAcademicsSummary;
+window.openCgpaModal = openCgpaModal;
+window.renderCgpaModal = renderCgpaModal;
+window.recalcCgpaRow = recalcCgpaRow;
+window.saveCgpaInputs = saveCgpaInputs;
+window.openStudyHubModal = openStudyHubModal;
+window.switchStudyHubTab = switchStudyHubTab;
+window.renderStudyHubModal = renderStudyHubModal;
+window.toggleSyllabusUnit = toggleSyllabusUnit;
+window.toggleLabExperiment = toggleLabExperiment;
+window.promptAddSyllabusUnit = promptAddSyllabusUnit;
+window.promptAddLabExperiment = promptAddLabExperiment;
+window.addCustomStudyNote = addCustomStudyNote;
