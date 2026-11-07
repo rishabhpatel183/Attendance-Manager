@@ -77,30 +77,110 @@
     </div>
   </header>
 
-  <!-- Top Portal Role Selector (Student vs Faculty Admin) -->
-  <div class="portal-role-bar">
-    <div class="portal-role-pills">
-      <button id="btnRoleStudent" class="btn-role-pill active">
-        <span>🎓 Student App</span>
-      </button>
-      <button id="btnRoleFaculty" class="btn-role-pill">
-        <span>👨‍🏫 Faculty Portal</span>
-        <span id="facultyPendingBadge" class="faculty-notif-dot" style="display: none;">0</span>
-      </button>
+  <!-- Top Authenticated User Status Bar -->
+  <div id="portalAuthBar" class="portal-auth-bar" style="display: none;">
+    <div class="user-badge-chip" id="userBadgeChip">
+      <span id="userBadgeIcon" class="user-badge-avatar">🎓</span>
+      <div style="display: flex; flex-direction: column; line-height: 1.15;">
+        <span id="userBadgeName" style="font-weight: 800; color: #fff; font-size: 0.82rem;">Rishabh Patel</span>
+        <span id="userBadgeRole" style="font-size: 0.68rem; color: var(--accent-cyan); font-weight: 600;">Roll #104 • CSE 5th Sem</span>
+      </div>
     </div>
-    <div id="facultySelectorWrapper" class="faculty-selector-wrapper" style="display: none;">
-      <select id="selectCurrentFaculty" class="select-faculty-dropdown" title="Simulate different professors">
-        <option value="fac-1">Prof. Rishabh Patel (CS)</option>
-        <option value="fac-2">Dr. Neha Verma (Data Science)</option>
-        <option value="fac-3">Prof. Amit Sharma (AI/ML)</option>
-        <option value="fac-4">Prof. Rajesh Kumar (Software Engg)</option>
-        <option value="fac-5">Prof. Priya Singh (Networking)</option>
-      </select>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div id="facultySelectorWrapper" class="faculty-selector-wrapper" style="display: none;">
+        <select id="selectCurrentFaculty" class="select-faculty-dropdown" title="Simulate different professors">
+          <option value="fac-1">Prof. Rishabh Patel (CS)</option>
+          <option value="fac-2">Dr. Neha Verma (Data Science)</option>
+          <option value="fac-3">Prof. Amit Sharma (AI/ML)</option>
+          <option value="fac-4">Prof. Rajesh Kumar (Software Engg)</option>
+          <option value="fac-5">Prof. Priya Singh (Networking)</option>
+        </select>
+      </div>
+      <button type="button" id="btnLogoutSession" class="btn-auth-logout" title="Sign out of this session" onclick="logoutSession()">
+        <span>🚪</span> Logout
+      </button>
     </div>
   </div>
 
   <!-- Main View Container -->
   <main class="main-container">
+
+    <!-- ================= 0. AUTHENTICATION & LOGIN GATEWAY ================= -->
+    <div id="viewAuthGateway" class="auth-gateway-container" style="display: none;">
+      <div class="auth-card">
+        <div class="auth-header">
+          <div class="auth-logo-badge">🏛️</div>
+          <h1 class="auth-title">Campus ERP Portal</h1>
+          <p class="auth-sub">Secure Academic ERP for Students & Faculty</p>
+        </div>
+
+        <!-- Role Switcher Tabs for Login -->
+        <div class="auth-role-tabs">
+          <button type="button" id="tabBtnStudentAuth" class="auth-role-tab student-tab active" onclick="switchAuthTab('student')">
+            <span>🎓 Student Login</span>
+          </button>
+          <button type="button" id="tabBtnFacultyAuth" class="auth-role-tab" onclick="switchAuthTab('faculty')">
+            <span>👨‍🏫 Faculty Login</span>
+          </button>
+        </div>
+
+        <!-- 1. Student Login Form -->
+        <form id="formStudentLogin" class="auth-form-pane active" onsubmit="handleStudentLoginSubmit(event)">
+          <div class="form-field" style="margin-bottom: 12px;">
+            <label class="form-label-text" for="inputStudentRoll">Student Roll Number or College Email:</label>
+            <input type="text" id="inputStudentRoll" class="form-input-box" placeholder="e.g. 104 or rishabh.p@college.edu" value="104" required>
+          </div>
+
+          <div class="form-field" style="margin-bottom: 14px;">
+            <label class="form-label-text" for="inputStudentPin">Passcode / PIN:</label>
+            <input type="password" id="inputStudentPin" class="form-input-box" placeholder="Enter PIN (Default: 1234)" value="1234" required>
+            <span style="font-size: 0.70rem; color: var(--text-muted); margin-top: 4px; display: block;">Default PIN for all student profiles is <strong>1234</strong></span>
+          </div>
+
+          <!-- Quick 1-Tap Student Demo Pills -->
+          <div style="margin-bottom: 16px;">
+            <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; margin-bottom: 6px; text-transform: uppercase;">⚡ Quick 1-Tap Profiles:</div>
+            <div class="auth-quick-pills">
+              <button type="button" class="auth-quick-pill" onclick="quickFillStudent('104')">⚡ Rishabh Patel (#104)</button>
+              <button type="button" class="auth-quick-pill" onclick="quickFillStudent('101')">⚡ Aarav Sharma (#101)</button>
+              <button type="button" class="auth-quick-pill" onclick="quickFillStudent('102')">⚡ Aditi Rao (#102)</button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-cta-primary" style="background: linear-gradient(135deg, #00d68f, #00ab72); color: #000; font-weight: 900;">
+            🚀 Sign In as Student
+          </button>
+        </form>
+
+        <!-- 2. Faculty Login Form -->
+        <form id="formFacultyLogin" class="auth-form-pane" style="display: none;" onsubmit="handleFacultyLoginSubmit(event)">
+          <div class="form-field" style="margin-bottom: 12px;">
+            <label class="form-label-text" for="inputFacultyId">Faculty ID or College Email:</label>
+            <input type="text" id="inputFacultyId" class="form-input-box" placeholder="e.g. fac-1 or rishabh.cs@college.edu" value="fac-1" required>
+          </div>
+
+          <div class="form-field" style="margin-bottom: 14px;">
+            <label class="form-label-text" for="inputFacultyPin">Faculty Security PIN:</label>
+            <input type="password" id="inputFacultyPin" class="form-input-box" placeholder="Enter PIN (Default: 1234)" value="1234" required>
+            <span style="font-size: 0.70rem; color: var(--text-muted); margin-top: 4px; display: block;">Default PIN for all faculty profiles is <strong>1234</strong></span>
+          </div>
+
+          <!-- Quick 1-Tap Faculty Demo Pills -->
+          <div style="margin-bottom: 16px;">
+            <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; margin-bottom: 6px; text-transform: uppercase;">⚡ Quick 1-Tap Profiles:</div>
+            <div class="auth-quick-pills">
+              <button type="button" class="auth-quick-pill" onclick="quickFillFaculty('fac-1')">⚡ Prof. Rishabh Patel (CS)</button>
+              <button type="button" class="auth-quick-pill" onclick="quickFillFaculty('fac-2')">⚡ Dr. Neha Verma (Data Science)</button>
+              <button type="button" class="auth-quick-pill" onclick="quickFillFaculty('fac-3')">⚡ Prof. Amit Sharma (AI/ML)</button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-cta-primary" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; font-weight: 900;">
+            🔐 Sign In as Faculty
+          </button>
+        </form>
+      </div>
+    </div>
 
     <!-- ================= 1. STUDENT APP VIEW ================= -->
     <div id="viewStudentApp">
@@ -166,6 +246,22 @@
         </div>
         <div id="subjectListContainer">
           <!-- Injected via app.js -->
+        </div>
+      </div>
+
+      <!-- Assigned Teachers Directory (Student View) -->
+      <div id="studentTeachersDirectory" class="assigned-teachers-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <div>
+            <h3 style="font-size: 0.95rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px; margin: 0;">
+              <span>👨‍🏫</span> My Assigned Teachers
+            </h3>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">CSE-5th Sem Faculty Directory</span>
+          </div>
+          <span class="badge-tag-upcoming" style="font-size: 0.68rem;">Official Directory</span>
+        </div>
+        <div id="assignedTeachersList" class="assigned-teachers-grid">
+          <!-- Injected via renderAssignedTeachers() -->
         </div>
       </div>
     </section>

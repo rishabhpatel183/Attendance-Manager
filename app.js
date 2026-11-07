@@ -142,6 +142,13 @@ const DEFAULT_STUDENTS = [
 
 // 100% Clean Default State with Faculty & Substitution Engine
 const DEFAULT_STATE = {
+  authSession: {
+    isLoggedIn: true,
+    role: 'student', // 'student' | 'faculty'
+    userId: '104',
+    name: 'Rishabh Patel',
+    subtitle: 'Roll #104 • CSE 5th Sem'
+  },
   activeRole: 'student', // 'student' | 'faculty'
   currentFacultyId: 'fac-1',
   faculties: DEFAULT_FACULTIES,
@@ -254,6 +261,7 @@ class AppState {
         const data = {
           ...DEFAULT_STATE,
           ...parsed,
+          authSession: parsed.authSession || DEFAULT_STATE.authSession,
           activeRole: parsed.activeRole || DEFAULT_STATE.activeRole,
           currentFacultyId: parsed.currentFacultyId || DEFAULT_STATE.currentFacultyId,
           faculties: (parsed.faculties && parsed.faculties.length) ? parsed.faculties : DEFAULT_STATE.faculties,
@@ -1287,6 +1295,8 @@ function renderDashboard() {
       </div>
     `;
 
+    const assignedFac = getAssignedFacultyForSubject(lec.subject);
+
     heroContainer.innerHTML = `
       <div class="upcoming-hero-card">
         <div class="card-top-badge-row">
@@ -1296,6 +1306,11 @@ function renderDashboard() {
         
         <h2 class="upcoming-subject-title">${lec.subject}</h2>
         <div class="upcoming-time-meta">⏰ ${format12h(lec.startTime)} - ${format12h(lec.endTime)} • 📍 ${lec.room || 'No Room Specified'}</div>
+        <div style="font-size: 0.76rem; font-weight: 700; color: #94a3b8; margin: 4px 0 6px 0; display: flex; align-items: center; gap: 6px;">
+          <span>👨‍🏫 Teacher:</span>
+          <span style="color: #fff; font-weight: 800;">${assignedFac ? assignedFac.name : 'Department Faculty'}</span>
+          <span style="font-size: 0.70rem; color: var(--accent-cyan); font-weight: 600;">(${assignedFac ? assignedFac.dept : 'CSE'})</span>
+        </div>
 
         ${upcomingData.substituteInfo ? `
           <div style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 8px; padding: 7px 11px; margin: 8px 0; font-size: 0.78rem; font-weight: 700; color: #93c5fd; display: flex; align-items: center; gap: 6px;">
@@ -1469,6 +1484,8 @@ function renderDashboard() {
     `;
     subContainer.appendChild(card);
   });
+
+  renderAssignedTeachers();
 }
 
 function quickAddAttendance(subject, status) {
@@ -1510,6 +1527,7 @@ function renderTimetable() {
   list.forEach(lec => {
     const row = document.createElement('div');
     row.className = 'timetable-row';
+    const assignedFac = getAssignedFacultyForSubject(lec.subject);
     row.innerHTML = `
       <div class="time-badge">
         <div class="time-start">${format12h(lec.startTime)}</div>
@@ -1517,7 +1535,7 @@ function renderTimetable() {
       </div>
       <div class="lec-details">
         <div class="lec-name">${lec.subject}</div>
-        <div class="lec-meta">📍 ${lec.room || 'No Room Specified'}</div>
+        <div class="lec-meta">📍 ${lec.room || 'No Room Specified'} • 👨‍🏫 ${assignedFac ? assignedFac.name : 'Faculty TBA'}</div>
       </div>
       <div class="lec-row-actions">
         <button class="btn-chip btn-chip-blue" onclick="openEditLecture('${lec.id}')">✏️</button>
@@ -3441,21 +3459,138 @@ function getCurrentFaculty() {
   return (state.data.faculties || []).find(f => f.id === facId) || state.data.faculties[0];
 }
 
-function switchPortalRole(role) {
-  state.data.activeRole = role;
-  state.save();
+// ================= ASSIGNED TEACHERS DIRECTORY =================
+function getAssignedFacultyForSubject(subjectName) {
+  if (!subjectName) return null;
+  const subLower = subjectName.trim().toLowerCase();
+  const faculties = state.data.faculties || DEFAULT_FACULTIES;
 
-  const btnStudent = document.getElementById('btnRoleStudent');
-  const btnFaculty = document.getElementById('btnRoleFaculty');
+  // 1. Exact match in faculty.subjects
+  for (const fac of faculties) {
+    if ((fac.subjects || []).some(s => s.trim().toLowerCase() === subLower)) {
+      return fac;
+    }
+  }
+
+  // 2. Direct contains / substring match
+  for (const fac of faculties) {
+    if ((fac.subjects || []).some(s => s.toLowerCase().includes(subLower) || subLower.includes(s.toLowerCase()))) {
+      return fac;
+    }
+  }
+
+  // 3. Keyword fallback matching
+  if (subLower.includes('data') || subLower.includes('mining')) return faculties.find(f => f.id === 'fac-2') || faculties[0];
+  if (subLower.includes('intelligence') || subLower.includes('algorithm')) return faculties.find(f => f.id === 'fac-1') || faculties[0];
+  if (subLower.includes('learning') || subLower.includes('neural')) return faculties.find(f => f.id === 'fac-3') || faculties[0];
+  if (subLower.includes('network') || subLower.includes('security')) return faculties.find(f => f.id === 'fac-5') || faculties[0];
+  if (subLower.includes('software') || subLower.includes('database')) return faculties.find(f => f.id === 'fac-4') || faculties[0];
+
+  return faculties[0];
+}
+
+function renderAssignedTeachers() {
+  const container = document.getElementById('assignedTeachersList');
+  if (!container) return;
+
+  const subjects = state.getUniqueSubjects();
+  if (subjects.length === 0) {
+    container.innerHTML = `
+      <div style="font-size: 0.78rem; color: var(--text-muted); padding: 8px 0;">No subjects added in your timetable yet.</div>
+    `;
+    return;
+  }
+
+  const now = new Date();
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const todayName = days[now.getDay()];
+
+  let html = '';
+  subjects.forEach(sub => {
+    const fac = getAssignedFacultyForSubject(sub);
+    if (!fac) return;
+
+    // Check if there is an active accepted substitute for this subject today
+    const activeSub = (state.data.substitutions || []).find(s => 
+      s.status === 'accepted' && 
+      s.day === todayName && 
+      s.subject.trim().toLowerCase() === sub.trim().toLowerCase()
+    );
+
+    html += `
+      <div class="teacher-card">
+        <div class="teacher-card-left">
+          <div class="teacher-avatar">👨‍🏫</div>
+          <div>
+            <div class="teacher-name">${fac.name}</div>
+            <div class="teacher-meta">${sub} • <span style="color: var(--accent-cyan); font-weight: 700;">${fac.dept}</span></div>
+            ${activeSub ? `
+              <div style="font-size: 0.68rem; color: #93c5fd; font-weight: 700; margin-top: 3px;">
+                🔄 Substitute Today: <strong>${activeSub.toFacultyName}</strong>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+        <div>
+          <span class="slot-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-size: 0.68rem; padding: 3px 8px;">
+            ${fac.title.split(' ')[0] || 'Faculty'}
+          </span>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+// ================= AUTHENTICATION & ROLE ISOLATION =================
+function getAuthSession() {
+  if (!state.data.authSession) {
+    state.data.authSession = {
+      isLoggedIn: true,
+      role: 'student',
+      userId: '104',
+      name: 'Rishabh Patel',
+      subtitle: 'Roll #104 • CSE 5th Sem'
+    };
+  }
+  return state.data.authSession;
+}
+
+function applyAuthSession() {
+  const session = getAuthSession();
+  const authBar = document.getElementById('portalAuthBar');
+  const authGateway = document.getElementById('viewAuthGateway');
   const viewStudent = document.getElementById('viewStudentApp');
   const viewFaculty = document.getElementById('viewFacultyPortal');
   const dockStudent = document.getElementById('dockStudentNav');
   const dockFaculty = document.getElementById('dockFacultyNav');
   const facSelectWrapper = document.getElementById('facultySelectorWrapper');
+  const badgeIcon = document.getElementById('userBadgeIcon');
+  const badgeName = document.getElementById('userBadgeName');
+  const badgeRole = document.getElementById('userBadgeRole');
 
-  if (role === 'faculty') {
-    if (btnStudent) btnStudent.classList.remove('active');
-    if (btnFaculty) btnFaculty.classList.add('active');
+  if (!session || !session.isLoggedIn) {
+    // Show Login Gateway Screen, Hide all apps & docks
+    if (authGateway) authGateway.style.display = 'block';
+    if (authBar) authBar.style.display = 'none';
+    if (viewStudent) viewStudent.style.display = 'none';
+    if (viewFaculty) viewFaculty.style.display = 'none';
+    if (dockStudent) dockStudent.style.display = 'none';
+    if (dockFaculty) dockFaculty.style.display = 'none';
+    if (facSelectWrapper) facSelectWrapper.style.display = 'none';
+    return;
+  }
+
+  // User is Logged In
+  if (authGateway) authGateway.style.display = 'none';
+  if (authBar) authBar.style.display = 'flex';
+
+  if (session.role === 'faculty') {
+    if (badgeIcon) badgeIcon.textContent = '👨‍🏫';
+    if (badgeName) badgeName.textContent = session.name;
+    if (badgeRole) badgeRole.textContent = session.subtitle || 'Faculty Member';
+
     if (viewStudent) viewStudent.style.display = 'none';
     if (viewFaculty) viewFaculty.style.display = 'block';
     if (dockStudent) dockStudent.style.display = 'none';
@@ -3464,8 +3599,11 @@ function switchPortalRole(role) {
 
     renderFacultyPortal();
   } else {
-    if (btnFaculty) btnFaculty.classList.remove('active');
-    if (btnStudent) btnStudent.classList.add('active');
+    // Student Session
+    if (badgeIcon) badgeIcon.textContent = '🎓';
+    if (badgeName) badgeName.textContent = session.name;
+    if (badgeRole) badgeRole.textContent = session.subtitle || `Roll #${session.userId || '104'} • Student`;
+
     if (viewFaculty) viewFaculty.style.display = 'none';
     if (viewStudent) viewStudent.style.display = 'block';
     if (dockFaculty) dockFaculty.style.display = 'none';
@@ -3474,6 +3612,145 @@ function switchPortalRole(role) {
 
     renderDashboard();
     renderWeeklyMatrix();
+    renderAssignedTeachers();
+  }
+}
+
+function switchAuthTab(role) {
+  const tabStudent = document.getElementById('tabBtnStudentAuth');
+  const tabFaculty = document.getElementById('tabBtnFacultyAuth');
+  const formStudent = document.getElementById('formStudentLogin');
+  const formFaculty = document.getElementById('formFacultyLogin');
+
+  if (role === 'student') {
+    if (tabStudent) {
+      tabStudent.classList.add('active');
+      tabStudent.classList.add('student-tab');
+    }
+    if (tabFaculty) tabFaculty.classList.remove('active');
+    if (formStudent) formStudent.style.display = 'block';
+    if (formFaculty) formFaculty.style.display = 'none';
+  } else {
+    if (tabFaculty) tabFaculty.classList.add('active');
+    if (tabStudent) {
+      tabStudent.classList.remove('active');
+      tabStudent.classList.remove('student-tab');
+    }
+    if (formFaculty) formFaculty.style.display = 'block';
+    if (formStudent) formStudent.style.display = 'none';
+  }
+}
+
+function quickFillStudent(roll) {
+  const inputRoll = document.getElementById('inputStudentRoll');
+  const inputPin = document.getElementById('inputStudentPin');
+  if (inputRoll) inputRoll.value = roll;
+  if (inputPin) inputPin.value = '1234';
+}
+
+function quickFillFaculty(facId) {
+  const inputId = document.getElementById('inputFacultyId');
+  const inputPin = document.getElementById('inputFacultyPin');
+  if (inputId) inputId.value = facId;
+  if (inputPin) inputPin.value = '1234';
+}
+
+function handleStudentLoginSubmit(e) {
+  if (e) e.preventDefault();
+  const inputRoll = document.getElementById('inputStudentRoll');
+  const inputPin = document.getElementById('inputStudentPin');
+  const val = (inputRoll ? inputRoll.value : '').trim().toLowerCase();
+  const pin = (inputPin ? inputPin.value : '').trim();
+
+  const students = state.data.studentsList || DEFAULT_STUDENTS;
+  const match = students.find(s => 
+    s.roll.toLowerCase() === val || 
+    s.email.toLowerCase() === val || 
+    s.name.toLowerCase().includes(val)
+  );
+
+  if (!match) {
+    alert(`Student profile not found for "${val}". Please check your Roll number or try 104.`);
+    return;
+  }
+
+  if (pin !== '1234') {
+    alert('Invalid security PIN. (Default PIN is 1234)');
+    return;
+  }
+
+  state.data.authSession = {
+    isLoggedIn: true,
+    role: 'student',
+    userId: match.roll,
+    name: match.name,
+    email: match.email,
+    subtitle: `Roll #${match.roll} • CSE-5th Sem`
+  };
+  state.data.activeRole = 'student';
+  state.save();
+
+  applyAuthSession();
+  showBottomToast(`Welcome back, ${match.name}! 🎓`, 'Dismiss', hideBottomToast);
+}
+
+function handleFacultyLoginSubmit(e) {
+  if (e) e.preventDefault();
+  const inputId = document.getElementById('inputFacultyId');
+  const inputPin = document.getElementById('inputFacultyPin');
+  const val = (inputId ? inputId.value : '').trim().toLowerCase();
+  const pin = (inputPin ? inputPin.value : '').trim();
+
+  const faculties = state.data.faculties || DEFAULT_FACULTIES;
+  const match = faculties.find(f => 
+    f.id.toLowerCase() === val || 
+    f.name.toLowerCase().includes(val) || 
+    (f.dept && f.dept.toLowerCase().includes(val))
+  );
+
+  if (!match) {
+    alert(`Faculty profile not found for "${val}". Try "fac-1" or "Rishabh".`);
+    return;
+  }
+
+  if (pin !== '1234') {
+    alert('Invalid security PIN. (Default PIN is 1234)');
+    return;
+  }
+
+  state.data.authSession = {
+    isLoggedIn: true,
+    role: 'faculty',
+    userId: match.id,
+    name: match.name,
+    subtitle: `${match.title} • ${match.dept}`
+  };
+  state.data.activeRole = 'faculty';
+  state.data.currentFacultyId = match.id;
+  state.save();
+
+  applyAuthSession();
+  showBottomToast(`Welcome back, ${match.name}! 👨‍🏫`, 'Dismiss', hideBottomToast);
+}
+
+function logoutSession() {
+  if (!confirm('Log out of your current session?')) return;
+  state.data.authSession = {
+    isLoggedIn: false,
+    role: null,
+    userId: null,
+    name: null
+  };
+  state.save();
+  applyAuthSession();
+  showBottomToast('Logged out successfully. 🔒', 'Dismiss', hideBottomToast);
+}
+
+function switchPortalRole(role) {
+  if (role === 'faculty') {
+    handleFacultyLoginSubmit(null);
+  } else {
+    handleStudentLoginSubmit(null);
   }
 }
 
@@ -4713,8 +4990,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Restore Active Role on Load
-  switchPortalRole(state.data.activeRole || 'student');
+  // Apply Auth Session & Role Isolation on Load
+  applyAuthSession();
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error:', err));
@@ -4736,3 +5013,12 @@ window.setStudentRollStatus = setStudentRollStatus;
 window.markAllRollCall = markAllRollCall;
 window.submitBatchRollCall = submitBatchRollCall;
 window.exportBatchAnalyticsCsv = exportBatchAnalyticsCsv;
+window.switchAuthTab = switchAuthTab;
+window.quickFillStudent = quickFillStudent;
+window.quickFillFaculty = quickFillFaculty;
+window.handleStudentLoginSubmit = handleStudentLoginSubmit;
+window.handleFacultyLoginSubmit = handleFacultyLoginSubmit;
+window.logoutSession = logoutSession;
+window.applyAuthSession = applyAuthSession;
+window.renderAssignedTeachers = renderAssignedTeachers;
+window.getAssignedFacultyForSubject = getAssignedFacultyForSubject;
