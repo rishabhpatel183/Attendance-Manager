@@ -413,6 +413,40 @@ const DEFAULT_STATE = {
       ]
     }
   ],
+  odRequests: [
+    {
+      id: 'od-1',
+      studentRoll: '104',
+      studentName: 'Rishabh Patel',
+      enrollment: 'EN22CS301104',
+      batch: 'CSE Batch A1',
+      company: 'Impetus Technologies',
+      role: 'Big Data & AI Engineer',
+      event: 'Pre-Placement Talk (Audi-2)',
+      day: 'Wednesday',
+      timeSlot: '11:10 - 12:50',
+      subject: 'Data Science Lab',
+      facultyId: 'fac-1',
+      status: 'pending',
+      date: 'Nov 12, 2026'
+    },
+    {
+      id: 'od-2',
+      studentRoll: '106',
+      studentName: 'Aryan Joshi',
+      enrollment: 'EN22CS301106',
+      batch: 'CSE Batch A1',
+      company: 'Cisco Systems',
+      role: 'Software Engineer (Cloud & Networks)',
+      event: 'Round 1 Online Coding Assessment',
+      day: 'Monday',
+      timeSlot: '11:10 - 12:50',
+      subject: 'Machine Learning',
+      facultyId: 'fac-1',
+      status: 'pending',
+      date: 'Nov 18, 2026'
+    }
+  ],
   records: [],
   promptedHistory: {},
   dayAbsent: {} // { [dateStr]: true }
@@ -490,6 +524,7 @@ class AppState {
           studentAcademics: parsed.studentAcademics || DEFAULT_STATE.studentAcademics,
           studyHubData: parsed.studyHubData || DEFAULT_STATE.studyHubData,
           placementsData: (parsed.placementsData && parsed.placementsData.length) ? parsed.placementsData : DEFAULT_STATE.placementsData,
+          odRequests: (parsed.odRequests && parsed.odRequests.length) ? parsed.odRequests : DEFAULT_STATE.odRequests,
           settings: { ...DEFAULT_STATE.settings, ...parsed.settings },
           timetable: { ...DEFAULT_STATE.timetable, ...parsed.timetable },
           baseAttendance: { ...(parsed.baseAttendance || {}) },
@@ -5307,6 +5342,7 @@ function switchFacultyTab(tabName) {
   const tabMap = {
     schedule: 'facultyTabSchedule',
     substitutions: 'facultyTabSubstitutions',
+    od_approvals: 'facultyTabOdApprovals',
     analytics: 'facultyTabAnalytics',
     roster: 'facultyTabRoster'
   };
@@ -5321,6 +5357,7 @@ function switchFacultyTab(tabName) {
 
   if (tabName === 'schedule') renderFacultySchedule();
   else if (tabName === 'substitutions') renderSubstitutionHub();
+  else if (tabName === 'od_approvals') renderFacultyOdApprovals();
   else if (tabName === 'analytics') renderBatchAnalytics();
   else if (tabName === 'roster') renderStudentRoster();
 }
@@ -5332,13 +5369,27 @@ function renderFacultyPortal() {
   // 1. Update Profile Banner
   const nameEl = document.getElementById('facNameText');
   const deptEl = document.getElementById('facDeptText');
+  const cabinEl = document.getElementById('facCabinText');
+  const officeEl = document.getElementById('facOfficeHoursText');
+  const phoneEl = document.getElementById('facPhoneText');
   const selectDropdown = document.getElementById('selectCurrentFaculty');
 
   if (nameEl) nameEl.textContent = fac.name;
   if (deptEl) deptEl.textContent = `${fac.title} • ${fac.dept}`;
+  if (cabinEl) cabinEl.textContent = fac.cabin || 'Cabin 304, CS Block B (3rd Floor)';
+  if (officeEl) officeEl.textContent = fac.officeHours || 'Mon & Wed • 3:30 - 4:30 PM';
+  if (phoneEl) phoneEl.textContent = fac.phone || 'Ext: 3404';
+
   if (selectDropdown && selectDropdown.value !== fac.id) {
     selectDropdown.value = fac.id;
   }
+
+  // Highlight active quick switcher chip
+  document.querySelectorAll('.btn-fac-chip').forEach(chip => {
+    if (chip && chip.classList) {
+      chip.classList.toggle('active', chip.id === `chipFac_${fac.id}`);
+    }
+  });
 
   // 2. Calculate Pending Substitution Requests Count
   const pendingIncoming = (state.data.substitutions || []).filter(
@@ -5368,7 +5419,17 @@ function renderFacultyPortal() {
     subCountVal.textContent = pendingIncoming.length;
   }
 
-  // 3. Render the currently active faculty sub-pane
+  // 3. Pending OD Requests Count
+  const pendingOd = (state.data.odRequests || []).filter(o => o.status === 'pending');
+  const odBadge = document.getElementById('facMetricOdPending');
+  const odPillDot = document.getElementById('facOdPillDot');
+  if (odBadge) odBadge.textContent = pendingOd.length;
+  if (odPillDot) {
+    odPillDot.textContent = pendingOd.length;
+    odPillDot.style.display = pendingOd.length > 0 ? 'inline-flex' : 'none';
+  }
+
+  // 4. Render the currently active faculty sub-pane
   switchFacultyTab(activeFacultyTab);
 }
 
@@ -5851,6 +5912,219 @@ function toggleFacultyLectureCancel(lecId, dayName) {
     renderDashboard();
     renderWeeklyMatrix();
     showBottomToast('Lecture cancelled for today. Students notified. ⚪', 'Dismiss', hideBottomToast);
+  }
+}
+
+/* ================= DUTY LEAVE (OD) APPROVALS ENGINE ================= */
+function renderFacultyOdApprovals() {
+  const container = document.getElementById('facOdRequestsList');
+  if (!container) return;
+
+  const fac = getCurrentFaculty();
+  const odList = state.data.odRequests || [];
+
+  if (odList.length === 0) {
+    container.innerHTML = `
+      <div style="background: #111422; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px; text-align: center; color: #94a3b8; font-size: 0.80rem;">
+        No pending Duty Leave (OD) waiver requests at this time.
+      </div>
+    `;
+    return;
+  }
+
+  let html = '';
+  odList.forEach(od => {
+    let statusPill = '';
+    let actionsHtml = '';
+
+    if (od.status === 'approved') {
+      statusPill = `<span class="slot-badge" style="background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4);">Approved & Credited ✅</span>`;
+    } else if (od.status === 'rejected') {
+      statusPill = `<span class="slot-badge" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4);">Declined ❌</span>`;
+    } else {
+      statusPill = `<span class="slot-badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);">⏳ Review Pending</span>`;
+      actionsHtml = `
+        <div class="od-actions-row">
+          <button type="button" class="btn-od-approve" onclick="approveOdRequest('${od.id}')">
+            ✅ Approve OD & Credit Attendance
+          </button>
+          <button type="button" class="btn-od-reject" onclick="rejectOdRequest('${od.id}')">
+            ❌ Decline
+          </button>
+        </div>
+      `;
+    }
+
+    html += `
+      <div class="od-card">
+        <div class="od-top-row">
+          <div>
+            <div class="od-student-name">🎓 ${escapeHtml(od.studentName)} (#${escapeHtml(od.studentRoll)})</div>
+            <div class="od-meta-text">Enrollment: <strong>${escapeHtml(od.enrollment || 'EN22CS301104')}</strong> • ${escapeHtml(od.batch || 'Batch A1')}</div>
+          </div>
+          <div>${statusPill}</div>
+        </div>
+
+        <div class="od-event-strip">
+          <div>
+            <div><strong>Company Drive:</strong> ${escapeHtml(od.company)} (${escapeHtml(od.role)})</div>
+            <div style="font-size: 0.68rem; color: #94a3b8; margin-top: 2px;">Session: ${escapeHtml(od.event)} • ⏰ ${escapeHtml(od.day || 'Upcoming')} (${escapeHtml(od.timeSlot || 'Slot')})</div>
+          </div>
+          <span style="font-size: 0.65rem; color: #38bdf8; font-weight: 800;">POD VERIFIED</span>
+        </div>
+
+        <div style="font-size: 0.72rem; color: #cbd5e1; margin-bottom: 8px;">
+          Affected Academic Slot: <strong style="color: #fca5a5;">${escapeHtml(od.subject)}</strong> (${escapeHtml(od.timeSlot)})
+        </div>
+
+        ${actionsHtml}
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function approveOdRequest(odId) {
+  const odList = state.data.odRequests || [];
+  const req = odList.find(o => o.id === odId);
+  if (!req) return;
+
+  req.status = 'approved';
+  req.approvedBy = getCurrentFaculty().name;
+  req.approvedAt = new Date().toISOString();
+
+  // Automatically credit attendance for student
+  if (state.data.baseAttendance && state.data.baseAttendance[req.subject]) {
+    state.data.baseAttendance[req.subject].attended++;
+    state.data.baseAttendance[req.subject].total++;
+  } else if (!state.data.baseAttendance) {
+    state.data.baseAttendance = {};
+    state.data.baseAttendance[req.subject] = { attended: 1, total: 1 };
+  }
+
+  state.save();
+  renderFacultyPortal();
+  renderDashboard();
+  showToast(`✅ Approved Duty Leave for ${req.studentName}. Attendance credited!`);
+}
+
+function rejectOdRequest(odId) {
+  const odList = state.data.odRequests || [];
+  const req = odList.find(o => o.id === odId);
+  if (!req) return;
+
+  req.status = 'rejected';
+  state.save();
+  renderFacultyPortal();
+  showToast(`Duty Leave request for ${req.studentName} was declined.`);
+}
+
+/* ================= DEFAULTER NOTICE GENERATOR ENGINE ================= */
+function openDefaulterNoticeModal() {
+  const modal = document.getElementById('modalDefaulterNotice');
+  const body = document.getElementById('defaulterNoticeBody');
+  if (!modal || !body) return;
+
+  const subjectSel = document.getElementById('selectAnalyticsSubject');
+  const subject = subjectSel ? subjectSel.value : 'Data Science';
+  const fac = getCurrentFaculty();
+  const students = state.data.studentsList || DEFAULT_STUDENTS;
+  const target = state.data.settings.targetPercentage || 75;
+
+  // Compute student stats
+  const defaulters = [];
+  students.forEach((st, idx) => {
+    let baseAtt = 14;
+    let baseTot = 18;
+    if (idx === 0) { baseAtt = 16; baseTot = 18; } // Rishabh
+    else if (idx % 3 === 0) { baseAtt = 9; baseTot = 16; } // Defaulter
+    else if (idx % 5 === 0) { baseAtt = 10; baseTot = 17; } // Defaulter
+
+    const pct = Math.round((baseAtt / baseTot) * 100);
+    if (pct < target) {
+      defaulters.push({
+        roll: st.roll,
+        name: st.name,
+        enrollment: `EN22CS301${st.roll}`,
+        attended: baseAtt,
+        total: baseTot,
+        pct: pct
+      });
+    }
+  });
+
+  let rowsHtml = '';
+  defaulters.forEach((d, i) => {
+    rowsHtml += `
+      <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+        <td style="padding: 6px 8px; font-weight: 700;">${i + 1}</td>
+        <td style="padding: 6px 8px; font-weight: 800; color: #fff;">#${d.roll}</td>
+        <td style="padding: 6px 8px; font-weight: 700;">${escapeHtml(d.name)}</td>
+        <td style="padding: 6px 8px; color: #94a3b8;">${escapeHtml(d.enrollment)}</td>
+        <td style="padding: 6px 8px; text-align: center;">${d.attended}/${d.total}</td>
+        <td style="padding: 6px 8px; text-align: right; color: #f87171; font-weight: 900;">${d.pct}%</td>
+      </tr>
+    `;
+  });
+
+  body.innerHTML = `
+    <div style="text-align: center; border-bottom: 2px solid #ef4444; padding-bottom: 10px; margin-bottom: 12px;">
+      <div style="font-weight: 900; color: #fff; font-size: 1rem; letter-spacing: 0.5px;">MEDI-CAPS UNIVERSITY, INDORE</div>
+      <div style="font-size: 0.72rem; color: #f87171; font-weight: 800;">OFFICE OF THE DEAN & HOD • DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING</div>
+      <div style="font-size: 0.88rem; font-weight: 900; color: #fff; margin-top: 6px;">OFFICIAL ATTENDANCE DEFAULTER NOTICE (< ${target}%)</div>
+      <div style="font-size: 0.70rem; color: #94a3b8;">Course: <strong>${escapeHtml(subject)}</strong> • B.Tech CSE 5th Semester (Batch A1) • Session 2026–27</div>
+    </div>
+
+    <p style="font-size: 0.72rem; color: #e2e8f0; line-height: 1.45; margin-bottom: 10px;">
+      The following students have failed to maintain the mandatory minimum <strong>${target}% attendance</strong> in <strong>${escapeHtml(subject)}</strong> as mandated by Medi-Caps University Academic Regulations. Unless immediate recovery classes are attended, these students will be <strong>debarred from Mid-Term and End-Semester Examinations</strong>.
+    </p>
+
+    <div style="overflow-x: auto; margin-bottom: 12px;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.72rem;">
+        <thead>
+          <tr style="background: rgba(239, 68, 68, 0.15); color: #fca5a5; text-align: left;">
+            <th style="padding: 6px 8px;">S.No</th>
+            <th style="padding: 6px 8px;">Roll</th>
+            <th style="padding: 6px 8px;">Student Name</th>
+            <th style="padding: 6px 8px;">Enrollment</th>
+            <th style="padding: 6px 8px; text-align: center;">Classes</th>
+            <th style="padding: 6px 8px; text-align: right;">Attendance</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 10px; font-size: 0.70rem; color: #cbd5e1;">
+      <div>
+        <div>Faculty In-Charge: <strong>${escapeHtml(fac.name)}</strong></div>
+        <div style="color: #94a3b8;">${escapeHtml(fac.dept)}</div>
+      </div>
+      <div style="text-align: right;">
+        <div>Approved by: <strong>Prof. Rajesh Kumar (HOD, CSE)</strong></div>
+        <div style="color: #94a3b8;">Date: <strong>${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</strong></div>
+      </div>
+    </div>
+  `;
+
+  modal.classList.add('active');
+}
+
+function printDefaulterNotice() {
+  window.print();
+}
+
+function copyDefaulterListText() {
+  const body = document.getElementById('defaulterNoticeBody');
+  if (body) {
+    navigator.clipboard.writeText(body.innerText).then(() => {
+      showToast('📋 Defaulter notice copied to clipboard!');
+    }).catch(() => {
+      showToast('Notice text ready to print.');
+    });
   }
 }
 
@@ -6537,6 +6811,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Global scope bindings for inline HTML handlers
 window.switchPortalRole = switchPortalRole;
+window.renderFacultyPortal = renderFacultyPortal;
+window.renderFacultySchedule = renderFacultySchedule;
+window.renderSubstitutionHub = renderSubstitutionHub;
+window.findAvailableSubstitutes = findAvailableSubstitutes;
 window.switchCurrentFaculty = switchCurrentFaculty;
 window.switchFacultyTab = switchFacultyTab;
 window.openSmartSubstituteModal = openSmartSubstituteModal;
@@ -6591,3 +6869,9 @@ window.openDutyLeaveModal = openDutyLeaveModal;
 window.printDutyLeaveSlip = printDutyLeaveSlip;
 window.emailDutyLeaveAdvisor = emailDutyLeaveAdvisor;
 window.syncPodDrives = syncPodDrives;
+window.renderFacultyOdApprovals = renderFacultyOdApprovals;
+window.approveOdRequest = approveOdRequest;
+window.rejectOdRequest = rejectOdRequest;
+window.openDefaulterNoticeModal = openDefaulterNoticeModal;
+window.printDefaulterNotice = printDefaulterNotice;
+window.copyDefaulterListText = copyDefaulterListText;

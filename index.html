@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" type="image/png" href="icon-192.png">
 
-  <link rel="stylesheet" href="styles.css?v=37">
+  <link rel="stylesheet" href="styles.css?v=38">
 
   <!-- Immediate Auto-Update Engine (Forces clean update on mobile devices) -->
   <script>
@@ -620,6 +620,9 @@
 
       <!-- Faculty Profile Banner -->
       <div id="facultyProfileCard" class="faculty-profile-banner">
+        <div style="font-size: 0.65rem; font-weight: 800; color: #38bdf8; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px;">
+          🏛️ MEDI-CAPS UNIVERSITY • FACULTY OF ENGINEERING
+        </div>
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
           <div>
             <div id="facNameText" class="faculty-banner-name">Prof. Rishabh Patel</div>
@@ -627,7 +630,16 @@
           </div>
           <span class="badge-faculty-tag">Faculty Portal</span>
         </div>
-        <div class="faculty-metrics-strip">
+
+        <div class="fac-profile-cabin-row">
+          <span>📍 <strong id="facCabinText">Cabin 304, CS Block B (3rd Floor)</strong></span>
+          <span>•</span>
+          <span>🕒 <strong id="facOfficeHoursText">Mon & Wed • 3:30 - 4:30 PM</strong></span>
+          <span>•</span>
+          <span>📞 <strong id="facPhoneText">Ext: 3404</strong></span>
+        </div>
+
+        <div class="faculty-metrics-strip" style="margin-top: 10px;">
           <div class="fac-metric-item">
             <span id="facMetricToday" class="fac-metric-val">2</span>
             <span class="fac-metric-lbl">Today's Classes</span>
@@ -637,9 +649,23 @@
             <span class="fac-metric-lbl">Sub Requests</span>
           </div>
           <div class="fac-metric-item">
+            <span id="facMetricOdPending" class="fac-metric-val" style="color: #38bdf8;">1</span>
+            <span class="fac-metric-lbl">OD Requests</span>
+          </div>
+          <div class="fac-metric-item">
             <span id="facMetricTotalStudents" class="fac-metric-val" style="color: #4ade80;">20</span>
             <span class="fac-metric-lbl">Enrolled Batch</span>
           </div>
+        </div>
+
+        <!-- Quick 1-Tap Faculty Switcher Bar -->
+        <div class="fac-quick-switcher-row">
+          <span style="font-size: 0.64rem; color: #94a3b8; font-weight: 700; white-space: nowrap;">Switch View:</span>
+          <button type="button" class="btn-fac-chip active" id="chipFac_fac-1" onclick="switchCurrentFaculty('fac-1')">Prof. Rishabh Patel</button>
+          <button type="button" class="btn-fac-chip" id="chipFac_fac-2" onclick="switchCurrentFaculty('fac-2')">Dr. Neha Verma</button>
+          <button type="button" class="btn-fac-chip" id="chipFac_fac-3" onclick="switchCurrentFaculty('fac-3')">Prof. Amit Sharma</button>
+          <button type="button" class="btn-fac-chip" id="chipFac_fac-4" onclick="switchCurrentFaculty('fac-4')">Prof. Rajesh Kumar (HOD)</button>
+          <button type="button" class="btn-fac-chip" id="chipFac_fac-5" onclick="switchCurrentFaculty('fac-5')">Prof. Priya Singh</button>
         </div>
       </div>
 
@@ -651,6 +677,10 @@
         <button class="fac-nav-pill" data-factab="substitutions">
           <span>🔄 Substitution Hub</span>
           <span id="facSubPillDot" class="faculty-notif-dot" style="display: none;">0</span>
+        </button>
+        <button class="fac-nav-pill" data-factab="od_approvals">
+          <span>🏛️ Duty Leave (OD)</span>
+          <span id="facOdPillDot" class="faculty-notif-dot" style="display: none;">0</span>
         </button>
         <button class="fac-nav-pill" data-factab="analytics">
           <span>📊 Defaulters & Analytics</span>
@@ -705,6 +735,20 @@
         </div>
       </section>
 
+      <!-- SECTION: DUTY LEAVE (OD) APPROVALS DESK -->
+      <section id="facultyTabOdApprovals" class="faculty-sub-pane">
+        <div class="section-header" style="margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <h3 class="section-title" style="font-size: 1rem; margin-bottom: 2px;">Placement Duty Leave (OD) Approvals</h3>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Review student recruitment interview slips & approve attendance waivers</div>
+          </div>
+        </div>
+
+        <div id="facOdRequestsList">
+          <!-- Injected via app.js -->
+        </div>
+      </section>
+
       <!-- SECTION 3: BATCH ANALYTICS & DEFAULTERS -->
       <section id="facultyTabAnalytics" class="faculty-sub-pane">
         <div class="section-header" style="margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
@@ -712,9 +756,14 @@
             <h3 class="section-title" style="font-size: 1rem; margin-bottom: 2px;">Batch Attendance Analytics</h3>
             <div style="font-size: 0.72rem; color: var(--text-muted);">Monitor attendance & identify &lt;75% defaulters</div>
           </div>
-          <button id="btnExportBatchCsv" class="btn-chip btn-chip-blue" style="font-size: 0.74rem; padding: 6px 10px;">
-            📥 Export CSV
-          </button>
+          <div style="display: flex; gap: 6px;">
+            <button id="btnGenDefaulterNotice" type="button" class="btn-chip btn-chip-red" onclick="openDefaulterNoticeModal()" style="font-size: 0.74rem; padding: 6px 10px;">
+              📢 Defaulter Notice
+            </button>
+            <button id="btnExportBatchCsv" class="btn-chip btn-chip-blue" style="font-size: 0.74rem; padding: 6px 10px;">
+              📥 Export CSV
+            </button>
+          </div>
         </div>
 
         <!-- Subject Filter Dropdown -->
@@ -1435,6 +1484,33 @@
     </div>
   </div>
 
-  <script src="app.js?v=37"></script>
+  <!-- Modal: Official University Defaulter Notice Modal -->
+  <div id="modalDefaulterNotice" class="modal-overlay">
+    <div class="bottom-sheet" style="max-height: 88vh; overflow-y: auto;">
+      <div class="sheet-handle"></div>
+      <div class="modal-title-bar" style="margin-bottom: 8px;">
+        <div>
+          <h3 class="modal-heading">📢 Attendance Defaulter Notice</h3>
+          <span style="font-size: 0.70rem; color: #f87171;">Medi-Caps University Examination Cell Warning</span>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modalDefaulterNotice')">&times;</button>
+      </div>
+
+      <div id="defaulterNoticeBody" style="background: #111422; border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 12px; padding: 14px; font-size: 0.76rem; color: #cbd5e1; line-height: 1.5; margin-bottom: 14px;">
+        <!-- Injected via openDefaulterNoticeModal() -->
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <button type="button" class="btn-cta-primary" onclick="printDefaulterNotice()" style="flex: 1; background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; font-weight: 900;">
+          🖨️ Print Official Notice
+        </button>
+        <button type="button" class="btn-chip" onclick="copyDefaulterListText()" style="background: rgba(255,255,255,0.08); padding: 10px 14px; color: #fff; font-weight: 700;">
+          📋 Copy Text
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=38"></script>
 </body>
 </html>
