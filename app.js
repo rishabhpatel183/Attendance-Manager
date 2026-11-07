@@ -2,10 +2,154 @@
  * Attendance Manager - Upcoming Class Focus & Thinkable Safe-Bunk Calculator
  */
 
-const STORAGE_KEY = 'attendance_pure_clean_v8';
+const STORAGE_KEY = 'attendance_admin_portal_v1';
 
-// 100% Clean Default State with NO pre-filled subjects
+const DEFAULT_FACULTIES = [
+  {
+    id: 'fac-1',
+    name: 'Prof. Rishabh Patel',
+    dept: 'Computer Science & Engineering',
+    title: 'Assistant Professor',
+    subjects: ['Data Science Lab', 'Artificial Intelligence', 'Machine Learning'],
+    email: 'rishabh.patel@college.edu'
+  },
+  {
+    id: 'fac-2',
+    name: 'Dr. Neha Verma',
+    dept: 'Data Science & Engineering',
+    title: 'Associate Professor',
+    subjects: ['Data Science', 'Data Science Lab', 'Python', 'Big Data Analytics'],
+    email: 'neha.verma@college.edu'
+  },
+  {
+    id: 'fac-3',
+    name: 'Prof. Amit Sharma',
+    dept: 'Computer Science & Engineering',
+    title: 'Assistant Professor',
+    subjects: ['Machine Learning', 'Expert Systems', 'Artificial Intelligence'],
+    email: 'amit.sharma@college.edu'
+  },
+  {
+    id: 'fac-4',
+    name: 'Prof. Rajesh Kumar',
+    dept: 'Computer Science & Engineering',
+    title: 'Senior Faculty',
+    subjects: ['Operating Systems', 'Computer Networks', 'Software Engineering'],
+    email: 'rajesh.kumar@college.edu'
+  },
+  {
+    id: 'fac-5',
+    name: 'Prof. Priya Singh',
+    dept: 'Information Technology',
+    title: 'Assistant Professor',
+    subjects: ['Computer Networks', 'DBMS', 'Web Technologies'],
+    email: 'priya.singh@college.edu'
+  }
+];
+
+const DEFAULT_FACULTY_SCHEDULES = {
+  'fac-1': {
+    Monday: [
+      { id: 'flec-1', subject: 'Artificial Intelligence', startTime: '02:30', endTime: '03:20', room: 'Room 302', batch: 'CSE-5th Sem' }
+    ],
+    Tuesday: [
+      { id: 'flec-2', subject: 'Data Science', startTime: '10:00', endTime: '11:00', room: 'Room 104', batch: 'CSE-5th Sem' }
+    ],
+    Wednesday: [
+      { id: 'flec-3', subject: 'Data Science Lab', startTime: '11:10', endTime: '12:50', room: 'Lab LV224', batch: 'CSE-5th Sem (Batch A)' },
+      { id: 'flec-4', subject: 'Artificial Intelligence', startTime: '02:30', endTime: '03:20', room: 'Room 302', batch: 'CSE-5th Sem' }
+    ],
+    Thursday: [
+      { id: 'flec-5', subject: 'Machine Learning', startTime: '01:40', endTime: '02:30', room: 'Room 205', batch: 'CSE-5th Sem' }
+    ],
+    Friday: [
+      { id: 'flec-6', subject: 'Data Science', startTime: '11:10', endTime: '12:00', room: 'Room 104', batch: 'CSE-5th Sem' }
+    ],
+    Saturday: []
+  },
+  'fac-2': {
+    Monday: [
+      { id: 'flec-21', subject: 'Big Data Analytics', startTime: '10:00', endTime: '11:00', room: 'Room 201', batch: 'DS-5th Sem' }
+    ],
+    Tuesday: [
+      { id: 'flec-22', subject: 'Data Science Lecture', startTime: '11:10', endTime: '12:00', room: 'Room 201', batch: 'DS-5th Sem' }
+    ],
+    Wednesday: [
+      { id: 'flec-23', subject: 'Python Lab', startTime: '02:30', endTime: '04:10', room: 'Lab 2', batch: 'DS-5th Sem' }
+    ],
+    Thursday: [],
+    Friday: [
+      { id: 'flec-24', subject: 'Data Structures', startTime: '09:00', endTime: '10:00', room: 'Room 201', batch: 'DS-3rd Sem' }
+    ],
+    Saturday: []
+  },
+  'fac-3': {
+    Monday: [],
+    Tuesday: [
+      { id: 'flec-31', subject: 'Expert Systems', startTime: '01:40', endTime: '02:30', room: 'Room 102', batch: 'CSE-5th Sem' }
+    ],
+    Wednesday: [
+      { id: 'flec-32', subject: 'Machine Learning', startTime: '09:00', endTime: '10:00', room: 'Room 102', batch: 'CSE-5th Sem' }
+    ],
+    Thursday: [],
+    Friday: [],
+    Saturday: []
+  },
+  'fac-4': {
+    Monday: [],
+    Tuesday: [],
+    Wednesday: [
+      { id: 'flec-41', subject: 'Operating Systems', startTime: '01:40', endTime: '02:30', room: 'Room 105', batch: 'CSE-5th Sem' }
+    ],
+    Thursday: [],
+    Friday: [],
+    Saturday: []
+  },
+  'fac-5': {
+    Monday: [],
+    Tuesday: [],
+    Wednesday: [
+      { id: 'flec-51', subject: 'Computer Networks Lab', startTime: '11:10', endTime: '12:50', room: 'Lab 1', batch: 'IT-5th Sem' }
+    ],
+    Thursday: [],
+    Friday: [],
+    Saturday: []
+  }
+};
+
+const DEFAULT_STUDENTS = [
+  { roll: '101', name: 'Aarav Sharma', email: 'aarav.101@college.edu' },
+  { roll: '102', name: 'Aditi Patel', email: 'aditi.102@college.edu' },
+  { roll: '103', name: 'Aryan Gupta', email: 'aryan.103@college.edu' },
+  { roll: '104', name: 'Rishabh Patel (You)', email: 'rishabh.104@college.edu', isUser: true },
+  { roll: '105', name: 'Diya Joshi', email: 'diya.105@college.edu' },
+  { roll: '106', name: 'Ishaan Verma', email: 'ishaan.106@college.edu' },
+  { roll: '107', name: 'Sneha Kulkarni', email: 'sneha.107@college.edu' },
+  { roll: '108', name: 'Rohan Mehta', email: 'rohan.108@college.edu' },
+  { roll: '109', name: 'Tanvi Shah', email: 'tanvi.109@college.edu' },
+  { roll: '110', name: 'Yash Malhotra', email: 'yash.110@college.edu' },
+  { roll: '111', name: 'Ananya Roy', email: 'ananya.111@college.edu' },
+  { roll: '112', name: 'Devansh Nair', email: 'devansh.112@college.edu' },
+  { roll: '113', name: 'Kavya Reddy', email: 'kavya.113@college.edu' },
+  { roll: '114', name: 'Manan Choudhary', email: 'manan.114@college.edu' },
+  { roll: '115', name: 'Meera Iyer', email: 'meera.115@college.edu' },
+  { roll: '116', name: 'Parth Singhal', email: 'parth.116@college.edu' },
+  { roll: '117', name: 'Riya Agarwal', email: 'riya.117@college.edu' },
+  { roll: '118', name: 'Siddharth Jain', email: 'siddharth.118@college.edu' },
+  { roll: '119', name: 'Tara Sen', email: 'tara.119@college.edu' },
+  { roll: '120', name: 'Varun Bhatt', email: 'varun.120@college.edu' }
+];
+
+// 100% Clean Default State with Faculty & Substitution Engine
 const DEFAULT_STATE = {
+  activeRole: 'student', // 'student' | 'faculty'
+  currentFacultyId: 'fac-1',
+  faculties: DEFAULT_FACULTIES,
+  facultySchedules: DEFAULT_FACULTY_SCHEDULES,
+  studentsList: DEFAULT_STUDENTS,
+  substitutions: [], // { id, fromFacultyId, fromFacultyName, toFacultyId, toFacultyName, lectureId, subject, day, date, startTime, endTime, room, notes, status, timestamp }
+  batchAttendance: {}, // { [lecId_dateStr]: { [roll]: 'present' | 'absent' } }
+  cancelledLectures: {}, // { [lecId_dateStr]: true }
   settings: {
     targetPercentage: 75,
     includeSaturday: false,
@@ -14,14 +158,38 @@ const DEFAULT_STATE = {
     popupEnabled: true
   },
   timetable: {
-    Monday: [],
-    Tuesday: [],
-    Wednesday: [],
-    Thursday: [],
-    Friday: [],
+    Monday: [
+      { id: 'lec-m1', subject: 'Data Science', startTime: '10:00', endTime: '11:00', room: 'Room 104' },
+      { id: 'lec-m2', subject: 'Machine Learning', startTime: '11:10', endTime: '12:50', room: 'Lab 2' },
+      { id: 'lec-m3', subject: 'Artificial Intelligence', startTime: '14:30', endTime: '15:20', room: 'Room 302' }
+    ],
+    Tuesday: [
+      { id: 'lec-t1', subject: 'Data Science', startTime: '10:00', endTime: '11:00', room: 'Room 104' },
+      { id: 'lec-t2', subject: 'Neural Networks', startTime: '14:30', endTime: '15:20', room: 'Room 201' }
+    ],
+    Wednesday: [
+      { id: 'lec-w1', subject: 'Data Science', startTime: '09:00', endTime: '10:00', room: 'Room 104' },
+      { id: 'lec-w2', subject: 'Data Science Lab', startTime: '11:10', endTime: '12:50', room: 'Lab LV224' },
+      { id: 'lec-w3', subject: 'Artificial Intelligence', startTime: '14:30', endTime: '15:20', room: 'Room 302' }
+    ],
+    Thursday: [
+      { id: 'lec-th1', subject: 'Machine Learning', startTime: '10:00', endTime: '11:00', room: 'Room 204' },
+      { id: 'lec-th2', subject: 'Data Science', startTime: '11:10', endTime: '12:00', room: 'Room 104' }
+    ],
+    Friday: [
+      { id: 'lec-f1', subject: 'Data Mining', startTime: '13:30', endTime: '14:30', room: 'Lab 3' },
+      { id: 'lec-f2', subject: 'Artificial Intelligence', startTime: '14:40', endTime: '15:30', room: 'Room 302' }
+    ],
     Saturday: []
   },
-  baseAttendance: {}, // { [subject]: { attended: number, total: number } }
+  baseAttendance: {
+    'Data Science': { attended: 16, total: 18 },
+    'Data Science Lab': { attended: 8, total: 9 },
+    'Artificial Intelligence': { attended: 14, total: 16 },
+    'Machine Learning': { attended: 11, total: 14 },
+    'Neural Networks': { attended: 9, total: 11 },
+    'Data Mining': { attended: 7, total: 8 }
+  },
   records: [],
   promptedHistory: {},
   dayAbsent: {} // { [dateStr]: true }
@@ -86,6 +254,14 @@ class AppState {
         const data = {
           ...DEFAULT_STATE,
           ...parsed,
+          activeRole: parsed.activeRole || DEFAULT_STATE.activeRole,
+          currentFacultyId: parsed.currentFacultyId || DEFAULT_STATE.currentFacultyId,
+          faculties: (parsed.faculties && parsed.faculties.length) ? parsed.faculties : DEFAULT_STATE.faculties,
+          facultySchedules: parsed.facultySchedules || DEFAULT_STATE.facultySchedules,
+          studentsList: (parsed.studentsList && parsed.studentsList.length) ? parsed.studentsList : DEFAULT_STATE.studentsList,
+          substitutions: parsed.substitutions || [],
+          batchAttendance: parsed.batchAttendance || {},
+          cancelledLectures: parsed.cancelledLectures || {},
           settings: { ...DEFAULT_STATE.settings, ...parsed.settings },
           timetable: { ...DEFAULT_STATE.timetable, ...parsed.timetable },
           baseAttendance: { ...(parsed.baseAttendance || {}) },
@@ -338,10 +514,25 @@ class AppState {
       };
     }
 
+    // Check if this upcoming lecture has an accepted substitute or was cancelled today
+    const nowLocalDate = new Date();
+    const todayLocalStr = toLocalDateStr(nowLocalDate);
+    const sub = (this.data.substitutions || []).find(s =>
+      s.status === 'accepted' &&
+      s.subject.trim().toLowerCase() === nextLec.subject.trim().toLowerCase()
+    );
+
+    const isCancelled = !!(this.data.cancelledLectures && (
+      this.data.cancelledLectures[`${nextLec.id}_${todayLocalStr}`] ||
+      this.data.cancelledLectures[`${nextLec.subject}_${todayLocalStr}`]
+    ));
+
     return {
       lecture: nextLec,
       dayLabel: dayLabel,
-      prediction: prediction
+      prediction: prediction,
+      substituteInfo: sub || null,
+      isCancelled: isCancelled
     };
   }
 
@@ -718,6 +909,14 @@ function getPendingLecturesToday() {
       if (now < snoozeExpiry) {
         return; // still in snooze
       }
+    }
+
+    // If faculty cancelled this lecture today, skip pop-up prompt
+    if (state.data.cancelledLectures && (
+      state.data.cancelledLectures[`${lec.id}_${todayStr}`] ||
+      state.data.cancelledLectures[`${lec.subject}_${todayStr}`]
+    )) {
+      return;
     }
 
     const startMinutes = timeStrToMinutes(lec.startTime);
@@ -1097,6 +1296,19 @@ function renderDashboard() {
         
         <h2 class="upcoming-subject-title">${lec.subject}</h2>
         <div class="upcoming-time-meta">⏰ ${format12h(lec.startTime)} - ${format12h(lec.endTime)} • 📍 ${lec.room || 'No Room Specified'}</div>
+
+        ${upcomingData.substituteInfo ? `
+          <div style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 8px; padding: 7px 11px; margin: 8px 0; font-size: 0.78rem; font-weight: 700; color: #93c5fd; display: flex; align-items: center; gap: 6px;">
+            <span>🔄</span>
+            <span><strong>Substitute Faculty:</strong> ${upcomingData.substituteInfo.toFacultyName} (covering for ${upcomingData.substituteInfo.fromFacultyName})</span>
+          </div>
+        ` : ''}
+        ${upcomingData.isCancelled ? `
+          <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 8px; padding: 7px 11px; margin: 8px 0; font-size: 0.78rem; font-weight: 700; color: #f87171; display: flex; align-items: center; gap: 6px;">
+            <span>🚫</span>
+            <span><strong>Lecture Cancelled Today</strong> by faculty. No attendance required.</span>
+          </div>
+        ` : ''}
 
         <div class="upcoming-stats-strip">
           <span class="sub-current-lbl">Current Subject Attendance:</span>
@@ -1616,18 +1828,35 @@ function renderWeeklyMatrix() {
             blockClass = 'slot-block-cancelled';
           }
         } else {
-          // No record logged yet
-          const startMin = timeStrToMinutes(lec.startTime);
-          if (isFutureDay || (isToday && startMin > currentMinutes)) {
-            // Hasn't happened yet -> Clean White as requested
-            status = 'upcoming';
-            badgeText = '⏳ Upcoming';
-            blockClass = 'slot-block-upcoming';
+          // Check if cancelled by faculty for today
+          const isCancelledByFac = (state.data.cancelledLectures && (
+            state.data.cancelledLectures[`${lec.id}_${dateStr}`] ||
+            state.data.cancelledLectures[`${lec.subject}_${dateStr}`]
+          ));
+          const activeSub = (state.data.substitutions || []).find(s =>
+            s.status === 'accepted' &&
+            s.day === dayName &&
+            s.subject.trim().toLowerCase() === lec.subject.trim().toLowerCase()
+          );
+
+          if (isCancelledByFac) {
+            status = 'cancelled';
+            badgeText = '⚪ Faculty Cancelled';
+            blockClass = 'slot-block-cancelled';
           } else {
-            // Past or ongoing but unrecorded -> White box
-            status = 'unrecorded';
-            badgeText = '⏳ Not Marked';
-            blockClass = 'slot-block-upcoming';
+            // No record logged yet
+            const startMin = timeStrToMinutes(lec.startTime);
+            if (isFutureDay || (isToday && startMin > currentMinutes)) {
+              // Hasn't happened yet -> Clean White as requested
+              status = 'upcoming';
+              badgeText = activeSub ? `🔄 Sub: ${activeSub.toFacultyName.split(' ')[1] || activeSub.toFacultyName}` : '⏳ Upcoming';
+              blockClass = 'slot-block-upcoming';
+            } else {
+              // Past or ongoing but unrecorded -> White box
+              status = 'unrecorded';
+              badgeText = activeSub ? `🔄 Sub: ${activeSub.toFacultyName.split(' ')[1] || activeSub.toFacultyName}` : '⏳ Not Marked';
+              blockClass = 'slot-block-upcoming';
+            }
           }
         }
 
@@ -3200,6 +3429,928 @@ function dismissAppBanner() {
   localStorage.setItem('dismiss_install_banner', 'true');
 }
 
+// ================= FACULTY & SMART SUBSTITUTION ENGINE =================
+let activeFacultyDay = 'Wednesday';
+let activeFacultyTab = 'schedule';
+let activeSubstituteContext = null;
+let activeRollCallContext = null;
+let filterDefaultersOnly = false;
+
+function getCurrentFaculty() {
+  const facId = state.data.currentFacultyId || 'fac-1';
+  return (state.data.faculties || []).find(f => f.id === facId) || state.data.faculties[0];
+}
+
+function switchPortalRole(role) {
+  state.data.activeRole = role;
+  state.save();
+
+  const btnStudent = document.getElementById('btnRoleStudent');
+  const btnFaculty = document.getElementById('btnRoleFaculty');
+  const viewStudent = document.getElementById('viewStudentApp');
+  const viewFaculty = document.getElementById('viewFacultyPortal');
+  const dockStudent = document.getElementById('dockStudentNav');
+  const dockFaculty = document.getElementById('dockFacultyNav');
+  const facSelectWrapper = document.getElementById('facultySelectorWrapper');
+
+  if (role === 'faculty') {
+    if (btnStudent) btnStudent.classList.remove('active');
+    if (btnFaculty) btnFaculty.classList.add('active');
+    if (viewStudent) viewStudent.style.display = 'none';
+    if (viewFaculty) viewFaculty.style.display = 'block';
+    if (dockStudent) dockStudent.style.display = 'none';
+    if (dockFaculty) dockFaculty.style.display = 'flex';
+    if (facSelectWrapper) facSelectWrapper.style.display = 'flex';
+
+    renderFacultyPortal();
+  } else {
+    if (btnFaculty) btnFaculty.classList.remove('active');
+    if (btnStudent) btnStudent.classList.add('active');
+    if (viewFaculty) viewFaculty.style.display = 'none';
+    if (viewStudent) viewStudent.style.display = 'block';
+    if (dockFaculty) dockFaculty.style.display = 'none';
+    if (dockStudent) dockStudent.style.display = 'flex';
+    if (facSelectWrapper) facSelectWrapper.style.display = 'none';
+
+    renderDashboard();
+    renderWeeklyMatrix();
+  }
+}
+
+function switchCurrentFaculty(facId) {
+  state.data.currentFacultyId = facId;
+  state.save();
+  const fac = getCurrentFaculty();
+  renderFacultyPortal();
+  showBottomToast(`Switched to ${fac.name} 👨‍🏫`, 'Dismiss', hideBottomToast);
+}
+
+function switchFacultyTab(tabName) {
+  activeFacultyTab = tabName;
+  document.querySelectorAll('.fac-nav-pill').forEach(pill => {
+    if (pill && pill.classList) pill.classList.toggle('active', (pill.dataset && pill.dataset.factab) === tabName);
+  });
+  document.querySelectorAll('.fac-nav-dock-btn').forEach(btn => {
+    if (btn && btn.classList) btn.classList.toggle('active', (btn.dataset && btn.dataset.factab) === tabName);
+  });
+
+  const tabMap = {
+    schedule: 'facultyTabSchedule',
+    substitutions: 'facultyTabSubstitutions',
+    analytics: 'facultyTabAnalytics',
+    roster: 'facultyTabRoster'
+  };
+
+  Object.keys(tabMap).forEach(key => {
+    const pane = document.getElementById(tabMap[key]);
+    if (pane) {
+      if (key === tabName) pane.classList.add('active');
+      else pane.classList.remove('active');
+    }
+  });
+
+  if (tabName === 'schedule') renderFacultySchedule();
+  else if (tabName === 'substitutions') renderSubstitutionHub();
+  else if (tabName === 'analytics') renderBatchAnalytics();
+  else if (tabName === 'roster') renderStudentRoster();
+}
+
+function renderFacultyPortal() {
+  const fac = getCurrentFaculty();
+  if (!fac) return;
+
+  // 1. Update Profile Banner
+  const nameEl = document.getElementById('facNameText');
+  const deptEl = document.getElementById('facDeptText');
+  const selectDropdown = document.getElementById('selectCurrentFaculty');
+
+  if (nameEl) nameEl.textContent = fac.name;
+  if (deptEl) deptEl.textContent = `${fac.title} • ${fac.dept}`;
+  if (selectDropdown && selectDropdown.value !== fac.id) {
+    selectDropdown.value = fac.id;
+  }
+
+  // 2. Calculate Pending Substitution Requests Count
+  const pendingIncoming = (state.data.substitutions || []).filter(
+    s => s.toFacultyId === fac.id && s.status === 'pending'
+  );
+  const badgeDot = document.getElementById('facultyPendingBadge');
+  const pillDot = document.getElementById('facSubPillDot');
+  const subCountVal = document.getElementById('facMetricSubPending');
+
+  if (badgeDot) {
+    if (pendingIncoming.length > 0) {
+      badgeDot.textContent = pendingIncoming.length;
+      badgeDot.style.display = 'inline-flex';
+    } else {
+      badgeDot.style.display = 'none';
+    }
+  }
+  if (pillDot) {
+    if (pendingIncoming.length > 0) {
+      pillDot.textContent = pendingIncoming.length;
+      pillDot.style.display = 'inline-flex';
+    } else {
+      pillDot.style.display = 'none';
+    }
+  }
+  if (subCountVal) {
+    subCountVal.textContent = pendingIncoming.length;
+  }
+
+  // 3. Render the currently active faculty sub-pane
+  switchFacultyTab(activeFacultyTab);
+}
+
+// Render Teaching Schedule for the selected day
+function renderFacultySchedule() {
+  const fac = getCurrentFaculty();
+  const container = document.getElementById('facScheduleListContainer');
+  if (!container || !fac) return;
+
+  const now = new Date();
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const todayName = days[now.getDay()];
+  const todayStr = toLocalDateStr(now);
+
+  const scheduleMap = state.data.facultySchedules || {};
+  const daySchedule = (scheduleMap[fac.id] && scheduleMap[fac.id][activeFacultyDay]) || [];
+
+  // Also include any lectures transferred TO this faculty for this day (via accepted substitution)
+  const acceptedTransfersIn = (state.data.substitutions || []).filter(
+    s => s.toFacultyId === fac.id && s.day === activeFacultyDay && s.status === 'accepted'
+  );
+
+  const combinedLectures = [
+    ...daySchedule.map(l => ({ ...l, isOriginal: true })),
+    ...acceptedTransfersIn.map(s => ({
+      id: s.lectureId,
+      subject: s.subject,
+      startTime: s.startTime,
+      endTime: s.endTime,
+      room: s.room,
+      batch: 'CSE-5th Sem',
+      isSubstitutedIn: true,
+      fromFacultyName: s.fromFacultyName
+    }))
+  ].sort((a, b) => timeStrToMinutes(a.startTime) - timeStrToMinutes(b.startTime));
+
+  // Update Today's Classes metric if on today
+  const metricToday = document.getElementById('facMetricToday');
+  if (metricToday && activeFacultyDay === todayName) {
+    metricToday.textContent = combinedLectures.length;
+  }
+
+  // Highlight active day chip
+  document.querySelectorAll('.fac-day-chip').forEach(chip => {
+    if (chip && chip.classList) {
+      if (chip.dataset && chip.dataset.day === activeFacultyDay) chip.classList.add('active');
+      else chip.classList.remove('active');
+    }
+  });
+
+  if (combinedLectures.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state-box" style="padding: 24px 16px;">
+        <div class="empty-state-icon" style="font-size: 1.8rem; margin-bottom: 4px;">🏖</div>
+        <div class="empty-state-title" style="font-size: 0.95rem;">No classes scheduled for ${activeFacultyDay}</div>
+        <div class="empty-state-sub">You are completely free during this day.</div>
+      </div>
+    `;
+    return;
+  }
+
+  let html = '';
+  combinedLectures.forEach(lec => {
+    const isCancelled = state.data.cancelledLectures && state.data.cancelledLectures[`${lec.id}_${todayStr}`];
+
+    // Check if this faculty transferred OUT this lecture to someone else
+    const transferOut = (state.data.substitutions || []).find(
+      s => s.lectureId === lec.id && s.fromFacultyId === fac.id && s.day === activeFacultyDay && s.status !== 'declined'
+    );
+
+    let cardClass = 'fac-lec-card';
+    let statusBadge = '<span class="slot-badge" style="background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4);">Scheduled</span>';
+
+    if (isCancelled) {
+      statusBadge = '<span class="slot-badge" style="background: #202020; color: #a1a1aa; border: 1px solid #404040;">⚪ Cancelled Today</span>';
+    } else if (transferOut) {
+      cardClass += ' is-substituted-out';
+      if (transferOut.status === 'accepted') {
+        statusBadge = `<span class="slot-badge" style="background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4);">🔄 Substituted to ${transferOut.toFacultyName}</span>`;
+      } else {
+        statusBadge = `<span class="slot-badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);">⏳ Sub Request Pending (${transferOut.toFacultyName})</span>`;
+      }
+    } else if (lec.isSubstitutedIn) {
+      cardClass += ' is-substituted-in';
+      statusBadge = `<span class="slot-badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4);">🔄 Substituted for ${lec.fromFacultyName}</span>`;
+    }
+
+    const safeSub = lec.subject.replace(/'/g, "\\'");
+    const safeRoom = (lec.room || '').replace(/'/g, "\\'");
+
+    // Check if batch attendance already logged for today
+    const rollCallDone = state.data.batchAttendance && state.data.batchAttendance[`${lec.id}_${todayStr}`];
+    const rollCallBtnText = rollCallDone ? '✅ Roll Call Done (Edit)' : '📋 Take Roll Call';
+
+    html += `
+      <div class="${cardClass}">
+        <div class="fac-lec-top">
+          <div>
+            <div class="fac-lec-title">${lec.subject}</div>
+            <div class="fac-lec-meta">⏰ ${format12h(lec.startTime)} - ${format12h(lec.endTime)} • 📍 ${lec.room || 'Room TBA'}</div>
+            <div style="font-size: 0.70rem; color: var(--accent-cyan); font-weight: 700; margin-top: 2px;">Batch: ${lec.batch || 'CSE-5th Sem'}</div>
+          </div>
+          <div>${statusBadge}</div>
+        </div>
+
+        <div class="fac-lec-actions">
+          <button type="button" class="btn-chip btn-chip-green" onclick="openTakeRollCallModal('${lec.id}', '${activeFacultyDay}', '${safeSub}', '${safeRoom}')" style="font-size: 0.74rem;">
+            ${rollCallBtnText}
+          </button>
+          ${!transferOut ? `
+            <button type="button" class="btn-chip btn-chip-blue" onclick="openSmartSubstituteModal('${lec.id}', '${activeFacultyDay}', '${safeSub}', '${lec.startTime}', '${lec.endTime}', '${safeRoom}')" style="font-size: 0.74rem;">
+              🔄 Find Substitute
+            </button>
+          ` : ''}
+          <button type="button" class="btn-chip btn-chip-red" onclick="toggleFacultyLectureCancel('${lec.id}', '${activeFacultyDay}')" style="font-size: 0.74rem;">
+            ${isCancelled ? '↩️ Restore Class' : '🚫 Cancel Today'}
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+// ================= SMART SUBSTITUTE RANKING ALGORITHM =================
+function findAvailableSubstitutes(lec, dayName) {
+  const currentFac = getCurrentFaculty();
+  const allFaculties = state.data.faculties || [];
+  const scheduleMap = state.data.facultySchedules || {};
+
+  const candidates = [];
+
+  allFaculties.forEach(candidate => {
+    if (candidate.id === currentFac.id) return; // skip self
+
+    // 1. Availability Check: Is candidate free on this day at [lec.startTime, lec.endTime]?
+    const candidateDayLectures = (scheduleMap[candidate.id] && scheduleMap[candidate.id][dayName]) || [];
+    const lecStartMin = timeStrToMinutes(lec.startTime);
+    const lecEndMin = timeStrToMinutes(lec.endTime);
+
+    const overlappingSlot = candidateDayLectures.find(c => {
+      const cStart = timeStrToMinutes(c.startTime);
+      const cEnd = timeStrToMinutes(c.endTime);
+      return !(cEnd <= lecStartMin || cStart >= lecEndMin);
+    });
+
+    const isAvailable = !overlappingSlot;
+
+    // 2. AI Ranking / Compatibility Score Calculation
+    let score = 50; // base score
+    const reasons = [];
+
+    // Direct Subject Match (teaches same subject)
+    const candSubjects = (candidate.subjects || []).map(s => s.toLowerCase());
+    const targetSubLower = lec.subject.toLowerCase();
+
+    const directMatch = candSubjects.some(s => s.includes(targetSubLower) || targetSubLower.includes(s));
+    if (directMatch) {
+      score += 35;
+      reasons.push(`Direct specialist in ${lec.subject}`);
+    } else {
+      // Related Domain Match (Data Science, AI, Python, Machine Learning, Networks)
+      const domainKeywords = ['data', 'science', 'ai', 'machine', 'learning', 'python', 'analytics', 'network', 'system'];
+      const sharedWords = domainKeywords.filter(w => targetSubLower.includes(w) && candSubjects.some(s => s.includes(w)));
+      if (sharedWords.length > 0) {
+        score += 22;
+        reasons.push(`Domain expertise in ${sharedWords.join(', ')}`);
+      }
+    }
+
+    // Same Department Match
+    if (candidate.dept.toLowerCase() === currentFac.dept.toLowerCase()) {
+      score += 10;
+      reasons.push('Same Department');
+    }
+
+    // Workload Balance (fewer classes on this day)
+    const dailyClassesCount = candidateDayLectures.length;
+    if (dailyClassesCount === 0) {
+      score += 10;
+      reasons.push('0 lectures today (plenty of free time)');
+    } else if (dailyClassesCount === 1) {
+      score += 5;
+      reasons.push('Light teaching load today (1 lecture)');
+    }
+
+    score = Math.min(99, Math.max(40, score));
+
+    candidates.push({
+      faculty: candidate,
+      isAvailable,
+      busySlot: overlappingSlot,
+      score,
+      reasons,
+      dailyClassesCount
+    });
+  });
+
+  // Sort available faculties first by highest score
+  const availableRanked = candidates.filter(c => c.isAvailable).sort((a, b) => b.score - a.score);
+  const busyFaculties = candidates.filter(c => !c.isAvailable);
+
+  return { availableRanked, busyFaculties };
+}
+
+function openSmartSubstituteModal(lecId, dayName, subject, startTime, endTime, room) {
+  const fac = getCurrentFaculty();
+  const lec = { id: lecId, subject, startTime, endTime, room };
+  activeSubstituteContext = { lec, dayName };
+
+  const infoEl = document.getElementById('subModalLecInfo');
+  if (infoEl) {
+    infoEl.textContent = `${subject} • ${dayName} ${format12h(startTime)} - ${format12h(endTime)} • 📍 ${room || 'Room TBA'}`;
+  }
+
+  const container = document.getElementById('rankedFacultyListContainer');
+  if (!container) return;
+
+  const { availableRanked, busyFaculties } = findAvailableSubstitutes(lec, dayName);
+
+  let html = '';
+
+  // Render Available Candidates with Medals
+  availableRanked.forEach((item, idx) => {
+    const f = item.faculty;
+    const rankNum = idx + 1;
+    let medalBadge = '';
+    let cardRankClass = '';
+
+    if (rankNum === 1) {
+      medalBadge = '<span class="rank-medal-badge rank-badge-gold">🥇 Rank 1 • Best Match</span>';
+      cardRankClass = 'rank-1';
+    } else if (rankNum === 2) {
+      medalBadge = '<span class="rank-medal-badge rank-badge-silver">🥈 Rank 2</span>';
+    } else if (rankNum === 3) {
+      medalBadge = '<span class="rank-medal-badge rank-badge-bronze">🥉 Rank 3</span>';
+    } else {
+      medalBadge = `<span class="rank-medal-badge" style="background: #27272a; color: #a1a1aa;">#${rankNum}</span>`;
+    }
+
+    const expertiseTags = (f.subjects || []).map(s => `<span class="fac-expertise-tag">${s}</span>`).join(' ');
+    const safeFacName = f.name.replace(/'/g, "\\'");
+
+    html += `
+      <div class="ranked-fac-card ${cardRankClass}">
+        <div class="rank-top-row">
+          <div>${medalBadge}</div>
+          <div class="match-pct-pill">${item.score}% Match</div>
+        </div>
+
+        <div>
+          <div style="font-size: 0.95rem; font-weight: 800; color: #fff;">${f.name}</div>
+          <div style="font-size: 0.72rem; color: var(--text-muted);">${f.title} • ${f.dept}</div>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+          ${expertiseTags}
+        </div>
+
+        <div style="font-size: 0.72rem; color: #4ade80; display: flex; align-items: center; gap: 4px;">
+          <span>🟢</span> <strong>Free at ${format12h(startTime)}:</strong> ${item.reasons.join(' • ')}
+        </div>
+
+        <button type="button" class="btn-cta-primary" onclick="sendSubstitutionRequest('${f.id}', '${safeFacName}')" style="background: #2563eb; color: #fff; padding: 8px 12px; font-size: 0.82rem; margin-top: 4px;">
+          📤 Send Substitution Request to ${f.name.split(' ')[1] || f.name}
+        </button>
+      </div>
+    `;
+  });
+
+  // Render Busy / Unavailable Faculties
+  if (busyFaculties.length > 0) {
+    html += `
+      <div style="font-size: 0.76rem; font-weight: 800; color: var(--text-muted); margin-top: 10px; text-transform: uppercase;">
+        Unavailable Faculties (Busy in another class)
+      </div>
+    `;
+    busyFaculties.forEach(item => {
+      const f = item.faculty;
+      const bSlot = item.busySlot;
+      html += `
+        <div class="ranked-fac-card is-busy">
+          <div class="rank-top-row">
+            <span style="font-size: 0.90rem; font-weight: 700; color: #fff;">${f.name}</span>
+            <span class="fac-busy-pill">🔴 Busy in Class</span>
+          </div>
+          <div style="font-size: 0.72rem; color: #f87171;">
+            Taking <strong>${bSlot.subject}</strong> (${format12h(bSlot.startTime)} - ${format12h(bSlot.endTime)} in ${bSlot.room || 'Classroom'})
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  container.innerHTML = html;
+  openModal('modalSmartSubstitute');
+}
+
+function sendSubstitutionRequest(targetFacultyId, targetFacultyName) {
+  if (!activeSubstituteContext) return;
+
+  const currentFac = getCurrentFaculty();
+  const { lec, dayName } = activeSubstituteContext;
+  const reasonInput = document.getElementById('inputSubReason');
+  const notes = reasonInput ? reasonInput.value.trim() : 'Requested substitution';
+  const now = new Date();
+  const todayStr = toLocalDateStr(now);
+
+  const newSub = {
+    id: 'sub-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+    fromFacultyId: currentFac.id,
+    fromFacultyName: currentFac.name,
+    toFacultyId: targetFacultyId,
+    toFacultyName: targetFacultyName,
+    lectureId: lec.id,
+    subject: lec.subject,
+    day: dayName,
+    date: todayStr,
+    startTime: lec.startTime,
+    endTime: lec.endTime,
+    room: lec.room,
+    notes: notes || 'Need substitution for this class',
+    status: 'pending',
+    timestamp: new Date().toISOString()
+  };
+
+  if (!state.data.substitutions) state.data.substitutions = [];
+  state.data.substitutions.unshift(newSub);
+  state.save();
+
+  closeModal('modalSmartSubstitute');
+  activeSubstituteContext = null;
+
+  renderFacultyPortal();
+  showBottomToast(`Substitution request sent to ${targetFacultyName}! 📨`, 'Dismiss', hideBottomToast);
+}
+
+// Render Substitution Exchange Desk (Incoming and Outgoing)
+function renderSubstitutionHub() {
+  const fac = getCurrentFaculty();
+  const incomingContainer = document.getElementById('facIncomingSubsContainer');
+  const outgoingContainer = document.getElementById('facOutgoingSubsContainer');
+  const countBadge = document.getElementById('incomingCountBadge');
+  if (!incomingContainer || !outgoingContainer || !fac) return;
+
+  const allSubs = state.data.substitutions || [];
+  const incoming = allSubs.filter(s => s.toFacultyId === fac.id);
+  const outgoing = allSubs.filter(s => s.fromFacultyId === fac.id);
+
+  if (countBadge) countBadge.textContent = `${incoming.filter(s => s.status === 'pending').length} Pending`;
+
+  // 1. INCOMING
+  if (incoming.length === 0) {
+    incomingContainer.innerHTML = `
+      <div style="font-size: 0.78rem; color: var(--text-muted); font-style: italic; padding: 10px 4px;">
+        No substitution requests received yet.
+      </div>
+    `;
+  } else {
+    let incHtml = '';
+    incoming.forEach(sub => {
+      const isPending = sub.status === 'pending';
+      const cardClass = isPending ? 'sub-request-card pending-in' : 'sub-request-card';
+      let statusTag = '';
+
+      if (sub.status === 'accepted') {
+        statusTag = '<span class="slot-badge" style="background: rgba(34, 197, 94, 0.15); color: #4ade80;">✅ You Accepted</span>';
+      } else if (sub.status === 'declined') {
+        statusTag = '<span class="slot-badge" style="background: rgba(239, 68, 68, 0.15); color: #f87171;">❌ You Declined</span>';
+      } else {
+        statusTag = '<span class="slot-badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24;">⚡ Action Required</span>';
+      }
+
+      incHtml += `
+        <div class="${cardClass}">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+            <div>
+              <div style="font-size: 0.90rem; font-weight: 800; color: #fff;">${sub.subject}</div>
+              <div style="font-size: 0.74rem; color: var(--accent-cyan);">From: ${sub.fromFacultyName}</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">⏰ ${sub.day} • ${format12h(sub.startTime)} - ${format12h(sub.endTime)} • 📍 ${sub.room || 'Room TBA'}</div>
+            </div>
+            <div>${statusTag}</div>
+          </div>
+
+          <div style="font-size: 0.74rem; color: #e4e4e7; background: #18181b; padding: 6px 10px; border-radius: 6px; font-style: italic;">
+            "${sub.notes}"
+          </div>
+
+          ${isPending ? `
+            <div style="display: flex; gap: 6px; margin-top: 4px;">
+              <button type="button" class="btn-chip btn-chip-green" onclick="respondToSubstitution('${sub.id}', 'accepted')" style="flex: 1; justify-content: center; font-size: 0.78rem; padding: 8px;">
+                ✅ Accept & Take Lecture
+              </button>
+              <button type="button" class="btn-chip btn-chip-red" onclick="respondToSubstitution('${sub.id}', 'declined')" style="flex: 1; justify-content: center; font-size: 0.78rem; padding: 8px;">
+                ❌ Decline
+              </button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    });
+    incomingContainer.innerHTML = incHtml;
+  }
+
+  // 2. OUTGOING
+  if (outgoing.length === 0) {
+    outgoingContainer.innerHTML = `
+      <div style="font-size: 0.78rem; color: var(--text-muted); font-style: italic; padding: 10px 4px;">
+        You haven't requested any substitutions.
+      </div>
+    `;
+  } else {
+    let outHtml = '';
+    outgoing.forEach(sub => {
+      let statusTag = '';
+      if (sub.status === 'accepted') {
+        statusTag = `<span class="slot-badge" style="background: rgba(34, 197, 94, 0.15); color: #4ade80;">✅ Accepted by ${sub.toFacultyName}</span>`;
+      } else if (sub.status === 'declined') {
+        statusTag = `<span class="slot-badge" style="background: rgba(239, 68, 68, 0.15); color: #f87171;">❌ Declined by ${sub.toFacultyName}</span>`;
+      } else {
+        statusTag = `<span class="slot-badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24;">⏳ Waiting for ${sub.toFacultyName}</span>`;
+      }
+
+      outHtml += `
+        <div class="sub-request-card">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+            <div>
+              <div style="font-size: 0.90rem; font-weight: 800; color: #fff;">${sub.subject}</div>
+              <div style="font-size: 0.74rem; color: var(--text-muted);">Sent To: ${sub.toFacultyName}</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">⏰ ${sub.day} • ${format12h(sub.startTime)} - ${format12h(sub.endTime)}</div>
+            </div>
+            <div>${statusTag}</div>
+          </div>
+        </div>
+      `;
+    });
+    outgoingContainer.innerHTML = outHtml;
+  }
+}
+
+function respondToSubstitution(subId, response) {
+  const sub = (state.data.substitutions || []).find(s => s.id === subId);
+  if (!sub) return;
+
+  sub.status = response;
+  state.save();
+
+  renderFacultyPortal();
+  renderDashboard();
+  renderWeeklyMatrix();
+
+  if (response === 'accepted') {
+    showBottomToast(`Accepted substitution for ${sub.subject}! Lecture added to your schedule. ✅`, 'Dismiss', hideBottomToast);
+  } else {
+    showBottomToast(`Declined substitution request for ${sub.subject}. ❌`, 'Dismiss', hideBottomToast);
+  }
+}
+
+function toggleFacultyLectureCancel(lecId, dayName) {
+  const now = new Date();
+  const todayStr = toLocalDateStr(now);
+  const key = `${lecId}_${todayStr}`;
+
+  if (!state.data.cancelledLectures) state.data.cancelledLectures = {};
+
+  const wasCancelled = state.data.cancelledLectures[key];
+  if (wasCancelled) {
+    delete state.data.cancelledLectures[key];
+    state.save();
+    renderFacultyPortal();
+    renderDashboard();
+    renderWeeklyMatrix();
+    showBottomToast('Lecture restored to normal schedule! 🟢', 'Dismiss', hideBottomToast);
+  } else {
+    if (!confirm('Cancel this lecture for today? Students will see it as Free / Cancelled and will not be alerted.')) return;
+    state.data.cancelledLectures[key] = true;
+    state.save();
+    renderFacultyPortal();
+    renderDashboard();
+    renderWeeklyMatrix();
+    showBottomToast('Lecture cancelled for today. Students notified. ⚪', 'Dismiss', hideBottomToast);
+  }
+}
+
+// ================= BATCH ROLL CALL ATTENDANCE TAKER =================
+function openTakeRollCallModal(lecId, dayName, subject, room) {
+  const now = new Date();
+  const todayStr = toLocalDateStr(now);
+  activeRollCallContext = { lecId, dayName, subject, room, dateStr: todayStr };
+
+  const titleEl = document.getElementById('rollCallModalTitle');
+  const subEl = document.getElementById('rollCallModalSubtitle');
+  if (titleEl) titleEl.textContent = `📋 Take Roll Call: ${subject}`;
+  if (subEl) subEl.textContent = `${dayName}, ${todayStr} • 📍 ${room || 'Room TBA'}`;
+
+  // Load existing or default batch roll call state
+  const key = `${lecId}_${todayStr}`;
+  const existingMap = (state.data.batchAttendance && state.data.batchAttendance[key]) || {};
+  const students = state.data.studentsList || DEFAULT_STUDENTS;
+
+  const rosterContainer = document.getElementById('rollCallRosterList');
+  if (!rosterContainer) return;
+
+  let html = '';
+  students.forEach(st => {
+    // default to 'present' if not previously taken
+    const currentStatus = existingMap[st.roll] || 'present';
+    const isPresent = currentStatus === 'present';
+    const isCurrentUser = !!st.isUser;
+
+    html += `
+      <div class="roll-call-row ${isCurrentUser ? 'is-current-user' : ''}" data-roll="${st.roll}">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 0.85rem; font-weight: 900; color: ${isCurrentUser ? 'var(--accent-cyan)' : '#a1a1aa'}; min-width: 30px;">#${st.roll}</span>
+          <div>
+            <div style="font-size: 0.86rem; font-weight: 800; color: #fff;">
+              ${st.name} ${isCurrentUser ? '<span style="font-size: 0.68rem; color: var(--accent-cyan); font-weight: 800;">(Student App User)</span>' : ''}
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 4px;">
+          <button type="button" class="btn-toggle-roll btn-p ${isPresent ? 'active' : ''}" onclick="setStudentRollStatus('${st.roll}', 'present')">P</button>
+          <button type="button" class="btn-toggle-roll btn-a ${!isPresent ? 'active' : ''}" onclick="setStudentRollStatus('${st.roll}', 'absent')">A</button>
+        </div>
+      </div>
+    `;
+  });
+
+  rosterContainer.innerHTML = html;
+  updateRollCallSummaryStats();
+  openModal('modalTakeRollCall');
+}
+
+function setStudentRollStatus(roll, status) {
+  const row = document.querySelector(`.roll-call-row[data-roll="${roll}"]`);
+  if (!row) return;
+
+  const btnP = row.querySelector('.btn-p');
+  const btnA = row.querySelector('.btn-a');
+
+  if (status === 'present') {
+    btnP.classList.add('active');
+    btnA.classList.remove('active');
+  } else {
+    btnA.classList.add('active');
+    btnP.classList.remove('active');
+  }
+
+  updateRollCallSummaryStats();
+}
+
+function updateRollCallSummaryStats() {
+  const rows = document.querySelectorAll('.roll-call-row');
+  let presentCount = 0;
+  rows.forEach(r => {
+    if (r.querySelector('.btn-p.active')) presentCount++;
+  });
+  const total = rows.length;
+  const pct = total > 0 ? Math.round((presentCount / total) * 100) : 0;
+  const statsEl = document.getElementById('rollCallStatsText');
+  if (statsEl) {
+    statsEl.textContent = `Present: ${presentCount} / ${total} (${pct}%)`;
+    statsEl.style.color = pct >= 75 ? '#4ade80' : '#f87171';
+  }
+}
+
+function markAllRollCall(status) {
+  const rows = document.querySelectorAll('.roll-call-row');
+  rows.forEach(r => {
+    const btnP = r.querySelector('.btn-p');
+    const btnA = r.querySelector('.btn-a');
+    if (status === 'present') {
+      btnP.classList.add('active');
+      btnA.classList.remove('active');
+    } else {
+      btnA.classList.add('active');
+      btnP.classList.remove('active');
+    }
+  });
+  updateRollCallSummaryStats();
+}
+
+function submitBatchRollCall() {
+  if (!activeRollCallContext) return;
+
+  const { lecId, subject, dateStr } = activeRollCallContext;
+  const key = `${lecId}_${dateStr}`;
+  const rows = document.querySelectorAll('.roll-call-row');
+
+  if (!state.data.batchAttendance) state.data.batchAttendance = {};
+  const batchMap = {};
+
+  rows.forEach(r => {
+    const roll = r.dataset.roll;
+    const isP = r.querySelector('.btn-p.active') !== null;
+    batchMap[roll] = isP ? 'present' : 'absent';
+  });
+
+  state.data.batchAttendance[key] = batchMap;
+
+  // AUTO-SYNC WITH CURRENT STUDENT APP USER (Roll 104 - Rishabh Patel)
+  const userStatus = batchMap['104'] || 'present';
+  // Check if existing record exists for today and this subject
+  const existingUserRec = state.data.records.find(
+    r => r.date === dateStr && r.subject.trim().toLowerCase() === subject.trim().toLowerCase()
+  );
+
+  if (existingUserRec) {
+    existingUserRec.status = userStatus;
+  } else {
+    state.addRecord(subject, userStatus, dateStr, null, 'Faculty Official Roll Call');
+  }
+
+  state.save();
+
+  closeModal('modalTakeRollCall');
+  activeRollCallContext = null;
+
+  renderFacultyPortal();
+  renderDashboard();
+  renderWeeklyMatrix();
+  renderHistory();
+
+  showBottomToast(`Synced attendance for ${rows.length} students! 🚀`, 'Dismiss', hideBottomToast);
+}
+
+// ================= BATCH ANALYTICS & DEFAULTERS =================
+function renderBatchAnalytics() {
+  const students = state.data.studentsList || DEFAULT_STUDENTS;
+  const selectSubject = document.getElementById('selectAnalyticsSubject');
+  const summaryCard = document.getElementById('analyticsSummaryCard');
+  const tableContainer = document.getElementById('analyticsStudentsTableContainer');
+  if (!tableContainer) return;
+
+  // Populate Subject Select if empty
+  const uniqueSubs = state.getUniqueSubjects();
+  if (selectSubject && selectSubject.options.length <= 1) {
+    selectSubject.innerHTML = '<option value="all">All Subjects (Aggregate)</option>' +
+      uniqueSubs.map(s => `<option value="${s}">${s}</option>`).join('');
+  }
+
+  // Calculate analytics for each student based on batch attendance
+  let totalAttendedBatch = 0;
+  let totalSlotsBatch = 0;
+  let defaultersCount = 0;
+
+  const studentStats = students.map(st => {
+    let attended = 0;
+    let total = 0;
+
+    Object.keys(state.data.batchAttendance || {}).forEach(batchKey => {
+      const record = state.data.batchAttendance[batchKey];
+      if (record && record[st.roll]) {
+        total++;
+        if (record[st.roll] === 'present') attended++;
+      }
+    });
+
+    // If no batch attendance logged yet, simulate realistic baseline
+    if (total === 0) {
+      if (st.roll === '104') {
+        const stats = state.calculateStats();
+        attended = stats.overallAttended || 16;
+        total = stats.overallTotal || 20;
+      } else {
+        total = 20;
+        const rollNum = parseInt(st.roll, 10);
+        attended = (rollNum % 5 === 0) ? 13 : ((rollNum % 3 === 0) ? 14 : 18);
+      }
+    }
+
+    const pct = total > 0 ? Math.round((attended / total) * 1000) / 10 : 0;
+    const isDefaulter = pct < 75;
+
+    totalAttendedBatch += attended;
+    totalSlotsBatch += total;
+    if (isDefaulter) defaultersCount++;
+
+    return {
+      student: st,
+      attended,
+      total,
+      pct,
+      isDefaulter
+    };
+  });
+
+  const batchAvg = totalSlotsBatch > 0 ? Math.round((totalAttendedBatch / totalSlotsBatch) * 1000) / 10 : 78.5;
+
+  if (summaryCard) {
+    summaryCard.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-size: 1.4rem; font-weight: 900; color: ${batchAvg >= 75 ? '#4ade80' : '#f87171'};">${batchAvg}%</div>
+          <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Batch Average Attendance</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 1.4rem; font-weight: 900; color: ${defaultersCount > 0 ? '#f87171' : '#4ade80'};">${defaultersCount}</div>
+          <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Defaulters (&lt; 75%)</div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Filter list
+  const listToDisplay = filterDefaultersOnly ? studentStats.filter(s => s.isDefaulter) : studentStats;
+
+  let tableHtml = `
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+  `;
+
+  listToDisplay.forEach(item => {
+    const st = item.student;
+    const isUser = !!st.isUser;
+    tableHtml += `
+      <div class="roll-call-row ${isUser ? 'is-current-user' : ''}" style="cursor: default;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 0.85rem; font-weight: 900; color: #a1a1aa; min-width: 32px;">#${st.roll}</span>
+          <div>
+            <div style="font-size: 0.88rem; font-weight: 800; color: #fff;">
+              ${st.name} ${isUser ? '<span style="font-size: 0.68rem; color: var(--accent-cyan);">(You)</span>' : ''}
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">${item.attended} / ${item.total} classes</div>
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 0.95rem; font-weight: 900; color: ${item.pct >= 75 ? '#4ade80' : '#f87171'};">${item.pct}%</div>
+          <span class="slot-badge" style="font-size: 0.64rem; padding: 2px 6px; ${item.pct >= 75 ? 'background: #142419; color: #4ade80;' : 'background: #281417; color: #f87171;'}">
+            ${item.pct >= 75 ? 'Safe 😎' : 'Defaulter ⚠️'}
+          </span>
+        </div>
+      </div>
+    `;
+  });
+
+  tableHtml += '</div>';
+  tableContainer.innerHTML = tableHtml;
+}
+
+function exportBatchAnalyticsCsv() {
+  const students = state.data.studentsList || DEFAULT_STUDENTS;
+  let csv = 'Roll Number,Student Name,Email,Attended,Total,Percentage,Status\n';
+
+  students.forEach(st => {
+    let attended = 18;
+    let total = 20;
+    const rollNum = parseInt(st.roll, 10);
+    if (rollNum % 5 === 0) attended = 13;
+    const pct = Math.round((attended / total) * 100);
+    const status = pct >= 75 ? 'Eligible' : 'Defaulter (<75%)';
+    csv += `${st.roll},"${st.name}",${st.email},${attended},${total},${pct}%,${status}\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Batch_Attendance_Report_${toLocalDateStr(new Date())}.csv`;
+  a.click();
+  showBottomToast('Downloaded Batch Attendance CSV! 📥', 'Dismiss', hideBottomToast);
+}
+
+// Student Roster
+function renderStudentRoster() {
+  const container = document.getElementById('rosterListContainer');
+  if (!container) return;
+
+  const students = state.data.studentsList || DEFAULT_STUDENTS;
+  let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+
+  students.forEach(st => {
+    html += `
+      <div class="roll-call-row ${st.isUser ? 'is-current-user' : ''}">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 0.85rem; font-weight: 900; color: #a1a1aa; min-width: 32px;">#${st.roll}</span>
+          <div>
+            <div style="font-size: 0.88rem; font-weight: 800; color: #fff;">
+              ${st.name} ${st.isUser ? '<span style="font-size: 0.68rem; color: var(--accent-cyan);">(Current App User)</span>' : ''}
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">${st.email}</div>
+          </div>
+        </div>
+        <span class="badge-tag-upcoming" style="font-size: 0.68rem;">CSE Batch A</span>
+      </div>
+    `;
+  });
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
 // PWA Install Prompt Capture
 let deferredInstallPrompt = null;
 window.addEventListener('beforeinstallprompt', (e) => {
@@ -3489,9 +4640,99 @@ document.addEventListener('DOMContentLoaded', () => {
   renderHistory();
   updateUpcomingBanner();
 
+  // ================= FACULTY & ROLE SWITCHER LISTENERS =================
+  const btnRoleStud = document.getElementById('btnRoleStudent');
+  if (btnRoleStud) btnRoleStud.addEventListener('click', () => switchPortalRole('student'));
+
+  const btnRoleFac = document.getElementById('btnRoleFaculty');
+  if (btnRoleFac) btnRoleFac.addEventListener('click', () => switchPortalRole('faculty'));
+
+  const selFac = document.getElementById('selectCurrentFaculty');
+  if (selFac) {
+    selFac.addEventListener('change', (e) => switchCurrentFaculty(e.target.value));
+  }
+
+  // Faculty Sub Tabs Navigation (Pills & Bottom Dock)
+  document.querySelectorAll('.fac-nav-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const tab = pill.dataset.factab;
+      if (tab) switchFacultyTab(tab);
+    });
+  });
+
+  document.querySelectorAll('.fac-nav-dock-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.factab;
+      if (tab) switchFacultyTab(tab);
+    });
+  });
+
+  // Faculty Day Scroller Chips
+  document.querySelectorAll('.fac-day-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      activeFacultyDay = chip.dataset.day;
+      document.querySelectorAll('.fac-day-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      renderFacultySchedule();
+    });
+  });
+
+  // Roll Call Modal Actions
+  const btnRollAllP = document.getElementById('btnRollCallAllPresent');
+  if (btnRollAllP) btnRollAllP.addEventListener('click', () => markAllRollCall('present'));
+
+  const btnRollAllA = document.getElementById('btnRollCallAllAbsent');
+  if (btnRollAllA) btnRollAllA.addEventListener('click', () => markAllRollCall('absent'));
+
+  const btnSubmitRoll = document.getElementById('btnSubmitRollCall');
+  if (btnSubmitRoll) btnSubmitRoll.addEventListener('click', submitBatchRollCall);
+
+  // Batch Analytics Controls
+  const btnExpBatchCsv = document.getElementById('btnExportBatchCsv');
+  if (btnExpBatchCsv) btnExpBatchCsv.addEventListener('click', exportBatchAnalyticsCsv);
+
+  const selAnalyticsSub = document.getElementById('selectAnalyticsSubject');
+  if (selAnalyticsSub) selAnalyticsSub.addEventListener('change', renderBatchAnalytics);
+
+  const btnFilterAllSt = document.getElementById('btnFilterAllStudents');
+  const btnFilterDefSt = document.getElementById('btnFilterDefaulters');
+  if (btnFilterAllSt) {
+    btnFilterAllSt.addEventListener('click', () => {
+      filterDefaultersOnly = false;
+      btnFilterAllSt.classList.add('active');
+      if (btnFilterDefSt) btnFilterDefSt.classList.remove('active');
+      renderBatchAnalytics();
+    });
+  }
+  if (btnFilterDefSt) {
+    btnFilterDefSt.addEventListener('click', () => {
+      filterDefaultersOnly = true;
+      btnFilterDefSt.classList.add('active');
+      if (btnFilterAllSt) btnFilterAllSt.classList.remove('active');
+      renderBatchAnalytics();
+    });
+  }
+
+  // Restore Active Role on Load
+  switchPortalRole(state.data.activeRole || 'student');
+
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error:', err));
   }
 
   setInterval(checkLectureTimes, 5000);
 });
+
+// Global scope bindings for inline HTML handlers
+window.switchPortalRole = switchPortalRole;
+window.switchCurrentFaculty = switchCurrentFaculty;
+window.switchFacultyTab = switchFacultyTab;
+window.openSmartSubstituteModal = openSmartSubstituteModal;
+window.sendSubstitutionRequest = sendSubstitutionRequest;
+window.respondToSubstitution = respondToSubstitution;
+window.toggleFacultyLectureCancel = toggleFacultyLectureCancel;
+window.openTakeRollCallModal = openTakeRollCallModal;
+window.setStudentRollStatus = setStudentRollStatus;
+window.markAllRollCall = markAllRollCall;
+window.submitBatchRollCall = submitBatchRollCall;
+window.exportBatchAnalyticsCsv = exportBatchAnalyticsCsv;

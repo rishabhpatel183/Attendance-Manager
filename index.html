@@ -77,10 +77,35 @@
     </div>
   </header>
 
+  <!-- Top Portal Role Selector (Student vs Faculty Admin) -->
+  <div class="portal-role-bar">
+    <div class="portal-role-pills">
+      <button id="btnRoleStudent" class="btn-role-pill active">
+        <span>🎓 Student App</span>
+      </button>
+      <button id="btnRoleFaculty" class="btn-role-pill">
+        <span>👨‍🏫 Faculty Portal</span>
+        <span id="facultyPendingBadge" class="faculty-notif-dot" style="display: none;">0</span>
+      </button>
+    </div>
+    <div id="facultySelectorWrapper" class="faculty-selector-wrapper" style="display: none;">
+      <select id="selectCurrentFaculty" class="select-faculty-dropdown" title="Simulate different professors">
+        <option value="fac-1">Prof. Rishabh Patel (CS)</option>
+        <option value="fac-2">Dr. Neha Verma (Data Science)</option>
+        <option value="fac-3">Prof. Amit Sharma (AI/ML)</option>
+        <option value="fac-4">Prof. Rajesh Kumar (Software Engg)</option>
+        <option value="fac-5">Prof. Priya Singh (Networking)</option>
+      </select>
+    </div>
+  </div>
+
   <!-- Main View Container -->
   <main class="main-container">
 
-    <!-- Direct Download / Install App Banner -->
+    <!-- ================= 1. STUDENT APP VIEW ================= -->
+    <div id="viewStudentApp">
+
+      <!-- Direct Download / Install App Banner -->
     <div id="downloadBanner" class="install-banner">
       <div class="install-info">
         <div class="install-title">📱 Get Mobile App</div>
@@ -290,10 +315,153 @@
       </div>
     </section>
 
+    </div> <!-- /viewStudentApp -->
+
+    <!-- ================= 2. FACULTY / ADMIN PORTAL VIEW ================= -->
+    <div id="viewFacultyPortal" style="display: none;">
+
+      <!-- Faculty Profile Banner -->
+      <div id="facultyProfileCard" class="faculty-profile-banner">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+          <div>
+            <div id="facNameText" class="faculty-banner-name">Prof. Rishabh Patel</div>
+            <div id="facDeptText" class="faculty-banner-dept">Dept of Computer Science & Engineering</div>
+          </div>
+          <span class="badge-faculty-tag">Faculty Portal</span>
+        </div>
+        <div class="faculty-metrics-strip">
+          <div class="fac-metric-item">
+            <span id="facMetricToday" class="fac-metric-val">2</span>
+            <span class="fac-metric-lbl">Today's Classes</span>
+          </div>
+          <div class="fac-metric-item">
+            <span id="facMetricSubPending" class="fac-metric-val" style="color: #f59e0b;">0</span>
+            <span class="fac-metric-lbl">Sub Requests</span>
+          </div>
+          <div class="fac-metric-item">
+            <span id="facMetricTotalStudents" class="fac-metric-val" style="color: #4ade80;">20</span>
+            <span class="fac-metric-lbl">Enrolled Batch</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Faculty Sub Navigation Pills -->
+      <div class="fac-nav-pills-row">
+        <button class="fac-nav-pill active" data-factab="schedule">
+          <span>📅 Teaching Schedule</span>
+        </button>
+        <button class="fac-nav-pill" data-factab="substitutions">
+          <span>🔄 Substitution Hub</span>
+          <span id="facSubPillDot" class="faculty-notif-dot" style="display: none;">0</span>
+        </button>
+        <button class="fac-nav-pill" data-factab="analytics">
+          <span>📊 Defaulters & Analytics</span>
+        </button>
+        <button class="fac-nav-pill" data-factab="roster">
+          <span>👥 Students Roster</span>
+        </button>
+      </div>
+
+      <!-- SECTION 1: TEACHING SCHEDULE -->
+      <section id="facultyTabSchedule" class="faculty-sub-pane active">
+        <div class="day-chip-row" style="margin-bottom: 12px;">
+          <div class="fac-day-chip active" data-day="Monday">Mon</div>
+          <div class="fac-day-chip" data-day="Tuesday">Tue</div>
+          <div class="fac-day-chip" data-day="Wednesday">Wed</div>
+          <div class="fac-day-chip" data-day="Thursday">Thu</div>
+          <div class="fac-day-chip" data-day="Friday">Fri</div>
+          <div class="fac-day-chip" data-day="Saturday">Sat</div>
+        </div>
+
+        <div id="facScheduleListContainer">
+          <!-- Injected via app.js -->
+        </div>
+      </section>
+
+      <!-- SECTION 2: SUBSTITUTION HUB -->
+      <section id="facultyTabSubstitutions" class="faculty-sub-pane">
+        <div class="section-header" style="margin-bottom: 8px;">
+          <h3 class="section-title" style="font-size: 1rem;">🔄 Substitution Exchange Desk</h3>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">Smart lecture delegation</span>
+        </div>
+
+        <!-- Incoming Substitution Requests -->
+        <div class="sub-hub-block">
+          <div class="sub-hub-header">
+            <span>📥 Incoming Requests (For You)</span>
+            <span id="incomingCountBadge" class="badge-tag-upcoming" style="font-size: 0.68rem;">0 Requests</span>
+          </div>
+          <div id="facIncomingSubsContainer">
+            <!-- Injected via app.js -->
+          </div>
+        </div>
+
+        <!-- Outgoing Substitution Requests -->
+        <div class="sub-hub-block" style="margin-top: 14px;">
+          <div class="sub-hub-header">
+            <span>📤 Outgoing Requests (Sent By You)</span>
+          </div>
+          <div id="facOutgoingSubsContainer">
+            <!-- Injected via app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 3: BATCH ANALYTICS & DEFAULTERS -->
+      <section id="facultyTabAnalytics" class="faculty-sub-pane">
+        <div class="section-header" style="margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <h3 class="section-title" style="font-size: 1rem; margin-bottom: 2px;">Batch Attendance Analytics</h3>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Monitor attendance & identify &lt;75% defaulters</div>
+          </div>
+          <button id="btnExportBatchCsv" class="btn-chip btn-chip-blue" style="font-size: 0.74rem; padding: 6px 10px;">
+            📥 Export CSV
+          </button>
+        </div>
+
+        <!-- Subject Filter Dropdown -->
+        <div class="form-field" style="margin-bottom: 12px;">
+          <label class="form-label-text" for="selectAnalyticsSubject">Select Subject / Course:</label>
+          <select id="selectAnalyticsSubject" class="form-input-box" style="padding: 10px;">
+            <!-- Populated via app.js -->
+          </select>
+        </div>
+
+        <!-- Metric Highlight Card -->
+        <div id="analyticsSummaryCard" class="analytics-stat-card">
+          <!-- Injected via app.js -->
+        </div>
+
+        <!-- Filter Defaulters Toggle -->
+        <div style="display: flex; gap: 8px; margin: 14px 0 10px 0;">
+          <button id="btnFilterAllStudents" class="btn-chip btn-chip-slate active" style="font-size: 0.74rem;">All Students</button>
+          <button id="btnFilterDefaulters" class="btn-chip btn-chip-red" style="font-size: 0.74rem;">⚠️ Defaulters Only (&lt; 75%)</button>
+        </div>
+
+        <div id="analyticsStudentsTableContainer">
+          <!-- Injected via app.js -->
+        </div>
+      </section>
+
+      <!-- SECTION 4: STUDENT ROSTER -->
+      <section id="facultyTabRoster" class="faculty-sub-pane">
+        <div class="section-header" style="margin-bottom: 12px;">
+          <div>
+            <h3 class="section-title" style="font-size: 1rem; margin-bottom: 2px;">Enrolled Student Directory</h3>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">B.Tech Computer Science — 5th Semester</div>
+          </div>
+        </div>
+        <div id="rosterListContainer">
+          <!-- Injected via app.js -->
+        </div>
+      </section>
+
+    </div> <!-- /viewFacultyPortal -->
+
   </main>
 
-  <!-- Modern Mobile Bottom Navigation Dock -->
-  <nav class="bottom-nav-dock">
+  <!-- Modern Mobile Bottom Navigation Dock (STUDENT MODE) -->
+  <nav id="dockStudentNav" class="bottom-nav-dock">
     <button class="nav-tab-btn active" data-tab="dashboard">
       <span class="nav-tab-icon">📊</span>
       <span>Dashboard</span>
@@ -313,6 +481,26 @@
     <button class="nav-tab-btn" data-tab="settings">
       <span class="nav-tab-icon">⚙️</span>
       <span>Settings</span>
+    </button>
+  </nav>
+
+  <!-- Modern Mobile Bottom Navigation Dock (FACULTY MODE) -->
+  <nav id="dockFacultyNav" class="bottom-nav-dock" style="display: none;">
+    <button class="fac-nav-dock-btn active" data-factab="schedule">
+      <span class="nav-tab-icon">📅</span>
+      <span>Teaching</span>
+    </button>
+    <button class="fac-nav-dock-btn" data-factab="substitutions">
+      <span class="nav-tab-icon">🔄</span>
+      <span>Substitutes</span>
+    </button>
+    <button class="fac-nav-dock-btn" data-factab="analytics">
+      <span class="nav-tab-icon">📊</span>
+      <span>Analytics</span>
+    </button>
+    <button class="fac-nav-dock-btn" data-factab="roster">
+      <span class="nav-tab-icon">👥</span>
+      <span>Roster</span>
     </button>
   </nav>
 
@@ -695,6 +883,74 @@
           <button type="button" onclick="forceAppRefresh()" style="background: none; border: none; color: var(--accent-cyan); font-size: 0.74rem; font-weight: 700; text-decoration: underline; cursor: pointer; padding: 2px 4px;">Tap to Force Refresh App 🔄</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal: Smart Faculty Substitution Recommendation -->
+  <div id="modalSmartSubstitute" class="modal-overlay">
+    <div class="bottom-sheet" style="max-height: 85vh; overflow-y: auto;">
+      <div class="sheet-handle"></div>
+      <div class="modal-title-bar" style="margin-bottom: 8px;">
+        <div>
+          <h3 class="modal-heading" style="font-size: 1.15rem; color: #fff;">🔄 Smart Lecture Transfer</h3>
+          <p id="subModalLecInfo" style="font-size: 0.78rem; color: var(--accent-cyan); margin-top: 3px;">Data Science Lab • Wed 11:10 AM - 12:50 PM</p>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modalSmartSubstitute')">&times;</button>
+      </div>
+
+      <!-- Substitution Note / Reason -->
+      <div class="form-field" style="margin-bottom: 12px;">
+        <label class="form-label-text" for="inputSubReason">Reason / Note for Substitute Teacher:</label>
+        <input type="text" id="inputSubReason" class="form-input-box" placeholder="e.g. Urgent faculty meeting, please cover Unit 3 numericals" value="Need substitution due to urgent meeting.">
+      </div>
+
+      <!-- Ranking Engine Explanation Header -->
+      <div style="background: rgba(139, 92, 246, 0.10); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 10px 12px; margin-bottom: 14px;">
+        <div style="font-size: 0.82rem; font-weight: 800; color: #c084fc; display: flex; align-items: center; gap: 6px;">
+          <span>⚡</span> AI Ranked Replacement Recommendations
+        </div>
+        <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
+          Faculties who are free at this hour, ranked by subject expertise match & daily workload balance.
+        </div>
+      </div>
+
+      <!-- Ranked Faculty Recommendation Cards -->
+      <div id="rankedFacultyListContainer" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+        <!-- Injected via app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Batch Roll Call Attendance Taker -->
+  <div id="modalTakeRollCall" class="modal-overlay">
+    <div class="bottom-sheet" style="max-height: 88vh; display: flex; flex-direction: column;">
+      <div class="sheet-handle"></div>
+      <div class="modal-title-bar" style="margin-bottom: 8px;">
+        <div>
+          <h3 id="rollCallModalTitle" class="modal-heading" style="font-size: 1.15rem; color: #fff;">📋 Take Roll Call</h3>
+          <p id="rollCallModalSubtitle" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 3px;">Data Science Lab • Batch A • 20 Students</p>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modalTakeRollCall')">&times;</button>
+      </div>
+
+      <!-- Quick Batch Actions -->
+      <div style="display: flex; gap: 8px; justify-content: space-between; align-items: center; background: #0d0d0d; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--border-subtle); margin-bottom: 10px;">
+        <span id="rollCallStatsText" style="font-size: 0.80rem; font-weight: 800; color: #4ade80;">Present: 20 / 20 (100%)</span>
+        <div style="display: flex; gap: 6px;">
+          <button id="btnRollCallAllPresent" type="button" class="btn-chip btn-chip-green" style="font-size: 0.72rem; padding: 5px 8px;">✅ All Present</button>
+          <button id="btnRollCallAllAbsent" type="button" class="btn-chip btn-chip-red" style="font-size: 0.72rem; padding: 5px 8px;">❌ All Absent</button>
+        </div>
+      </div>
+
+      <!-- Scrollable Student Roster List -->
+      <div id="rollCallRosterList" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; max-height: 48vh; padding-right: 4px; margin-bottom: 12px;">
+        <!-- Injected via app.js -->
+      </div>
+
+      <!-- Submit Button -->
+      <button id="btnSubmitRollCall" type="button" class="btn-cta-primary" style="background: linear-gradient(135deg, #22c55e, #16a34a); color: #000; font-weight: 900; margin-top: auto;">
+        💾 Submit & Sync Attendance
+      </button>
     </div>
   </div>
 
