@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" type="image/png" href="icon-192.png">
 
-  <link rel="stylesheet" href="styles.css?v=38">
+  <link rel="stylesheet" href="styles.css?v=39">
 
   <!-- Immediate Auto-Update Engine (Forces clean update on mobile devices) -->
   <script>
@@ -410,61 +410,126 @@
       </div>
     </section>
 
-    <!-- TAB: PLACEMENTS & DRIVES (MEDI-CAPS POD.AI ECOSYSTEM) -->
+    <!-- TAB: PLACEMENTS, ASSESSMENTS & POD.AI ECOSYSTEM -->
     <section id="tab-placements" class="tab-pane">
       <div class="section-header" style="flex-wrap: wrap; gap: 8px;">
         <div>
-          <h2 class="section-title">Campus Placements & Drives</h2>
-          <div style="font-size: 0.72rem; color: var(--text-muted);">Medi-Caps University TPO • Powered by Pod.ai Network</div>
+          <h2 class="section-title">Medi-Caps Pod.ai Career Hub</h2>
+          <div style="font-size: 0.72rem; color: var(--text-muted);">Campus Drives • QuickTest Assessments • Quizzes & Profile</div>
         </div>
         <button type="button" class="btn-chip btn-chip-blue" onclick="syncPodDrives()" style="font-size: 0.72rem; padding: 6px 10px;">
-          🔄 Sync Drives
+          🔄 Sync Hub
         </button>
       </div>
 
-      <!-- TPO Quick Analytics Strip -->
-      <div class="tpo-stats-strip">
-        <div class="tpo-stat-box">
-          <div class="tpo-stat-val" id="tpoStatActiveCount">6</div>
-          <div class="tpo-stat-lbl">Active Drives</div>
-        </div>
-        <div class="tpo-stat-box">
-          <div class="tpo-stat-val" id="tpoStatAppliedCount" style="color: #4ade80;">2</div>
-          <div class="tpo-stat-lbl">Applied</div>
-        </div>
-        <div class="tpo-stat-box">
-          <div class="tpo-stat-val" id="tpoStatMaxCtc" style="color: #fbbf24;">14.5 L</div>
-          <div class="tpo-stat-lbl">Top Package</div>
-        </div>
-        <div class="tpo-stat-box">
-          <div class="tpo-stat-val" id="tpoStatEligibility" style="color: #2dd4bf;">83%</div>
-          <div class="tpo-stat-lbl">Eligibility</div>
-        </div>
+      <!-- Pod.ai Sub Navigation Tabs -->
+      <div class="pod-sub-nav">
+        <button type="button" class="pod-sub-nav-btn active" id="btnPodSub_drives" onclick="switchPodSection('drives')">
+          <span>💼 Campus Drives</span>
+        </button>
+        <button type="button" class="pod-sub-nav-btn" id="btnPodSub_assessments" onclick="switchPodSection('assessments')">
+          <span>📝 QuickTest & Quizzes</span>
+          <span id="badgeActiveTestsCount" style="background: #38bdf8; color: #000; font-size: 0.60rem; padding: 1px 5px; border-radius: 10px; font-weight: 900;">3</span>
+        </button>
+        <button type="button" class="pod-sub-nav-btn" id="btnPodSub_assignments" onclick="switchPodSection('assignments')">
+          <span>📂 Course Assignments</span>
+          <span id="badgePendingAssignments" style="background: #f59e0b; color: #000; font-size: 0.60rem; padding: 1px 5px; border-radius: 10px; font-weight: 900;">1</span>
+        </button>
+        <button type="button" class="pod-sub-nav-btn" id="btnPodSub_profile" onclick="switchPodSection('profile')">
+          <span>🎓 Verified POD Profile</span>
+        </button>
       </div>
 
-      <!-- Medi-Caps TPO Notice Alert -->
-      <div class="tpo-alert-banner">
-        <span style="font-size: 1.3rem;">📢</span>
-        <div style="flex: 1;">
-          <div style="font-size: 0.80rem; font-weight: 800; color: #38bdf8;">Medi-Caps TPO Official Notice</div>
-          <div style="font-size: 0.72rem; color: #cbd5e1; margin-top: 2px;">
-            Pre-Placement Talk (PPT) for Impetus Technologies tomorrow at 11:30 AM in Audi-2. Attendance is strictly monitored for Round 1 shortlisting.
+      <!-- SUB-SECTION 1: CAMPUS DRIVES -->
+      <div id="podSectionDrives">
+        <!-- TPO Quick Analytics Strip -->
+        <div class="tpo-stats-strip">
+          <div class="tpo-stat-box">
+            <div class="tpo-stat-val" id="tpoStatActiveCount">6</div>
+            <div class="tpo-stat-lbl">Active Drives</div>
+          </div>
+          <div class="tpo-stat-box">
+            <div class="tpo-stat-val" id="tpoStatAppliedCount" style="color: #4ade80;">2</div>
+            <div class="tpo-stat-lbl">Applied</div>
+          </div>
+          <div class="tpo-stat-box">
+            <div class="tpo-stat-val" id="tpoStatMaxCtc" style="color: #fbbf24;">14.5 L</div>
+            <div class="tpo-stat-lbl">Top Package</div>
+          </div>
+          <div class="tpo-stat-box">
+            <div class="tpo-stat-val" id="tpoStatEligibility" style="color: #2dd4bf;">83%</div>
+            <div class="tpo-stat-lbl">Eligibility</div>
           </div>
         </div>
+
+        <!-- Medi-Caps TPO Notice Alert -->
+        <div class="tpo-alert-banner">
+          <span style="font-size: 1.3rem;">📢</span>
+          <div style="flex: 1;">
+            <div style="font-size: 0.80rem; font-weight: 800; color: #38bdf8;">Medi-Caps TPO Official Notice</div>
+            <div style="font-size: 0.72rem; color: #cbd5e1; margin-top: 2px;">
+              Pre-Placement Talk (PPT) for Impetus Technologies tomorrow at 11:30 AM in Audi-2. Attendance is strictly monitored for Round 1 shortlisting.
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter Chips Row -->
+        <div class="tpo-filter-row">
+          <button type="button" class="btn-tpo-filter active" onclick="filterDrivesBy('all', this)">🌐 All Drives</button>
+          <button type="button" class="btn-tpo-filter" onclick="filterDrivesBy('eligible', this)">🟢 Eligible Only</button>
+          <button type="button" class="btn-tpo-filter" onclick="filterDrivesBy('high_ctc', this)">💰 8+ LPA High CTC</button>
+          <button type="button" class="btn-tpo-filter" onclick="filterDrivesBy('applied', this)">📌 Applied</button>
+          <button type="button" class="btn-tpo-filter" onclick="filterDrivesBy('offcampus', this)">🚀 Off-Campus & SIH</button>
+        </div>
+
+        <!-- Drives Feed List -->
+        <div id="placementsFeedList">
+          <!-- Injected via renderPlacementsTab() -->
+        </div>
       </div>
 
-      <!-- Filter Chips Row -->
-      <div class="tpo-filter-row">
-        <button type="button" class="btn-tpo-filter active" onclick="filterDrivesBy('all', this)">🌐 All Drives</button>
-        <button type="button" class="btn-tpo-filter" onclick="filterDrivesBy('eligible', this)">🟢 Eligible Only</button>
-        <button type="button" class="btn-tpo-filter" onclick="filterDrivesBy('high_ctc', this)">💰 8+ LPA High CTC</button>
-        <button type="button" class="btn-tpo-filter" onclick="filterDrivesBy('applied', this)">📌 Applied</button>
-        <button type="button" class="btn-tpo-filter" onclick="filterDrivesBy('offcampus', this)">🚀 Off-Campus & SIH</button>
+      <!-- SUB-SECTION 2: QUICKTEST & ASSESSMENTS -->
+      <div id="podSectionAssessments" style="display: none;">
+        <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 0.80rem; font-weight: 800; color: #38bdf8;">⚡ QuickTest Proctored Testing Suite</div>
+            <div style="font-size: 0.70rem; color: #cbd5e1; margin-top: 2px;">Complete assigned quizzes & tests before deadline. Anti-cheat tab monitoring active.</div>
+          </div>
+          <span style="font-size: 1.4rem;">🎯</span>
+        </div>
+
+        <!-- Test Filter Chips -->
+        <div class="tpo-filter-row" style="margin-bottom: 12px;">
+          <button type="button" class="btn-tpo-filter active" onclick="filterStudentAssessments('all', this)">All Tests</button>
+          <button type="button" class="btn-tpo-filter" onclick="filterStudentAssessments('active', this)">Active / Pending</button>
+          <button type="button" class="btn-tpo-filter" onclick="filterStudentAssessments('completed', this)">Completed</button>
+        </div>
+
+        <div id="studentAssessmentsList">
+          <!-- Injected via renderStudentAssessments() -->
+        </div>
       </div>
 
-      <!-- Drives Feed List -->
-      <div id="placementsFeedList">
-        <!-- Injected via renderPlacementsTab() -->
+      <!-- SUB-SECTION 3: COURSE ASSIGNMENTS -->
+      <div id="podSectionAssignments" style="display: none;">
+        <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 12px; padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 0.80rem; font-weight: 800; color: #fbbf24;">📂 Faculty Coursework & Lab Assignments</div>
+            <div style="font-size: 0.70rem; color: #cbd5e1; margin-top: 2px;">Submit lab reports and problem sets for evaluation & internal marks.</div>
+          </div>
+          <span style="font-size: 1.4rem;">📑</span>
+        </div>
+
+        <div id="studentAssignmentsList">
+          <!-- Injected via renderStudentAssignments() -->
+        </div>
+      </div>
+
+      <!-- SUB-SECTION 4: VERIFIED POD PROFILE -->
+      <div id="podSectionProfile" style="display: none;">
+        <div id="studentPodProfileContainer">
+          <!-- Injected via renderStudentPodProfile() -->
+        </div>
       </div>
     </section>
 
@@ -653,6 +718,10 @@
             <span class="fac-metric-lbl">OD Requests</span>
           </div>
           <div class="fac-metric-item">
+            <span id="facMetricQuizzesCount" class="fac-metric-val" style="color: #c084fc;">4</span>
+            <span class="fac-metric-lbl">Quizzes & Tests</span>
+          </div>
+          <div class="fac-metric-item">
             <span id="facMetricTotalStudents" class="fac-metric-val" style="color: #4ade80;">20</span>
             <span class="fac-metric-lbl">Enrolled Batch</span>
           </div>
@@ -681,6 +750,10 @@
         <button class="fac-nav-pill" data-factab="od_approvals">
           <span>🏛️ Duty Leave (OD)</span>
           <span id="facOdPillDot" class="faculty-notif-dot" style="display: none;">0</span>
+        </button>
+        <button class="fac-nav-pill" data-factab="assessments">
+          <span>📝 Quizzes & Assessments</span>
+          <span id="facAsmPillDot" class="faculty-notif-dot" style="display: none;">0</span>
         </button>
         <button class="fac-nav-pill" data-factab="analytics">
           <span>📊 Defaulters & Analytics</span>
@@ -746,6 +819,34 @@
 
         <div id="facOdRequestsList">
           <!-- Injected via app.js -->
+        </div>
+      </section>
+
+      <!-- SECTION: ASSESSMENTS & QUIZZES HUB -->
+      <section id="facultyTabAssessments" class="faculty-sub-pane">
+        <div class="section-header" style="margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <h3 class="section-title" style="font-size: 1rem; margin-bottom: 2px;">Faculty Assessment & Quiz Hub</h3>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Author tests, publish coding rounds, and review live student leaderboards</div>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" class="btn-chip btn-chip-blue" onclick="openCreateAssessmentModal()" style="font-size: 0.74rem; padding: 6px 12px; font-weight: 800; background: linear-gradient(135deg, #38bdf8, #2563eb); color: #fff;">
+              ➕ Create Quiz / Test
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter chips -->
+        <div class="tpo-filter-row" style="margin-bottom: 12px;">
+          <button type="button" class="btn-tpo-filter active" onclick="filterFacultyAssessments('all', this)">All</button>
+          <button type="button" class="btn-tpo-filter" onclick="filterFacultyAssessments('quiz', this)">MCQ Quizzes</button>
+          <button type="button" class="btn-tpo-filter" onclick="filterFacultyAssessments('coding', this)">Coding Tests</button>
+          <button type="button" class="btn-tpo-filter" onclick="filterFacultyAssessments('assignment', this)">Assignments</button>
+        </div>
+
+        <!-- Faculty Assessments Cards List -->
+        <div id="facultyAssessmentsList">
+          <!-- Injected via renderFacultyAssessments() -->
         </div>
       </section>
 
@@ -844,6 +945,10 @@
     <button class="fac-nav-dock-btn" data-factab="substitutions">
       <span class="nav-tab-icon">🔄</span>
       <span>Substitutes</span>
+    </button>
+    <button class="fac-nav-dock-btn" data-factab="assessments">
+      <span class="nav-tab-icon">📝</span>
+      <span>Quizzes</span>
     </button>
     <button class="fac-nav-dock-btn" data-factab="analytics">
       <span class="nav-tab-icon">📊</span>
@@ -1511,6 +1616,286 @@
     </div>
   </div>
 
-  <script src="app.js?v=38"></script>
+  <!-- Modal 1: Faculty Quiz / Assessment / Assignment Creator -->
+  <div id="modalCreateAssessment" class="modal-overlay">
+    <div class="bottom-sheet" style="max-height: 90vh; overflow-y: auto;">
+      <div class="sheet-handle"></div>
+      <div class="modal-title-bar" style="margin-bottom: 8px;">
+        <div>
+          <h3 class="modal-heading">➕ Create Quiz / Assessment</h3>
+          <span style="font-size: 0.70rem; color: #38bdf8;">Publish to Student Portals & QuickTest Engine</span>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modalCreateAssessment')">&times;</button>
+      </div>
+
+      <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+        <button type="button" class="btn-tpo-filter active" id="btnAsmType_quiz" onclick="selectCreateAsmType('quiz')" style="flex: 1; text-align: center;">📝 MCQ Quiz</button>
+        <button type="button" class="btn-tpo-filter" id="btnAsmType_coding" onclick="selectCreateAsmType('coding')" style="flex: 1; text-align: center;">💻 Coding Test</button>
+        <button type="button" class="btn-tpo-filter" id="btnAsmType_assignment" onclick="selectCreateAsmType('assignment')" style="flex: 1; text-align: center;">📂 Assignment</button>
+      </div>
+
+      <form id="formCreateAssessment" onsubmit="handleCreateAssessmentSubmit(event)">
+        <input type="hidden" id="inputAsmType" value="quiz">
+
+        <div class="form-field">
+          <label class="form-label-text">Title / Name *</label>
+          <input type="text" id="inputAsmTitle" class="form-input-box" placeholder="e.g. Computer Networks: Subnetting & OSPF Quiz" required>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+          <div class="form-field" style="margin-bottom: 0;">
+            <label class="form-label-text">Subject / Domain *</label>
+            <select id="selectAsmSubject" class="form-input-box" style="padding: 10px;">
+              <option value="Computer Networks">Computer Networks</option>
+              <option value="Data Science">Data Science</option>
+              <option value="Machine Learning">Machine Learning</option>
+              <option value="Operating Systems">Operating Systems</option>
+              <option value="Aptitude & Reasoning">Aptitude & Reasoning</option>
+            </select>
+          </div>
+          <div class="form-field" style="margin-bottom: 0;">
+            <label class="form-label-text">Target Batch *</label>
+            <select id="selectAsmBatch" class="form-input-box" style="padding: 10px;">
+              <option value="CSE Batch A1">CSE Batch A1 (5th Sem)</option>
+              <option value="CSE Batch A2">CSE Batch A2 (5th Sem)</option>
+              <option value="All 3rd Year CSE">All 3rd Year CSE</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+          <div class="form-field" style="margin-bottom: 0;">
+            <label class="form-label-text">Duration (Mins)</label>
+            <input type="number" id="inputAsmDuration" class="form-input-box" value="20" min="5" max="180">
+          </div>
+          <div class="form-field" style="margin-bottom: 0;">
+            <label class="form-label-text">Total Marks</label>
+            <input type="number" id="inputAsmTotalMarks" class="form-input-box" value="30" min="5" max="100">
+          </div>
+          <div class="form-field" style="margin-bottom: 0;">
+            <label class="form-label-text">Negative Mark</label>
+            <input type="number" id="inputAsmNegMark" class="form-input-box" value="0.25" step="0.25" min="0" max="2">
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label class="form-label-text">Due Date & Time</label>
+          <input type="text" id="inputAsmDueDate" class="form-input-box" value="Nov 18, 2026 • 11:59 PM">
+        </div>
+
+        <!-- Dynamic Questions Builder for Quiz/Coding -->
+        <div id="sectionQuizQuestionBuilder">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; margin-bottom: 8px;">
+            <span style="font-size: 0.82rem; font-weight: 800; color: #fff;">Questions in Quiz (<span id="countDraftQuestions">0</span>)</span>
+            <div style="display: flex; gap: 6px;">
+              <button type="button" class="btn-chip btn-chip-ai" onclick="quickFillSampleQuestions()" style="font-size: 0.68rem; padding: 4px 8px;">
+                ⚡ Load Sample 3-Q
+              </button>
+            </div>
+          </div>
+
+          <div id="draftQuestionsList" style="margin-bottom: 10px; max-height: 220px; overflow-y: auto;">
+            <!-- Questions rendered here -->
+          </div>
+
+          <!-- Add Question Form Card -->
+          <div style="background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.15); border-radius: 10px; padding: 12px; margin-bottom: 12px;">
+            <span style="font-size: 0.74rem; font-weight: 800; color: #38bdf8; display: block; margin-bottom: 6px;">+ Add Question Statement</span>
+            <textarea id="inputDraftQText" class="form-input-box" rows="2" placeholder="e.g. Which layer of the OSI model is responsible for end-to-end reliability?" style="margin-bottom: 8px;"></textarea>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px;">
+              <input type="text" id="inputDraftOpt0" class="form-input-box" placeholder="Option A (e.g. Network Layer)">
+              <input type="text" id="inputDraftOpt1" class="form-input-box" placeholder="Option B (e.g. Transport Layer)">
+              <input type="text" id="inputDraftOpt2" class="form-input-box" placeholder="Option C (e.g. Data Link Layer)">
+              <input type="text" id="inputDraftOpt3" class="form-input-box" placeholder="Option D (e.g. Session Layer)">
+            </div>
+
+            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+              <label style="font-size: 0.70rem; color: #94a3b8; font-weight: 700;">Correct Answer:</label>
+              <select id="selectDraftCorrectOpt" class="form-input-box" style="padding: 4px 8px; font-size: 0.74rem; width: auto;">
+                <option value="0">Option A</option>
+                <option value="1">Option B</option>
+                <option value="2">Option C</option>
+                <option value="3">Option D</option>
+              </select>
+            </div>
+
+            <input type="text" id="inputDraftExplanation" class="form-input-box" placeholder="Explanation (Optional) e.g. Transport layer uses TCP sequence numbers & ACKs" style="margin-bottom: 8px; font-size: 0.72rem;">
+
+            <button type="button" class="btn-chip btn-chip-blue" onclick="addDraftQuestionToQuiz()" style="width: 100%; justify-content: center; padding: 7px; font-size: 0.74rem;">
+              ➕ Add This Question
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-cta-primary" style="background: linear-gradient(135deg, #38bdf8, #2563eb); font-weight: 900; margin-top: 8px;">
+          🚀 Publish to Student Portals
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Faculty Submissions & Leaderboard Gradebook -->
+  <div id="modalAssessmentSubmissions" class="modal-overlay">
+    <div class="bottom-sheet" style="max-height: 90vh; overflow-y: auto;">
+      <div class="sheet-handle"></div>
+      <div class="modal-title-bar" style="margin-bottom: 8px;">
+        <div>
+          <h3 class="modal-heading" id="facAsmDetailTitle">Submissions & Gradebook</h3>
+          <span style="font-size: 0.70rem; color: #38bdf8;" id="facAsmDetailSub">Live Medi-Caps Batch Leaderboard</span>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modalAssessmentSubmissions')">&times;</button>
+      </div>
+
+      <div id="facAsmSubmissionsBody">
+        <!-- Injected via openAssessmentSubmissionsModal() -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Student Interactive Proctored QuickTest Player -->
+  <div id="modalQuickTestPlayer" class="modal-overlay">
+    <div class="bottom-sheet quicktest-sheet" style="max-height: 94vh;">
+      <div class="sheet-handle"></div>
+      
+      <!-- Top Proctoring Bar -->
+      <div class="quicktest-header-bar">
+        <div>
+          <div style="font-size: 0.84rem; font-weight: 800; color: #fff;" id="testActiveTitle">QuickTest Assessment</div>
+          <div style="font-size: 0.68rem; color: #94a3b8;" id="testActiveSubject">Computer Networks</div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <div class="quicktest-proctor-badge" id="testTabSwitchBadge">⚠️ 0/3 Switches</div>
+          <div class="quicktest-timer-badge">
+            <span>⏳</span>
+            <span id="testTimerDisplay">19:59</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Question Palette Dots -->
+      <div class="quicktest-palette-strip" id="testPaletteStrip">
+        <!-- Injected via renderQuickTestQuestion() -->
+      </div>
+
+      <!-- Main Question Container -->
+      <div class="quicktest-q-box" style="flex: 1; overflow-y: auto;">
+        <div class="quicktest-q-number" id="testQNumberLabel">Question 1 of 5</div>
+        <div class="quicktest-q-text" id="testQTextDisplay">Loading question statement...</div>
+
+        <div class="quicktest-options-list" id="testOptionsList">
+          <!-- Injected via renderQuickTestQuestion() -->
+        </div>
+      </div>
+
+      <!-- Bottom Controls -->
+      <div style="display: flex; gap: 6px; align-items: center; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1);">
+        <button type="button" class="btn-chip" onclick="prevQuickTestQuestion()" style="padding: 9px 12px; background: rgba(255,255,255,0.06); color: #cbd5e1;">⬅️ Prev</button>
+        <button type="button" class="btn-chip" onclick="toggleQuickTestReview()" style="padding: 9px 10px; background: rgba(168,85,247,0.15); border-color: #a855f7; color: #c084fc;">🟣 Review</button>
+        <button type="button" class="btn-chip" onclick="clearQuickTestResponse()" style="padding: 9px 10px; background: rgba(255,255,255,0.06); color: #94a3b8;">Clear</button>
+        <button type="button" class="btn-chip btn-chip-blue" onclick="nextQuickTestQuestion()" style="padding: 9px 14px; margin-left: auto;">Next ➡️</button>
+        <button type="button" class="btn-cta-primary" onclick="confirmSubmitQuickTest()" style="padding: 9px 16px; background: linear-gradient(135deg, #16a34a, #15803d); font-weight: 800; border-radius: 8px;">🏁 Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: Student Detailed Scorecard & Solutions Review -->
+  <div id="modalScorecard" class="modal-overlay">
+    <div class="bottom-sheet" style="max-height: 90vh; overflow-y: auto;">
+      <div class="sheet-handle"></div>
+      <div class="modal-title-bar" style="margin-bottom: 8px;">
+        <div>
+          <h3 class="modal-heading">🎯 Assessment Performance Scorecard</h3>
+          <span style="font-size: 0.70rem; color: #38bdf8;">QuickTest Medi-Caps Evaluation Report</span>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modalScorecard')">&times;</button>
+      </div>
+
+      <div id="scorecardBody">
+        <!-- Injected via renderScorecardModal() -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 5: Interactive Coding Sandbox -->
+  <div id="modalCodingSandbox" class="modal-overlay">
+    <div class="bottom-sheet" style="max-height: 92vh; overflow-y: auto;">
+      <div class="sheet-handle"></div>
+      <div class="modal-title-bar" style="margin-bottom: 8px;">
+        <div>
+          <h3 class="modal-heading" id="codingModalTitle">💻 Coding Assessment</h3>
+          <span style="font-size: 0.70rem; color: #60a5fa;">Interactive Multi-Language Compiler & Test Runner</span>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modalCodingSandbox')">&times;</button>
+      </div>
+
+      <div id="codingProblemDescription" style="background: #141726; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px; margin-bottom: 10px; font-size: 0.76rem; color: #cbd5e1; line-height: 1.45;">
+        <!-- Injected dynamically -->
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <span style="font-size: 0.72rem; font-weight: 700; color: #94a3b8;">Code Editor:</span>
+        <select id="selectCodingLanguage" class="form-input-box" style="padding: 4px 8px; font-size: 0.72rem; width: auto;" onchange="updateCodingTemplate()">
+          <option value="python">Python 3</option>
+          <option value="cpp">C++ (GCC 11)</option>
+          <option value="java">Java 17</option>
+          <option value="javascript">JavaScript (Node.js)</option>
+        </select>
+      </div>
+
+      <textarea id="codingCodeEditor" class="coding-terminal" spellcheck="false"></textarea>
+
+      <div style="display: flex; gap: 8px; margin: 10px 0;">
+        <button type="button" class="btn-chip" onclick="runCodingTestCases()" style="flex: 1; justify-content: center; background: rgba(59,130,246,0.15); border-color: #3b82f6; color: #93c5fd; font-weight: 800; padding: 9px;">
+          ▶️ Run Test Cases
+        </button>
+        <button type="button" class="btn-cta-primary" onclick="submitCodingSolution()" style="flex: 1; background: linear-gradient(135deg, #16a34a, #15803d); font-weight: 900; padding: 9px;">
+          🚀 Submit Code
+        </button>
+      </div>
+
+      <div id="codingConsoleOutput" style="background: #090d16; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; font-family: monospace; font-size: 0.74rem; color: #cbd5e1; min-height: 60px;">
+        Terminal: Click "Run Test Cases" to execute solution against test suites.
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 6: Student Assignment Submission Modal -->
+  <div id="modalSubmitAssignment" class="modal-overlay">
+    <div class="bottom-sheet" style="max-height: 85vh; overflow-y: auto;">
+      <div class="sheet-handle"></div>
+      <div class="modal-title-bar" style="margin-bottom: 8px;">
+        <div>
+          <h3 class="modal-heading" id="assignmentModalTitle">📂 Submit Coursework Assignment</h3>
+          <span style="font-size: 0.70rem; color: #fbbf24;">Medi-Caps Engineering Internal Evaluation</span>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modalSubmitAssignment')">&times;</button>
+      </div>
+
+      <div id="assignmentModalBody" style="margin-bottom: 12px;">
+        <!-- Injected via openSubmitAssignmentModal() -->
+      </div>
+
+      <form id="formSubmitAssignment" onsubmit="handleStudentAssignmentSubmit(event)">
+        <input type="hidden" id="inputSubmitAsmId">
+        
+        <div class="form-field">
+          <label class="form-label-text">GitHub Repo or Google Drive Link</label>
+          <input type="url" id="inputAssignmentLink" class="form-input-box" placeholder="https://github.com/rishabhpatel183/..." required>
+        </div>
+
+        <div class="form-field">
+          <label class="form-label-text">Submission Comments / Brief Summary</label>
+          <textarea id="inputAssignmentComments" class="form-input-box" rows="3" placeholder="Explain the key methodology, findings, and libraries used..."></textarea>
+        </div>
+
+        <button type="submit" class="btn-cta-primary" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 900;">
+          📤 Submit Assignment for Evaluation
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js?v=39"></script>
 </body>
 </html>

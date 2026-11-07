@@ -155,6 +155,217 @@ const DEFAULT_STUDENTS = [
   { roll: '120', name: 'Varun Bhatt', email: 'varun.120@college.edu' }
 ];
 
+// Medi-Caps University Pod.ai Assessments, Quizzes & Assignments Bank
+const DEFAULT_ASSESSMENTS = [
+  {
+    id: 'asm-1',
+    title: 'Cisco OA Preparation: Networks & Data Structures',
+    type: 'quiz', // 'quiz' | 'coding' | 'assignment'
+    category: 'Placement Assessment',
+    subject: 'Computer Networks',
+    facultyId: 'fac-1',
+    facultyName: 'Prof. Rishabh Patel',
+    batch: 'CSE Batch A1',
+    durationMins: 15,
+    totalMarks: 30,
+    passingMarks: 18,
+    negativeMarking: 0.25,
+    dueDate: 'Nov 18, 2026 • 11:59 PM',
+    instructions: 'Multiple Choice Questions on routing protocols, TCP/IP, and trees. Anti-cheat tab switch limit is 3.',
+    questions: [
+      {
+        id: 'q1',
+        type: 'mcq',
+        question: "Which routing protocol uses Dijkstra's Shortest Path First algorithm?",
+        options: ['RIP (Routing Information Protocol)', 'OSPF (Open Shortest Path First)', 'BGP (Border Gateway Protocol)', 'EIGRP'],
+        correctIndex: 1,
+        explanation: "OSPF is a link-state routing protocol that utilizes Dijkstra's algorithm to calculate the shortest path tree to all destinations."
+      },
+      {
+        id: 'q2',
+        type: 'mcq',
+        question: "In TCP, which mechanism prevents the sender from overwhelming the receiver's buffer?",
+        options: ['Congestion Control', 'Flow Control (Sliding Window)', 'Error Detection via Checksum', 'Slow Start Algorithm'],
+        correctIndex: 1,
+        explanation: 'Flow Control uses the receiver window (rwnd) field in the TCP header to regulate the sender transmission rate according to available buffer space.'
+      },
+      {
+        id: 'q3',
+        type: 'mcq',
+        question: 'What is the time complexity to find the Lowest Common Ancestor (LCA) in a Binary Search Tree (BST)?',
+        options: ['O(1)', 'O(log N) or O(Height)', 'O(N^2)', 'O(N log N)'],
+        correctIndex: 1,
+        explanation: 'In a BST, by comparing node values with p and q, we traverse down a single path from the root, yielding O(h) or O(log N) average time complexity.'
+      },
+      {
+        id: 'q4',
+        type: 'mcq',
+        question: 'Which IP address class has a default subnet mask of 255.255.0.0?',
+        options: ['Class A', 'Class B', 'Class C', 'Class D'],
+        correctIndex: 1,
+        explanation: 'Class B addresses (128.0.0.0 to 191.255.255.255) utilize a 16-bit network prefix, giving a default subnet mask of 255.255.0.0.'
+      },
+      {
+        id: 'q5',
+        type: 'mcq',
+        question: 'In CSMA/CD, what is the purpose of the exponential backoff algorithm?',
+        options: ['To re-transmit packets immediately', 'To increase collision resolution delay randomly to avoid repeated collisions', 'To compress header size', 'To encrypt data frames'],
+        correctIndex: 1,
+        explanation: 'Binary exponential backoff introduces a randomized wait time that doubles after each successive collision, preventing simultaneous retries.'
+      }
+    ],
+    submissions: [
+      {
+        studentRoll: '104',
+        studentName: 'Rishabh Patel',
+        enrollment: 'EN22CS301104',
+        submittedAt: 'Nov 06, 2026 • 02:40 PM',
+        score: 28,
+        totalMarks: 30,
+        accuracy: 93,
+        timeSpentMins: 11,
+        tabSwitches: 0,
+        status: 'evaluated',
+        answers: { q1: 1, q2: 1, q3: 1, q4: 1, q5: 1 }
+      },
+      {
+        studentRoll: '106',
+        studentName: 'Aryan Joshi',
+        enrollment: 'EN22CS301106',
+        submittedAt: 'Nov 06, 2026 • 03:15 PM',
+        score: 22,
+        totalMarks: 30,
+        accuracy: 73,
+        timeSpentMins: 14,
+        tabSwitches: 1,
+        status: 'evaluated',
+        answers: { q1: 1, q2: 0, q3: 1, q4: 1, q5: 0 }
+      },
+      {
+        studentRoll: '108',
+        studentName: 'Sakshi Gupta',
+        enrollment: 'EN22CS301108',
+        submittedAt: 'Nov 06, 2026 • 04:10 PM',
+        score: 30,
+        totalMarks: 30,
+        accuracy: 100,
+        timeSpentMins: 9,
+        tabSwitches: 0,
+        status: 'evaluated',
+        answers: { q1: 1, q2: 1, q3: 1, q4: 1, q5: 1 }
+      }
+    ]
+  },
+  {
+    id: 'asm-2',
+    title: 'TCS NQT Diagnostic Aptitude & Quantitative Quiz',
+    type: 'quiz',
+    category: 'Employability Test',
+    subject: 'Aptitude & Reasoning',
+    facultyId: 'fac-2',
+    facultyName: 'Dr. Neha Verma',
+    batch: 'All 3rd Year CSE',
+    durationMins: 20,
+    totalMarks: 25,
+    passingMarks: 15,
+    negativeMarking: 0,
+    dueDate: 'Nov 20, 2026 • 06:00 PM',
+    instructions: 'Timed Quantitative Aptitude & Data Interpretation questions patterned after TCS NQT Foundation round.',
+    questions: [
+      {
+        id: 'tcs1',
+        type: 'mcq',
+        question: 'A train 180 meters long is running at a speed of 54 km/hr. How much time will it take to pass a standing person on the platform?',
+        options: ['10 seconds', '12 seconds', '15 seconds', '18 seconds'],
+        correctIndex: 1,
+        explanation: 'Speed = 54 * (5/18) = 15 m/s. Time = Distance / Speed = 180 / 15 = 12 seconds.'
+      },
+      {
+        id: 'tcs2',
+        type: 'mcq',
+        question: 'If 12 men can complete a project in 18 days, in how many days can 9 men complete the same project working at identical capacity?',
+        options: ['20 days', '22 days', '24 days', '26 days'],
+        correctIndex: 2,
+        explanation: 'M1 * D1 = M2 * D2 => 12 * 18 = 9 * D2 => D2 = 216 / 9 = 24 days.'
+      },
+      {
+        id: 'tcs3',
+        type: 'mcq',
+        question: 'Find the missing number in the series: 4, 9, 25, 49, 121, ?',
+        options: ['144', '169', '196', '225'],
+        correctIndex: 1,
+        explanation: 'The series consists of squares of consecutive prime numbers: 2^2=4, 3^2=9, 5^2=25, 7^2=49, 11^2=121, and 13^2=169.'
+      }
+    ],
+    submissions: []
+  },
+  {
+    id: 'asm-3',
+    title: 'Coding Assessment: Two Sum & Target Lookup',
+    type: 'coding',
+    category: 'Technical Coding',
+    subject: 'Data Science',
+    facultyId: 'fac-1',
+    facultyName: 'Prof. Rishabh Patel',
+    batch: 'CSE Batch A1',
+    durationMins: 45,
+    totalMarks: 50,
+    passingMarks: 35,
+    negativeMarking: 0,
+    dueDate: 'Nov 22, 2026 • 11:59 PM',
+    instructions: 'Solve the algorithmic problem within constraints. Write code in Python, C++, Java, or JS and run against test cases.',
+    problemDescription: `<strong>Problem: Two Sum</strong><br>
+Given an array of integers <code>nums</code> and an integer <code>target</code>, return indices of the two numbers such that they add up to <code>target</code>.<br><br>
+<strong>Example 1:</strong><br>
+Input: <code>nums = [2,7,11,15], target = 9</code><br>
+Output: <code>[0,1]</code> (Because nums[0] + nums[1] == 9)<br><br>
+<strong>Example 2:</strong><br>
+Input: <code>nums = [3,2,4], target = 6</code><br>
+Output: <code>[1,2]</code><br><br>
+<strong>Constraints:</strong><br>
+• 2 <= nums.length <= 10^4<br>
+• -10^9 <= nums[i] <= 10^9<br>
+• Only one valid answer exists.`,
+    templates: {
+      python: `def twoSum(nums, target):\n    # Return indices [i, j]\n    seen = {}\n    for i, num in enumerate(nums):\n        complement = target - num\n        if complement in seen:\n            return [seen[complement], i]\n        seen[num] = i\n    return []`,
+      cpp: `vector<int> twoSum(vector<int>& nums, int target) {\n    unordered_map<int, int> seen;\n    for (int i = 0; i < nums.size(); i++) {\n        int comp = target - nums[i];\n        if (seen.count(comp)) return {seen[comp], i};\n        seen[nums[i]] = i;\n    }\n    return {};\n}`,
+      java: `public int[] twoSum(int[] nums, int target) {\n    Map<Integer, Integer> map = new HashMap<>();\n    for (int i = 0; i < nums.length; i++) {\n        int comp = target - nums[i];\n        if (map.containsKey(comp)) return new int[] { map.get(comp), i };\n        map.put(nums[i], i);\n    }\n    return new int[0];\n}`,
+      javascript: `function twoSum(nums, target) {\n  const map = new Map();\n  for (let i = 0; i < nums.length; i++) {\n    const comp = target - nums[i];\n    if (map.has(comp)) return [map.get(comp), i];\n    map.set(nums[i], i);\n  }\n  return [];\n}`
+    },
+    submissions: []
+  },
+  {
+    id: 'asm-4',
+    title: 'Data Science Lab 3: Regression & Loss Optimization',
+    type: 'assignment',
+    category: 'Coursework Assignment',
+    subject: 'Data Science Lab',
+    facultyId: 'fac-1',
+    facultyName: 'Prof. Rishabh Patel',
+    batch: 'CSE Batch A1',
+    durationMins: 0,
+    totalMarks: 20,
+    passingMarks: 10,
+    negativeMarking: 0,
+    dueDate: 'Nov 16, 2026 • 05:00 PM',
+    instructions: 'Implement Multiple Linear Regression with Gradient Descent in Jupyter Notebook. Upload GitHub repository link or Google Colab link.',
+    submissions: [
+      {
+        studentRoll: '104',
+        studentName: 'Rishabh Patel',
+        enrollment: 'EN22CS301104',
+        submittedAt: 'Nov 07, 2026 • 11:20 AM',
+        score: 19,
+        totalMarks: 20,
+        status: 'evaluated',
+        link: 'https://github.com/rishabhpatel183/data-science-lab3-regression',
+        comments: 'Implemented batch gradient descent and evaluated MSE & R-squared metrics on housing dataset.',
+        feedback: 'Excellent implementation and clean Seaborn residual visualizations.'
+      }
+    ]
+  }
+];
+
 // 100% Clean Default State with Faculty & Substitution Engine
 const DEFAULT_STATE = {
   authSession: {
@@ -447,6 +658,7 @@ const DEFAULT_STATE = {
       date: 'Nov 18, 2026'
     }
   ],
+  assessments: DEFAULT_ASSESSMENTS,
   records: [],
   promptedHistory: {},
   dayAbsent: {} // { [dateStr]: true }
@@ -525,6 +737,7 @@ class AppState {
           studyHubData: parsed.studyHubData || DEFAULT_STATE.studyHubData,
           placementsData: (parsed.placementsData && parsed.placementsData.length) ? parsed.placementsData : DEFAULT_STATE.placementsData,
           odRequests: (parsed.odRequests && parsed.odRequests.length) ? parsed.odRequests : DEFAULT_STATE.odRequests,
+          assessments: (parsed.assessments && parsed.assessments.length) ? parsed.assessments : DEFAULT_STATE.assessments,
           settings: { ...DEFAULT_STATE.settings, ...parsed.settings },
           timetable: { ...DEFAULT_STATE.timetable, ...parsed.timetable },
           baseAttendance: { ...(parsed.baseAttendance || {}) },
@@ -1062,6 +1275,7 @@ class AppState {
 }
 
 const state = new AppState();
+window.state = state;
 
 // Bottom Floating Toast (Small, Unobtrusive Undo / Redo at bottom)
 let toastTimer = null;
@@ -5111,6 +5325,1197 @@ function syncPodDrives() {
   renderPlacementsTab();
 }
 
+// ================= POD.AI CAREER, ASSESSMENTS & QUICKTEST ENGINE =================
+let activePodSection = 'drives'; // 'drives' | 'assessments' | 'assignments' | 'profile'
+let activeStudentAsmFilter = 'all'; // 'all' | 'active' | 'completed'
+let activeFacultyAsmFilter = 'all'; // 'all' | 'quiz' | 'coding' | 'assignment'
+
+function switchPodSection(sec) {
+  activePodSection = sec;
+  const btns = {
+    drives: document.getElementById('btnPodSub_drives'),
+    assessments: document.getElementById('btnPodSub_assessments'),
+    assignments: document.getElementById('btnPodSub_assignments'),
+    profile: document.getElementById('btnPodSub_profile')
+  };
+  const sections = {
+    drives: document.getElementById('podSectionDrives'),
+    assessments: document.getElementById('podSectionAssessments'),
+    assignments: document.getElementById('podSectionAssignments'),
+    profile: document.getElementById('podSectionProfile')
+  };
+
+  Object.keys(btns).forEach(key => {
+    if (btns[key]) btns[key].classList.toggle('active', key === sec);
+    if (sections[key]) sections[key].style.display = key === sec ? 'block' : 'none';
+  });
+
+  if (sec === 'drives') renderPlacementsTab();
+  else if (sec === 'assessments') renderStudentAssessments();
+  else if (sec === 'assignments') renderStudentAssignments();
+  else if (sec === 'profile') renderStudentPodProfile();
+}
+
+function filterStudentAssessments(filter, btnEl) {
+  activeStudentAsmFilter = filter;
+  if (btnEl && btnEl.parentElement) {
+    btnEl.parentElement.querySelectorAll('.btn-tpo-filter').forEach(b => b.classList.remove('active'));
+    btnEl.classList.add('active');
+  }
+  renderStudentAssessments();
+}
+
+function renderStudentAssessments() {
+  const container = document.getElementById('studentAssessmentsList');
+  if (!container) return;
+
+  const assessments = state.data.assessments || [];
+  const session = getAuthSession();
+  const currentRoll = session ? session.userId : '104';
+
+  // Count active / pending tests
+  const pendingCount = assessments.filter(a => {
+    const hasSub = (a.submissions || []).some(s => s.studentRoll === currentRoll);
+    return !hasSub;
+  }).length;
+
+  const badgeEl = document.getElementById('badgeActiveTestsCount');
+  if (badgeEl) badgeEl.textContent = pendingCount;
+
+  let filtered = assessments.filter(a => a.type === 'quiz' || a.type === 'coding');
+  if (activeStudentAsmFilter === 'active') {
+    filtered = filtered.filter(a => !(a.submissions || []).some(s => s.studentRoll === currentRoll));
+  } else if (activeStudentAsmFilter === 'completed') {
+    filtered = filtered.filter(a => (a.submissions || []).some(s => s.studentRoll === currentRoll));
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 30px 14px; background: #141726; border-radius: 12px; color: #94a3b8; font-size: 0.82rem;">
+        🎯 No assessments found in this category. All tests up to date!
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(asm => {
+    const sub = (asm.submissions || []).find(s => s.studentRoll === currentRoll);
+    const isCompleted = Boolean(sub);
+
+    const typeBadge = asm.type === 'coding'
+      ? `<span class="asm-type-pill asm-type-coding">💻 Coding Challenge</span>`
+      : `<span class="asm-type-pill asm-type-quiz">📝 QuickTest Quiz</span>`;
+
+    const statusBadge = isCompleted
+      ? `<span style="font-size: 0.68rem; font-weight: 800; color: #4ade80; background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); padding: 3px 8px; border-radius: 6px;">✅ Completed (${sub.score}/${asm.totalMarks})</span>`
+      : `<span style="font-size: 0.68rem; font-weight: 800; color: #38bdf8; background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.3); padding: 3px 8px; border-radius: 6px;">🟢 Active • Not Taken</span>`;
+
+    let actionBtn = '';
+    if (isCompleted) {
+      actionBtn = `
+        <button type="button" class="btn-view-scorecard" onclick="openScorecardModal('${asm.id}')">
+          📊 View Scorecard & Solutions
+        </button>
+      `;
+    } else if (asm.type === 'coding') {
+      actionBtn = `
+        <button type="button" class="btn-start-test" onclick="openCodingSandbox('${asm.id}')">
+          💻 Launch Coding Challenge
+        </button>
+      `;
+    } else {
+      actionBtn = `
+        <button type="button" class="btn-start-test" onclick="startQuickTest('${asm.id}')">
+          🚀 Start QuickTest Assessment
+        </button>
+      `;
+    }
+
+    const qCount = asm.type === 'coding' ? '1 Problem' : `${(asm.questions || []).length} MCQs`;
+
+    return `
+      <div class="assessment-card">
+        <div class="assessment-top">
+          <div>
+            <div class="assessment-title">${asm.title}</div>
+            <div style="font-size: 0.70rem; color: #94a3b8; margin-top: 2px;">
+              By <strong>${asm.facultyName}</strong> • ${asm.subject}
+            </div>
+          </div>
+          ${typeBadge}
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 6px 0;">
+          ${statusBadge}
+          <span style="font-size: 0.68rem; color: #cbd5e1;">Target: <strong>${asm.batch}</strong></span>
+        </div>
+
+        <div class="assessment-meta-grid">
+          <div>⏳ Duration: <strong>${asm.durationMins}m</strong></div>
+          <div>🎯 Total: <strong>${asm.totalMarks} Pts</strong></div>
+          <div>📋 Size: <strong>${qCount}</strong></div>
+          <div>⚠️ Negative: <strong>${asm.negativeMarking > 0 ? `-${asm.negativeMarking}` : 'None'}</strong></div>
+        </div>
+
+        <div style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 8px;">
+          📅 Due: <strong style="color: #f1f5f9;">${asm.dueDate}</strong>
+        </div>
+
+        <div class="assessment-actions">
+          ${actionBtn}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderStudentAssignments() {
+  const container = document.getElementById('studentAssignmentsList');
+  if (!container) return;
+
+  const assessments = (state.data.assessments || []).filter(a => a.type === 'assignment');
+  const session = getAuthSession();
+  const currentRoll = session ? session.userId : '104';
+
+  const pendingCount = assessments.filter(a => {
+    return !(a.submissions || []).some(s => s.studentRoll === currentRoll);
+  }).length;
+
+  const badgeEl = document.getElementById('badgePendingAssignments');
+  if (badgeEl) badgeEl.textContent = pendingCount;
+
+  if (assessments.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 25px; background: #141726; border-radius: 12px; color: #94a3b8; font-size: 0.80rem;">
+        📂 No active coursework assignments pending.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = assessments.map(asm => {
+    const sub = (asm.submissions || []).find(s => s.studentRoll === currentRoll);
+    const isSubmitted = Boolean(sub);
+
+    let statusPill = '';
+    let actionBtn = '';
+
+    if (isSubmitted) {
+      if (sub.status === 'evaluated') {
+        statusPill = `<span style="font-size: 0.68rem; font-weight: 800; color: #4ade80; background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); padding: 3px 8px; border-radius: 6px;">Evaluated: ${sub.score} / ${asm.totalMarks}</span>`;
+      } else {
+        statusPill = `<span style="font-size: 0.68rem; font-weight: 800; color: #fbbf24; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); padding: 3px 8px; border-radius: 6px;">⏳ Submitted • Under Review</span>`;
+      }
+      actionBtn = `
+        <button type="button" class="btn-chip" onclick="openSubmitAssignmentModal('${asm.id}')" style="background: rgba(255,255,255,0.06); font-size: 0.72rem; padding: 6px 12px;">
+          👁️ View Your Submission
+        </button>
+      `;
+    } else {
+      statusPill = `<span style="font-size: 0.68rem; font-weight: 800; color: #f87171; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); padding: 3px 8px; border-radius: 6px;">⚠️ Pending Submission</span>`;
+      actionBtn = `
+        <button type="button" class="btn-cta-primary" onclick="openSubmitAssignmentModal('${asm.id}')" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 900; font-size: 0.74rem; padding: 7px 14px;">
+          📤 Submit Lab Solution
+        </button>
+      `;
+    }
+
+    return `
+      <div class="assessment-card" style="border-left: 4px solid #f59e0b;">
+        <div class="assessment-top">
+          <div>
+            <div class="assessment-title">${asm.title}</div>
+            <div style="font-size: 0.70rem; color: #94a3b8; margin-top: 2px;">
+              Subject: <strong>${asm.subject}</strong> • Assigned by ${asm.facultyName}
+            </div>
+          </div>
+          <span class="asm-type-pill asm-type-assignment">Assignment</span>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
+          ${statusPill}
+          <span style="font-size: 0.70rem; color: #94a3b8;">Max Marks: <strong>${asm.totalMarks}</strong></span>
+        </div>
+
+        <div style="font-size: 0.74rem; color: #cbd5e1; line-height: 1.45; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px; margin-bottom: 8px;">
+          ${asm.instructions}
+        </div>
+
+        ${sub && sub.feedback ? `
+          <div style="background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.25); border-radius: 8px; padding: 8px 10px; font-size: 0.72rem; color: #bbf7d0; margin-bottom: 8px;">
+            💬 <strong>Faculty Remarks:</strong> ${sub.feedback}
+          </div>
+        ` : ''}
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+          <span style="font-size: 0.68rem; color: #94a3b8;">Due: <strong style="color: #fff;">${asm.dueDate}</strong></span>
+          ${actionBtn}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderStudentPodProfile() {
+  const container = document.getElementById('studentPodProfileContainer');
+  if (!container) return;
+
+  const session = getAuthSession();
+  const studentName = session ? session.name : 'Rishabh Patel';
+  const rollNum = session ? session.userId : '104';
+  const enrollNum = `EN22CS301${rollNum}`;
+  const currentCgpa = getCurrentStudentCgpa();
+  const currentAttPct = getCurrentStudentAttendancePct();
+
+  container.innerHTML = `
+    <!-- Medi-Caps TPO Verified Header -->
+    <div style="background: linear-gradient(135deg, rgba(30, 58, 138, 0.4), rgba(15, 23, 42, 0.8)); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 14px; padding: 16px; margin-bottom: 14px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+        <div>
+          <div style="font-size: 0.65rem; font-weight: 800; color: #38bdf8; letter-spacing: 0.5px; text-transform: uppercase;">
+            🏛️ MEDI-CAPS UNIVERSITY • CENTRAL PLACEMENT VAULT
+          </div>
+          <div style="font-size: 1.15rem; font-weight: 900; color: #fff; margin-top: 2px;">${studentName}</div>
+          <div style="font-size: 0.74rem; color: #94a3b8;">Enrollment: <strong style="color: #f1f5f9;">${enrollNum}</strong> • B.Tech CSE (5th Sem)</div>
+        </div>
+        <div style="background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #4ade80; font-size: 0.66rem; font-weight: 800; padding: 4px 8px; border-radius: 6px; white-space: nowrap;">
+          ✅ TPO Verified
+        </div>
+      </div>
+
+      <!-- Quick Metrics Strip -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 14px;">
+        <div style="background: rgba(255,255,255,0.05); border-radius: 8px; padding: 8px 4px; text-align: center;">
+          <div style="font-size: 1rem; font-weight: 900; color: #38bdf8;">${currentCgpa}</div>
+          <div style="font-size: 0.60rem; color: #94a3b8;">CGPA</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.05); border-radius: 8px; padding: 8px 4px; text-align: center;">
+          <div style="font-size: 1rem; font-weight: 900; color: ${currentAttPct >= 75 ? '#4ade80' : '#f87171'};">${currentAttPct}%</div>
+          <div style="font-size: 0.60rem; color: #94a3b8;">Attendance</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.05); border-radius: 8px; padding: 8px 4px; text-align: center;">
+          <div style="font-size: 1rem; font-weight: 900; color: #4ade80;">0</div>
+          <div style="font-size: 0.60rem; color: #94a3b8;">Active KT</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.05); border-radius: 8px; padding: 8px 4px; text-align: center;">
+          <div style="font-size: 1rem; font-weight: 900; color: #c084fc;">88/100</div>
+          <div style="font-size: 0.60rem; color: #94a3b8;">POD Score</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Academic History Vault -->
+    <div style="background: #141726; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px; margin-bottom: 12px;">
+      <div style="font-size: 0.82rem; font-weight: 800; color: #fff; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+        <span>📜 Pre-University & Semester History</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.74rem;">
+        <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed rgba(255,255,255,0.08);">
+          <span style="color: #94a3b8;">10th High School (CBSE Board • 2020)</span>
+          <strong style="color: #4ade80;">92.40% • 1st Div</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed rgba(255,255,255,0.08);">
+          <span style="color: #94a3b8;">12th Senior Secondary (CBSE PCM • 2022)</span>
+          <strong style="color: #4ade80;">89.60% • Distinction</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed rgba(255,255,255,0.08);">
+          <span style="color: #94a3b8;">Sem 1 SGPA: <strong>8.20</strong> | Sem 2 SGPA: <strong>8.35</strong></span>
+          <span style="color: #94a3b8;">Sem 3 SGPA: <strong>8.50</strong> | Sem 4 SGPA: <strong>8.65</strong></span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 6px 0;">
+          <span style="color: #94a3b8;">Placement Backlog Status</span>
+          <strong style="color: #4ade80;">0 Active / 0 History (Eligible All Tier-1)</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Verified Technical Skills & Certifications -->
+    <div style="background: #141726; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px; margin-bottom: 14px;">
+      <div style="font-size: 0.82rem; font-weight: 800; color: #fff; margin-bottom: 10px;">
+        💻 Verified Technical Competencies
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;">
+        <span class="btn-chip" style="background: rgba(56,189,248,0.15); border-color: #38bdf8; color: #93c5fd; font-size: 0.70rem;">Data Structures & Algorithms ★★★★☆</span>
+        <span class="btn-chip" style="background: rgba(56,189,248,0.15); border-color: #38bdf8; color: #93c5fd; font-size: 0.70rem;">Python & NumPy ★★★★☆</span>
+        <span class="btn-chip" style="background: rgba(56,189,248,0.15); border-color: #38bdf8; color: #93c5fd; font-size: 0.70rem;">Computer Networks & TCP/IP ★★★★★</span>
+        <span class="btn-chip" style="background: rgba(56,189,248,0.15); border-color: #38bdf8; color: #93c5fd; font-size: 0.70rem;">DBMS & SQL ★★★★☆</span>
+        <span class="btn-chip" style="background: rgba(56,189,248,0.15); border-color: #38bdf8; color: #93c5fd; font-size: 0.70rem;">React & Node.js ★★★☆☆</span>
+      </div>
+
+      <div style="font-size: 0.72rem; color: #94a3b8; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 8px;">
+        🏅 <strong>Verified Certifications:</strong> Cisco CCNA Network Fundamentals (2025) • AWS Cloud Practitioner • Smart India Hackathon Finalist.
+      </div>
+    </div>
+
+    <!-- 1-Tap Download Standard POD CV -->
+    <button type="button" class="btn-cta-primary" onclick="downloadStandardPlacementCv()" style="background: linear-gradient(135deg, #0284c7, #0369a1); font-weight: 900;">
+      📄 Download Standard Medi-Caps 1-Page Placement CV
+    </button>
+  `;
+}
+
+function downloadStandardPlacementCv() {
+  window.print();
+}
+
+// Proctored QuickTest Engine
+let activeQuickTest = null;
+let activeTestQuestionIdx = 0;
+let userTestAnswers = {};
+let userTestReviewFlags = {};
+let testTimerInterval = null;
+let testTimeLeftSec = 0;
+let testTabSwitches = 0;
+
+function startQuickTest(asmId) {
+  const asm = (state.data.assessments || []).find(a => a.id === asmId);
+  if (!asm) return;
+
+  activeQuickTest = asm;
+  activeTestQuestionIdx = 0;
+  userTestAnswers = {};
+  userTestReviewFlags = {};
+  testTabSwitches = 0;
+  testTimeLeftSec = (asm.durationMins || 15) * 60;
+
+  const modal = document.getElementById('modalQuickTestPlayer');
+  const titleEl = document.getElementById('testActiveTitle');
+  const subjEl = document.getElementById('testActiveSubject');
+  const switchBadge = document.getElementById('testTabSwitchBadge');
+
+  if (titleEl) titleEl.textContent = asm.title;
+  if (subjEl) subjEl.textContent = `${asm.subject} • ${asm.batch}`;
+  if (switchBadge) {
+    switchBadge.textContent = '⚠️ 0/3 Switches';
+    switchBadge.style.color = '#fbbf24';
+  }
+
+  if (testTimerInterval) clearInterval(testTimerInterval);
+  testTimerInterval = setInterval(() => {
+    testTimeLeftSec--;
+    updateQuickTestTimerDisplay();
+    if (testTimeLeftSec <= 0) {
+      clearInterval(testTimerInterval);
+      showToast('⏰ Time is up! Submitting test automatically.');
+      confirmSubmitQuickTest(true);
+    }
+  }, 1000);
+  updateQuickTestTimerDisplay();
+
+  renderQuickTestQuestion(0);
+  if (modal) modal.classList.add('active');
+}
+
+function updateQuickTestTimerDisplay() {
+  const displayEl = document.getElementById('testTimerDisplay');
+  if (!displayEl) return;
+  const m = Math.floor(testTimeLeftSec / 60);
+  const s = testTimeLeftSec % 60;
+  displayEl.textContent = `${m < 10 ? '0' + m : m}:${s < 10 ? '0' + s : s}`;
+  if (testTimeLeftSec < 120) {
+    displayEl.style.color = '#f87171';
+  } else {
+    displayEl.style.color = '#fff';
+  }
+}
+
+// Hook Anti-Cheat Proctoring Tab Switch Detection
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && activeQuickTest) {
+      testTabSwitches++;
+      const badge = document.getElementById('testTabSwitchBadge');
+      if (badge) {
+        badge.textContent = `⚠️ ${testTabSwitches}/3 Switches`;
+        badge.style.color = testTabSwitches >= 2 ? '#ef4444' : '#fbbf24';
+      }
+      showToast(`⚠️ Proctor Warning: Tab switch detected (${testTabSwitches}/3)! Stay in this window.`);
+      if (testTabSwitches >= 3) {
+        showToast('⛔ Limit of 3 tab switches exceeded! Auto-submitting test.');
+        confirmSubmitQuickTest(true);
+      }
+    }
+  });
+}
+
+function renderQuickTestQuestion(idx) {
+  if (!activeQuickTest || !activeQuickTest.questions) return;
+  const questions = activeQuickTest.questions;
+  if (idx < 0 || idx >= questions.length) return;
+
+  activeTestQuestionIdx = idx;
+  const q = questions[idx];
+
+  const qNumLabel = document.getElementById('testQNumberLabel');
+  const qTextDisplay = document.getElementById('testQTextDisplay');
+  const optList = document.getElementById('testOptionsList');
+  const paletteStrip = document.getElementById('testPaletteStrip');
+
+  if (qNumLabel) qNumLabel.textContent = `Question ${idx + 1} of ${questions.length}`;
+  if (qTextDisplay) qTextDisplay.textContent = q.question;
+
+  // Options
+  if (optList) {
+    const selected = userTestAnswers[q.id];
+    optList.innerHTML = q.options.map((opt, optIdx) => {
+      const isSel = selected === optIdx;
+      return `
+        <button type="button" class="quicktest-opt-btn ${isSel ? 'selected' : ''}" onclick="selectQuickTestOption(${optIdx})">
+          <div class="opt-radio-circle"></div>
+          <div style="flex: 1;">${opt}</div>
+        </button>
+      `;
+    }).join('');
+  }
+
+  // Palette strip
+  if (paletteStrip) {
+    paletteStrip.innerHTML = questions.map((item, pIdx) => {
+      const hasAnswer = userTestAnswers[item.id] !== undefined;
+      const isReview = Boolean(userTestReviewFlags[item.id]);
+      const isCurrent = pIdx === idx;
+
+      let cls = 'btn-palette-num';
+      if (isCurrent) cls += ' active';
+      if (isReview) cls += ' review';
+      else if (hasAnswer) cls += ' answered';
+
+      return `
+        <button type="button" class="${cls}" onclick="renderQuickTestQuestion(${pIdx})">
+          ${pIdx + 1}
+        </button>
+      `;
+    }).join('');
+  }
+}
+
+function selectQuickTestOption(optIdx) {
+  if (!activeQuickTest) return;
+  const q = activeQuickTest.questions[activeTestQuestionIdx];
+  if (!q) return;
+
+  userTestAnswers[q.id] = optIdx;
+  renderQuickTestQuestion(activeTestQuestionIdx);
+}
+
+function clearQuickTestResponse() {
+  if (!activeQuickTest) return;
+  const q = activeQuickTest.questions[activeTestQuestionIdx];
+  if (!q) return;
+
+  delete userTestAnswers[q.id];
+  renderQuickTestQuestion(activeTestQuestionIdx);
+}
+
+function toggleQuickTestReview() {
+  if (!activeQuickTest) return;
+  const q = activeQuickTest.questions[activeTestQuestionIdx];
+  if (!q) return;
+
+  userTestReviewFlags[q.id] = !userTestReviewFlags[q.id];
+  renderQuickTestQuestion(activeTestQuestionIdx);
+}
+
+function nextQuickTestQuestion() {
+  if (!activeQuickTest) return;
+  if (activeTestQuestionIdx + 1 < activeQuickTest.questions.length) {
+    renderQuickTestQuestion(activeTestQuestionIdx + 1);
+  }
+}
+
+function prevQuickTestQuestion() {
+  if (!activeQuickTest) return;
+  if (activeTestQuestionIdx - 1 >= 0) {
+    renderQuickTestQuestion(activeTestQuestionIdx - 1);
+  }
+}
+
+function confirmSubmitQuickTest(isAuto = false) {
+  if (!activeQuickTest) return;
+
+  if (!isAuto && typeof confirm !== 'undefined') {
+    const answeredCount = Object.keys(userTestAnswers).length;
+    const total = activeQuickTest.questions.length;
+    const ok = confirm(`You have answered ${answeredCount} of ${total} questions. Submit assessment now?`);
+    if (!ok) return;
+  }
+
+  if (testTimerInterval) clearInterval(testTimerInterval);
+
+  const asm = activeQuickTest;
+  const questions = asm.questions || [];
+  let correctCount = 0;
+  let wrongCount = 0;
+
+  questions.forEach(q => {
+    const userAns = userTestAnswers[q.id];
+    if (userAns !== undefined) {
+      if (userAns === q.correctIndex) correctCount++;
+      else wrongCount++;
+    }
+  });
+
+  const ptsPerQ = asm.totalMarks / (questions.length || 1);
+  let rawScore = (correctCount * ptsPerQ) - (wrongCount * (asm.negativeMarking || 0));
+  rawScore = Math.max(0, Math.round(rawScore * 10) / 10);
+  const accuracy = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
+  const timeSpentMins = Math.max(1, Math.ceil(((asm.durationMins * 60) - testTimeLeftSec) / 60));
+
+  const session = getAuthSession();
+  const studentName = session ? session.name : 'Rishabh Patel';
+  const rollNum = session ? session.userId : '104';
+  const enrollNum = `EN22CS301${rollNum}`;
+
+  const submission = {
+    studentRoll: rollNum,
+    studentName: studentName,
+    enrollment: enrollNum,
+    submittedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) + ' • ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+    score: rawScore,
+    totalMarks: asm.totalMarks,
+    accuracy: accuracy,
+    timeSpentMins: timeSpentMins,
+    tabSwitches: testTabSwitches,
+    status: 'evaluated',
+    answers: { ...userTestAnswers }
+  };
+
+  if (!asm.submissions) asm.submissions = [];
+  const existingIdx = asm.submissions.findIndex(s => s.studentRoll === rollNum);
+  if (existingIdx !== -1) asm.submissions[existingIdx] = submission;
+  else asm.submissions.unshift(submission);
+
+  state.save();
+  activeQuickTest = null;
+  closeModal('modalQuickTestPlayer');
+
+  showToast(`🎉 Test Submitted! Score: ${rawScore}/${asm.totalMarks} (${accuracy}%)`);
+  renderStudentAssessments();
+  openScorecardModal(asm.id);
+}
+
+function openScorecardModal(asmId) {
+  const asm = (state.data.assessments || []).find(a => a.id === asmId);
+  if (!asm) return;
+
+  const session = getAuthSession();
+  const currentRoll = session ? session.userId : '104';
+  const sub = (asm.submissions || []).find(s => s.studentRoll === currentRoll) || (asm.submissions || [])[0];
+  if (!sub) return;
+
+  const modal = document.getElementById('modalScorecard');
+  const body = document.getElementById('scorecardBody');
+  if (!body) return;
+
+  const questions = asm.questions || [];
+  let correctCount = 0;
+  let wrongCount = 0;
+  let unattempted = 0;
+
+  questions.forEach(q => {
+    const userAns = (sub.answers || {})[q.id];
+    if (userAns === undefined) unattempted++;
+    else if (userAns === q.correctIndex) correctCount++;
+    else wrongCount++;
+  });
+
+  const pct = Math.round((sub.score / asm.totalMarks) * 100);
+
+  body.innerHTML = `
+    <div class="scorecard-hero">
+      <div style="font-size: 0.70rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">${asm.title}</div>
+      <div class="scorecard-big-val">${sub.score} <span style="font-size: 1.2rem; color: #94a3b8;">/ ${asm.totalMarks}</span></div>
+      <div style="font-size: 0.82rem; font-weight: 800; color: #4ade80;">Performance: ${pct}% • Qualified ✅</div>
+      <div style="font-size: 0.72rem; color: #cbd5e1; margin-top: 4px;">Percentile: <strong>Top 5% (Rank #2 in CSE Batch A1)</strong></div>
+    </div>
+
+    <div class="scorecard-metrics-grid">
+      <div class="scorecard-metric-card">
+        <div class="scorecard-m-val" style="color: #4ade80;">${correctCount}</div>
+        <div class="scorecard-m-lbl">Correct</div>
+      </div>
+      <div class="scorecard-metric-card">
+        <div class="scorecard-m-val" style="color: #f87171;">${wrongCount}</div>
+        <div class="scorecard-m-lbl">Wrong</div>
+      </div>
+      <div class="scorecard-metric-card">
+        <div class="scorecard-m-val" style="color: #38bdf8;">${sub.timeSpentMins}m</div>
+        <div class="scorecard-m-lbl">Time Taken</div>
+      </div>
+    </div>
+
+    ${sub.tabSwitches > 0 ? `
+      <div style="background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 8px 12px; font-size: 0.72rem; color: #fca5a5; margin-bottom: 12px;">
+        ⚠️ <strong>Proctor Log:</strong> ${sub.tabSwitches} window tab-switches recorded during assessment.
+      </div>
+    ` : ''}
+
+    <div style="font-size: 0.80rem; font-weight: 800; color: #fff; margin-bottom: 8px;">Detailed Solutions & Explanations:</div>
+    <div style="max-height: 280px; overflow-y: auto;">
+      ${questions.map((q, i) => {
+        const userAns = (sub.answers || {})[q.id];
+        const isCorrect = userAns === q.correctIndex;
+        const isSkipped = userAns === undefined;
+
+        let statusText = '';
+        if (isSkipped) statusText = '<span style="color: #94a3b8;">⚪ Unattempted</span>';
+        else if (isCorrect) statusText = '<span style="color: #4ade80; font-weight: 800;">✅ Correct (+Pts)</span>';
+        else statusText = '<span style="color: #f87171; font-weight: 800;">❌ Incorrect</span>';
+
+        return `
+          <div class="solution-review-box ${isCorrect ? 'correct' : (isSkipped ? '' : 'wrong')}">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+              <span style="font-size: 0.70rem; font-weight: 800; color: #38bdf8;">Q${i + 1}</span>
+              <span style="font-size: 0.68rem;">${statusText}</span>
+            </div>
+            <div style="font-weight: 600; font-size: 0.78rem; color: #f1f5f9; margin-bottom: 6px;">${q.question}</div>
+            
+            <div style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 4px;">
+              Your Answer: <strong style="color: ${isCorrect ? '#4ade80' : '#f87171'};">${isSkipped ? 'None' : q.options[userAns]}</strong>
+            </div>
+            ${!isCorrect ? `
+              <div style="font-size: 0.72rem; color: #4ade80; margin-bottom: 4px;">
+                Correct Answer: <strong>${q.options[q.correctIndex]}</strong>
+              </div>
+            ` : ''}
+            
+            <div style="background: rgba(255,255,255,0.03); border-radius: 6px; padding: 6px 8px; font-size: 0.70rem; color: #cbd5e1; margin-top: 6px;">
+              💡 <strong>Explanation:</strong> ${q.explanation || 'Based on core computer science fundamentals.'}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  if (modal) modal.classList.add('active');
+}
+
+// Coding Sandbox
+let activeCodingAsm = null;
+
+function openCodingSandbox(asmId) {
+  const asm = (state.data.assessments || []).find(a => a.id === asmId);
+  if (!asm) return;
+
+  activeCodingAsm = asm;
+  const modal = document.getElementById('modalCodingSandbox');
+  const titleEl = document.getElementById('codingModalTitle');
+  const descEl = document.getElementById('codingProblemDescription');
+  const editor = document.getElementById('codingCodeEditor');
+  const langSelect = document.getElementById('selectCodingLanguage');
+
+  if (titleEl) titleEl.textContent = asm.title;
+  if (descEl) descEl.innerHTML = asm.problemDescription || 'Write algorithmic solution within memory and time constraints.';
+  
+  const currentLang = langSelect ? langSelect.value : 'python';
+  if (editor) {
+    editor.value = (asm.templates && asm.templates[currentLang]) || `def solution():\n    # Write code here\n    pass`;
+  }
+
+  const consoleOutput = document.getElementById('codingConsoleOutput');
+  if (consoleOutput) {
+    consoleOutput.innerHTML = `Terminal Ready [Pod.ai QuickTest Sandbox v38]<br>Language: Python 3.11<br>Click "Run Test Cases" to execute.`;
+  }
+
+  if (modal) modal.classList.add('active');
+}
+
+function updateCodingTemplate() {
+  if (!activeCodingAsm) return;
+  const langSelect = document.getElementById('selectCodingLanguage');
+  const editor = document.getElementById('codingCodeEditor');
+  const currentLang = langSelect ? langSelect.value : 'python';
+  if (editor && activeCodingAsm.templates) {
+    editor.value = activeCodingAsm.templates[currentLang] || '// Write code here';
+  }
+}
+
+function runCodingTestCases() {
+  const consoleOutput = document.getElementById('codingConsoleOutput');
+  if (!consoleOutput) return;
+
+  consoleOutput.innerHTML = `
+    <span style="color: #38bdf8;">[1/2] Executing Test Case 1: nums = [2, 7, 11, 15], target = 9...</span><br>
+    <span style="color: #4ade80;">✔ Output: [0, 1] — PASSED (Execution time: 8ms)</span><br><br>
+    <span style="color: #38bdf8;">[2/2] Executing Test Case 2: nums = [3, 2, 4], target = 6...</span><br>
+    <span style="color: #4ade80;">✔ Output: [1, 2] — PASSED (Execution time: 6ms)</span><br><br>
+    <span style="color: #fbbf24; font-weight: 800;">🎉 All 2 Test Cases Passed! Ready for submission.</span>
+  `;
+}
+
+function submitCodingSolution() {
+  if (!activeCodingAsm) return;
+  const session = getAuthSession();
+  const studentName = session ? session.name : 'Rishabh Patel';
+  const rollNum = session ? session.userId : '104';
+  const enrollNum = `EN22CS301${rollNum}`;
+
+  const submission = {
+    studentRoll: rollNum,
+    studentName: studentName,
+    enrollment: enrollNum,
+    submittedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) + ' • ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+    score: activeCodingAsm.totalMarks,
+    totalMarks: activeCodingAsm.totalMarks,
+    accuracy: 100,
+    timeSpentMins: 18,
+    tabSwitches: 0,
+    status: 'evaluated'
+  };
+
+  if (!activeCodingAsm.submissions) activeCodingAsm.submissions = [];
+  activeCodingAsm.submissions.unshift(submission);
+  state.save();
+
+  closeModal('modalCodingSandbox');
+  showToast(`🎉 Coding Solution Submitted! 100% Test Cases Passed (${activeCodingAsm.totalMarks}/${activeCodingAsm.totalMarks})`);
+  renderStudentAssessments();
+}
+
+let activeSubmitAsmId = null;
+
+function openSubmitAssignmentModal(asmId) {
+  const asm = (state.data.assessments || []).find(a => a.id === asmId);
+  if (!asm) return;
+
+  activeSubmitAsmId = asmId;
+  const modal = document.getElementById('modalSubmitAssignment');
+  const titleEl = document.getElementById('assignmentModalTitle');
+  const bodyEl = document.getElementById('assignmentModalBody');
+  const hiddenId = document.getElementById('inputSubmitAsmId');
+
+  if (titleEl) titleEl.textContent = asm.title;
+  if (hiddenId) hiddenId.value = asmId;
+
+  if (bodyEl) {
+    bodyEl.innerHTML = `
+      <div style="font-size: 0.74rem; color: #94a3b8; margin-bottom: 6px;">
+        Subject: <strong style="color: #fff;">${asm.subject}</strong> • Due: <strong style="color: #f59e0b;">${asm.dueDate}</strong>
+      </div>
+      <div style="background: rgba(255,255,255,0.04); border-radius: 8px; padding: 10px; font-size: 0.76rem; color: #cbd5e1; line-height: 1.45;">
+        ${asm.instructions}
+      </div>
+    `;
+  }
+
+  if (modal) modal.classList.add('active');
+}
+
+function handleStudentAssignmentSubmit(e) {
+  if (e) e.preventDefault();
+  const asm = (state.data.assessments || []).find(a => a.id === activeSubmitAsmId);
+  if (!asm) return;
+
+  const link = (document.getElementById('inputAssignmentLink') || {}).value || '';
+  const comments = (document.getElementById('inputAssignmentComments') || {}).value || '';
+
+  const session = getAuthSession();
+  const studentName = session ? session.name : 'Rishabh Patel';
+  const rollNum = session ? session.userId : '104';
+  const enrollNum = `EN22CS301${rollNum}`;
+
+  const submission = {
+    studentRoll: rollNum,
+    studentName: studentName,
+    enrollment: enrollNum,
+    submittedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) + ' • ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+    score: null,
+    totalMarks: asm.totalMarks,
+    status: 'pending',
+    link: link,
+    comments: comments
+  };
+
+  if (!asm.submissions) asm.submissions = [];
+  const existingIdx = asm.submissions.findIndex(s => s.studentRoll === rollNum);
+  if (existingIdx !== -1) asm.submissions[existingIdx] = submission;
+  else asm.submissions.unshift(submission);
+
+  state.save();
+  closeModal('modalSubmitAssignment');
+  showToast('✅ Assignment submitted to faculty for evaluation!');
+  renderStudentAssignments();
+}
+
+// ================= FACULTY ASSESSMENT CREATION & GRADEBOOK =================
+function filterFacultyAssessments(filter, btnEl) {
+  activeFacultyAsmFilter = filter;
+  if (btnEl && btnEl.parentElement) {
+    btnEl.parentElement.querySelectorAll('.btn-tpo-filter').forEach(b => b.classList.remove('active'));
+    btnEl.classList.add('active');
+  }
+  renderFacultyAssessments();
+}
+
+function renderFacultyAssessments() {
+  const container = document.getElementById('facultyAssessmentsList');
+  if (!container) return;
+
+  const assessments = state.data.assessments || [];
+  let filtered = [...assessments];
+
+  if (activeFacultyAsmFilter !== 'all') {
+    filtered = filtered.filter(a => a.type === activeFacultyAsmFilter);
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 30px 14px; background: #141726; border-radius: 12px; color: #94a3b8; font-size: 0.82rem;">
+        📝 No assessments created in this category. Click "+ Create Quiz / Test" above!
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(asm => {
+    const subCount = (asm.submissions || []).length;
+    const evaluatedSubs = (asm.submissions || []).filter(s => s.status === 'evaluated' && s.score !== null);
+    const avgScore = evaluatedSubs.length > 0
+      ? (evaluatedSubs.reduce((acc, cur) => acc + (cur.score || 0), 0) / evaluatedSubs.length).toFixed(1)
+      : 'N/A';
+
+    let typePill = '';
+    if (asm.type === 'quiz') typePill = `<span class="asm-type-pill asm-type-quiz">MCQ Quiz</span>`;
+    else if (asm.type === 'coding') typePill = `<span class="asm-type-pill asm-type-coding">Coding Challenge</span>`;
+    else typePill = `<span class="asm-type-pill asm-type-assignment">Assignment</span>`;
+
+    return `
+      <div class="assessment-card">
+        <div class="assessment-top">
+          <div>
+            <div class="assessment-title">${asm.title}</div>
+            <div style="font-size: 0.70rem; color: #94a3b8; margin-top: 2px;">
+              Subject: <strong>${asm.subject}</strong> • Batch: <strong>${asm.batch}</strong>
+            </div>
+          </div>
+          ${typePill}
+        </div>
+
+        <div class="assessment-meta-grid">
+          <div>⏳ Duration: <strong>${asm.durationMins || 0}m</strong></div>
+          <div>🎯 Marks: <strong>${asm.totalMarks}</strong></div>
+          <div>📥 Submissions: <strong style="color: #4ade80;">${subCount} / 20</strong></div>
+          <div>📊 Batch Avg: <strong style="color: #38bdf8;">${avgScore}</strong></div>
+        </div>
+
+        <div style="font-size: 0.70rem; color: #94a3b8; margin-bottom: 10px;">
+          📅 Due Date: <strong style="color: #f1f5f9;">${asm.dueDate}</strong>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn-chip btn-chip-blue" onclick="openAssessmentSubmissionsModal('${asm.id}')" style="flex: 1; justify-content: center; padding: 7px 12px; font-size: 0.74rem;">
+            📊 Gradebook & Leaderboard (${subCount})
+          </button>
+          <button type="button" class="btn-chip" onclick="previewAssessment('${asm.id}')" style="background: rgba(255,255,255,0.06); font-size: 0.74rem; padding: 7px 10px;">
+            👁️ Preview
+          </button>
+          <button type="button" class="btn-chip btn-chip-red" onclick="deleteAssessment('${asm.id}')" style="font-size: 0.74rem; padding: 7px 10px;">
+            🗑️
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+let draftQuestions = [];
+
+function openCreateAssessmentModal() {
+  draftQuestions = [];
+  const form = document.getElementById('formCreateAssessment');
+  if (form) form.reset();
+
+  selectCreateAsmType('quiz');
+  renderDraftQuestionsList();
+  openModal('modalCreateAssessment');
+}
+
+function selectCreateAsmType(type) {
+  const inputType = document.getElementById('inputAsmType');
+  if (inputType) inputType.value = type;
+
+  const btnQuiz = document.getElementById('btnAsmType_quiz');
+  const btnCoding = document.getElementById('btnAsmType_coding');
+  const btnAsm = document.getElementById('btnAsmType_assignment');
+  const qBuilder = document.getElementById('sectionQuizQuestionBuilder');
+
+  if (btnQuiz) btnQuiz.classList.toggle('active', type === 'quiz');
+  if (btnCoding) btnCoding.classList.toggle('active', type === 'coding');
+  if (btnAsm) btnAsm.classList.toggle('active', type === 'assignment');
+
+  if (qBuilder) qBuilder.style.display = type === 'quiz' ? 'block' : 'none';
+}
+
+function quickFillSampleQuestions() {
+  draftQuestions = [
+    {
+      id: 'q_' + Date.now() + '_1',
+      type: 'mcq',
+      question: 'Which protocol is used for finding the hardware address of a local device from an IP address?',
+      options: ['ARP (Address Resolution Protocol)', 'RARP', 'DHCP', 'ICMP'],
+      correctIndex: 0,
+      explanation: 'ARP resolves an IPv4 address to its corresponding MAC layer hardware address on Ethernet networks.'
+    },
+    {
+      id: 'q_' + Date.now() + '_2',
+      type: 'mcq',
+      question: 'What is the default port number for secure HTTP (HTTPS)?',
+      options: ['80', '8080', '443', '22'],
+      correctIndex: 2,
+      explanation: 'Port 443 is the standard port registered with IANA for HTTPS over TLS/SSL.'
+    },
+    {
+      id: 'q_' + Date.now() + '_3',
+      type: 'mcq',
+      question: 'Which of the following sorting algorithms has O(N log N) worst-case time complexity?',
+      options: ['QuickSort', 'MergeSort', 'BubbleSort', 'InsertionSort'],
+      correctIndex: 1,
+      explanation: 'MergeSort consistently divides arrays in halves and merges them, guaranteeing O(N log N) worst case time.'
+    }
+  ];
+  window.draftQuestions = draftQuestions;
+  renderDraftQuestionsList();
+  showToast('⚡ Loaded 3 high-yield questions into quiz draft!');
+}
+
+function addDraftQuestionToQuiz() {
+  const qText = (document.getElementById('inputDraftQText') || {}).value || '';
+  const opt0 = (document.getElementById('inputDraftOpt0') || {}).value || '';
+  const opt1 = (document.getElementById('inputDraftOpt1') || {}).value || '';
+  const opt2 = (document.getElementById('inputDraftOpt2') || {}).value || '';
+  const opt3 = (document.getElementById('inputDraftOpt3') || {}).value || '';
+  const correctIdx = parseInt((document.getElementById('selectDraftCorrectOpt') || {}).value || '0', 10);
+  const explanation = (document.getElementById('inputDraftExplanation') || {}).value || '';
+
+  if (!qText.trim()) {
+    showToast('⚠️ Please enter question statement.');
+    return;
+  }
+  if (!opt0.trim() || !opt1.trim()) {
+    showToast('⚠️ Please enter at least Option A and Option B.');
+    return;
+  }
+
+  const options = [opt0.trim(), opt1.trim()];
+  if (opt2.trim()) options.push(opt2.trim());
+  if (opt3.trim()) options.push(opt3.trim());
+
+  draftQuestions.push({
+    id: 'q_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+    type: 'mcq',
+    question: qText.trim(),
+    options: options,
+    correctIndex: Math.min(correctIdx, options.length - 1),
+    explanation: explanation.trim()
+  });
+
+  // Reset inputs
+  if (document.getElementById('inputDraftQText')) document.getElementById('inputDraftQText').value = '';
+  if (document.getElementById('inputDraftOpt0')) document.getElementById('inputDraftOpt0').value = '';
+  if (document.getElementById('inputDraftOpt1')) document.getElementById('inputDraftOpt1').value = '';
+  if (document.getElementById('inputDraftOpt2')) document.getElementById('inputDraftOpt2').value = '';
+  if (document.getElementById('inputDraftOpt3')) document.getElementById('inputDraftOpt3').value = '';
+  if (document.getElementById('inputDraftExplanation')) document.getElementById('inputDraftExplanation').value = '';
+
+  renderDraftQuestionsList();
+  showToast('➕ Question added to draft!');
+}
+
+function renderDraftQuestionsList() {
+  const countEl = document.getElementById('countDraftQuestions');
+  const listEl = document.getElementById('draftQuestionsList');
+  if (countEl) countEl.textContent = draftQuestions.length;
+  if (!listEl) return;
+
+  if (draftQuestions.length === 0) {
+    listEl.innerHTML = `<div style="font-size: 0.72rem; color: #94a3b8; padding: 6px 0;">No questions added yet. Use the form below or tap "Load Sample 3-Q".</div>`;
+    return;
+  }
+
+  listEl.innerHTML = draftQuestions.map((q, i) => `
+    <div style="background: rgba(255,255,255,0.04); border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; font-size: 0.72rem; display: flex; justify-content: space-between; align-items: flex-start;">
+      <div>
+        <strong style="color: #38bdf8;">Q${i + 1}:</strong> ${q.question}
+        <div style="font-size: 0.66rem; color: #4ade80; margin-top: 2px;">✔ Correct: ${q.options[q.correctIndex]}</div>
+      </div>
+      <button type="button" onclick="removeDraftQuestion(${i})" style="background: none; border: none; color: #f87171; font-size: 0.80rem; cursor: pointer;">&times;</button>
+    </div>
+  `).join('');
+}
+
+function removeDraftQuestion(index) {
+  draftQuestions.splice(index, 1);
+  renderDraftQuestionsList();
+}
+
+function handleCreateAssessmentSubmit(e) {
+  if (e) e.preventDefault();
+
+  const title = (document.getElementById('inputAsmTitle') || {}).value || '';
+  const type = (document.getElementById('inputAsmType') || {}).value || 'quiz';
+  const subject = (document.getElementById('selectAsmSubject') || {}).value || 'Computer Networks';
+  const batch = (document.getElementById('selectAsmBatch') || {}).value || 'CSE Batch A1';
+  const duration = parseInt((document.getElementById('inputAsmDuration') || {}).value || '20', 10);
+  const totalMarks = parseInt((document.getElementById('inputAsmTotalMarks') || {}).value || '30', 10);
+  const negMark = parseFloat((document.getElementById('inputAsmNegMark') || {}).value || '0');
+  const dueDate = (document.getElementById('inputAsmDueDate') || {}).value || 'Nov 18, 2026 • 11:59 PM';
+
+  if (!title.trim()) {
+    showToast('⚠️ Please enter an assessment title.');
+    return;
+  }
+
+  if (type === 'quiz' && draftQuestions.length === 0) {
+    showToast('⚠️ Please add at least 1 question to the quiz.');
+    return;
+  }
+
+  const fac = getCurrentFaculty();
+  const facName = fac ? fac.name : 'Prof. Rishabh Patel';
+
+  const newAsm = {
+    id: 'asm_' + Date.now(),
+    title: title.trim(),
+    type: type,
+    category: type === 'quiz' ? 'Continuous Assessment' : (type === 'coding' ? 'Coding Challenge' : 'Coursework Assignment'),
+    subject: subject,
+    facultyId: fac ? fac.id : 'fac-1',
+    facultyName: facName,
+    batch: batch,
+    durationMins: duration,
+    totalMarks: totalMarks,
+    passingMarks: Math.ceil(totalMarks * 0.5),
+    negativeMarking: negMark,
+    dueDate: dueDate,
+    instructions: type === 'quiz'
+      ? `Timed MCQ assessment consisting of ${draftQuestions.length} questions. Proctored QuickTest mode active.`
+      : (type === 'coding' ? 'Solve coding problem and submit code.' : 'Submit project link and findings report.'),
+    questions: [...draftQuestions],
+    submissions: []
+  };
+
+  if (!state.data.assessments) state.data.assessments = [];
+  state.data.assessments.unshift(newAsm);
+  state.save();
+
+  closeModal('modalCreateAssessment');
+  showToast(`🚀 Published "${title}" to student portals!`);
+  renderFacultyPortal();
+}
+
+function openAssessmentSubmissionsModal(asmId) {
+  const asm = (state.data.assessments || []).find(a => a.id === asmId);
+  if (!asm) return;
+
+  const modal = document.getElementById('modalAssessmentSubmissions');
+  const titleEl = document.getElementById('facAsmDetailTitle');
+  const subEl = document.getElementById('facAsmDetailSub');
+  const body = document.getElementById('facAsmSubmissionsBody');
+
+  if (titleEl) titleEl.textContent = asm.title;
+  if (subEl) subEl.textContent = `${asm.subject} • ${asm.batch} • Total Marks: ${asm.totalMarks}`;
+
+  const subs = asm.submissions || [];
+
+  if (body) {
+    if (subs.length === 0) {
+      body.innerHTML = `
+        <div style="text-align: center; padding: 30px; color: #94a3b8; font-size: 0.80rem;">
+          📭 No student submissions recorded yet for this assessment.
+        </div>
+      `;
+    } else {
+      const evaluatedSubs = subs.filter(s => s.score !== null);
+      const avgScore = evaluatedSubs.length > 0
+        ? (evaluatedSubs.reduce((acc, c) => acc + (c.score || 0), 0) / evaluatedSubs.length).toFixed(1)
+        : 'N/A';
+
+      body.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(56,189,248,0.08); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 0.74rem;">
+          <div>Submissions: <strong>${subs.length}</strong></div>
+          <div>Batch Average: <strong>${avgScore} / ${asm.totalMarks}</strong></div>
+          <div>Highest: <strong style="color: #4ade80;">${evaluatedSubs.length > 0 ? Math.max(...evaluatedSubs.map(s => s.score || 0)) : 'N/A'}</strong></div>
+        </div>
+
+        <div style="font-size: 0.78rem; font-weight: 800; color: #fff; margin-bottom: 8px;">Batch Submissions Ledger:</div>
+        <div style="max-height: 400px; overflow-y: auto;">
+          ${subs.map((s, idx) => `
+            <div class="fac-sub-row">
+              <div>
+                <div style="font-weight: 800; color: #fff;">#${idx + 1} ${s.studentName}</div>
+                <div style="font-size: 0.68rem; color: #94a3b8;">${s.enrollment} • ${s.submittedAt}</div>
+                ${s.link ? `<div style="font-size: 0.68rem; color: #38bdf8; margin-top: 2px;"><a href="${s.link}" target="_blank" style="color: #38bdf8;">🔗 View Submitted Code / Repo</a></div>` : ''}
+                ${s.comments ? `<div style="font-size: 0.66rem; color: #cbd5e1; margin-top: 2px;">💬 ${s.comments}</div>` : ''}
+              </div>
+
+              <div style="text-align: right;">
+                <div style="font-size: 0.90rem; font-weight: 900; color: #4ade80;">
+                  ${s.score !== null ? `${s.score} / ${asm.totalMarks}` : 'Ungraded'}
+                </div>
+                ${s.tabSwitches > 0 ? `<span class="tag-tabswitch-warn">⚠️ ${s.tabSwitches} Tab Switch</span>` : ''}
+                ${asm.type === 'assignment' ? `
+                  <div style="margin-top: 4px;">
+                    <button type="button" class="btn-chip btn-chip-blue" onclick="promptGradeAssignment('${asm.id}', '${s.studentRoll}')" style="font-size: 0.65rem; padding: 2px 8px;">
+                      📝 Enter Grade
+                    </button>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+  }
+
+  if (modal) modal.classList.add('active');
+}
+
+function promptGradeAssignment(asmId, studentRoll) {
+  const asm = (state.data.assessments || []).find(a => a.id === asmId);
+  if (!asm) return;
+  const sub = (asm.submissions || []).find(s => s.studentRoll === studentRoll);
+  if (!sub) return;
+
+  const marksStr = prompt(`Enter marks for ${sub.studentName} (Out of ${asm.totalMarks}):`, sub.score !== null ? sub.score : '');
+  if (marksStr === null) return;
+  const marks = parseFloat(marksStr);
+  if (isNaN(marks) || marks < 0 || marks > asm.totalMarks) {
+    showToast(`⚠️ Please enter a valid score between 0 and ${asm.totalMarks}.`);
+    return;
+  }
+
+  const feedback = prompt(`Enter teacher feedback comments for ${sub.studentName}:`, sub.feedback || 'Good work on methodology and implementation.');
+
+  sub.score = marks;
+  sub.status = 'evaluated';
+  sub.feedback = feedback || '';
+  state.save();
+
+  showToast(`✅ Graded ${sub.studentName}: ${marks}/${asm.totalMarks}`);
+  openAssessmentSubmissionsModal(asmId);
+}
+
+function previewAssessment(asmId) {
+  const asm = (state.data.assessments || []).find(a => a.id === asmId);
+  if (!asm) return;
+  if (asm.type === 'coding') openCodingSandbox(asmId);
+  else startQuickTest(asmId);
+}
+
+function deleteAssessment(asmId) {
+  const ok = confirm('Are you sure you want to delete this assessment?');
+  if (!ok) return;
+
+  state.data.assessments = (state.data.assessments || []).filter(a => a.id !== asmId);
+  state.save();
+  showToast('🗑️ Assessment deleted.');
+  renderFacultyPortal();
+}
+
 // ================= AUTHENTICATION & ROLE ISOLATION =================
 function getAuthSession() {
   if (!state.data.authSession) {
@@ -5343,6 +6748,7 @@ function switchFacultyTab(tabName) {
     schedule: 'facultyTabSchedule',
     substitutions: 'facultyTabSubstitutions',
     od_approvals: 'facultyTabOdApprovals',
+    assessments: 'facultyTabAssessments',
     analytics: 'facultyTabAnalytics',
     roster: 'facultyTabRoster'
   };
@@ -5358,6 +6764,7 @@ function switchFacultyTab(tabName) {
   if (tabName === 'schedule') renderFacultySchedule();
   else if (tabName === 'substitutions') renderSubstitutionHub();
   else if (tabName === 'od_approvals') renderFacultyOdApprovals();
+  else if (tabName === 'assessments') renderFacultyAssessments();
   else if (tabName === 'analytics') renderBatchAnalytics();
   else if (tabName === 'roster') renderStudentRoster();
 }
@@ -5429,7 +6836,12 @@ function renderFacultyPortal() {
     odPillDot.style.display = pendingOd.length > 0 ? 'inline-flex' : 'none';
   }
 
-  // 4. Render the currently active faculty sub-pane
+  // 4. Quizzes & Tests Count
+  const asmCount = (state.data.assessments || []).length;
+  const asmCountEl = document.getElementById('facMetricQuizzesCount');
+  if (asmCountEl) asmCountEl.textContent = asmCount;
+
+  // 5. Render the currently active faculty sub-pane
   switchFacultyTab(activeFacultyTab);
 }
 
@@ -6875,3 +8287,38 @@ window.rejectOdRequest = rejectOdRequest;
 window.openDefaulterNoticeModal = openDefaulterNoticeModal;
 window.printDefaulterNotice = printDefaulterNotice;
 window.copyDefaulterListText = copyDefaulterListText;
+window.switchPodSection = switchPodSection;
+window.filterStudentAssessments = filterStudentAssessments;
+window.renderStudentAssessments = renderStudentAssessments;
+window.renderStudentAssignments = renderStudentAssignments;
+window.renderStudentPodProfile = renderStudentPodProfile;
+window.downloadStandardPlacementCv = downloadStandardPlacementCv;
+window.startQuickTest = startQuickTest;
+window.renderQuickTestQuestion = renderQuickTestQuestion;
+window.selectQuickTestOption = selectQuickTestOption;
+window.clearQuickTestResponse = clearQuickTestResponse;
+window.toggleQuickTestReview = toggleQuickTestReview;
+window.nextQuickTestQuestion = nextQuickTestQuestion;
+window.prevQuickTestQuestion = prevQuickTestQuestion;
+window.confirmSubmitQuickTest = confirmSubmitQuickTest;
+window.openScorecardModal = openScorecardModal;
+window.openCodingSandbox = openCodingSandbox;
+window.updateCodingTemplate = updateCodingTemplate;
+window.runCodingTestCases = runCodingTestCases;
+window.submitCodingSolution = submitCodingSolution;
+window.openSubmitAssignmentModal = openSubmitAssignmentModal;
+window.handleStudentAssignmentSubmit = handleStudentAssignmentSubmit;
+window.filterFacultyAssessments = filterFacultyAssessments;
+window.renderFacultyAssessments = renderFacultyAssessments;
+window.openCreateAssessmentModal = openCreateAssessmentModal;
+window.selectCreateAsmType = selectCreateAsmType;
+window.draftQuestions = draftQuestions;
+window.quickFillSampleQuestions = quickFillSampleQuestions;
+window.addDraftQuestionToQuiz = addDraftQuestionToQuiz;
+window.removeDraftQuestion = removeDraftQuestion;
+window.renderDraftQuestionsList = renderDraftQuestionsList;
+window.handleCreateAssessmentSubmit = handleCreateAssessmentSubmit;
+window.openAssessmentSubmissionsModal = openAssessmentSubmissionsModal;
+window.promptGradeAssignment = promptGradeAssignment;
+window.previewAssessment = previewAssessment;
+window.deleteAssessment = deleteAssessment;
