@@ -11,7 +11,10 @@ const DEFAULT_FACULTIES = [
     dept: 'Computer Science & Engineering',
     title: 'Assistant Professor',
     subjects: ['Data Science Lab', 'Artificial Intelligence', 'Machine Learning'],
-    email: 'rishabh.patel@college.edu'
+    email: 'rishabh.patel@college.edu',
+    cabin: 'Cabin 304, CS Block B (3rd Floor)',
+    officeHours: 'Mon & Wed • 3:30 PM - 4:30 PM',
+    phone: 'Ext: 3404'
   },
   {
     id: 'fac-2',
@@ -19,7 +22,10 @@ const DEFAULT_FACULTIES = [
     dept: 'Data Science & Engineering',
     title: 'Associate Professor',
     subjects: ['Data Science', 'Data Science Lab', 'Python', 'Big Data Analytics'],
-    email: 'neha.verma@college.edu'
+    email: 'neha.verma@college.edu',
+    cabin: 'Cabin 210, Data Science Wing (2nd Floor)',
+    officeHours: 'Tue & Thu • 2:00 PM - 3:30 PM',
+    phone: 'Ext: 2108'
   },
   {
     id: 'fac-3',
@@ -27,15 +33,21 @@ const DEFAULT_FACULTIES = [
     dept: 'Computer Science & Engineering',
     title: 'Assistant Professor',
     subjects: ['Machine Learning', 'Expert Systems', 'Artificial Intelligence'],
-    email: 'amit.sharma@college.edu'
+    email: 'amit.sharma@college.edu',
+    cabin: 'Cabin 112, AI & Robotics Block',
+    officeHours: 'Mon & Fri • 1:00 PM - 2:30 PM',
+    phone: 'Ext: 1120'
   },
   {
     id: 'fac-4',
     name: 'Prof. Rajesh Kumar',
     dept: 'Computer Science & Engineering',
-    title: 'Senior Faculty',
+    title: 'Senior Faculty & HOD',
     subjects: ['Operating Systems', 'Computer Networks', 'Software Engineering'],
-    email: 'rajesh.kumar@college.edu'
+    email: 'rajesh.kumar@college.edu',
+    cabin: 'HOD Office, Ground Floor Block A',
+    officeHours: 'Wed & Fri • 11:30 AM - 1:00 PM',
+    phone: 'Ext: 1001'
   },
   {
     id: 'fac-5',
@@ -43,7 +55,10 @@ const DEFAULT_FACULTIES = [
     dept: 'Information Technology',
     title: 'Assistant Professor',
     subjects: ['Computer Networks', 'DBMS', 'Web Technologies'],
-    email: 'priya.singh@college.edu'
+    email: 'priya.singh@college.edu',
+    cabin: 'Cabin 402, Networking Center (4th Floor)',
+    officeHours: 'Tue & Thu • 11:00 AM - 12:30 PM',
+    phone: 'Ext: 4022'
   }
 ];
 
@@ -157,6 +172,32 @@ const DEFAULT_STATE = {
   substitutions: [], // { id, fromFacultyId, fromFacultyName, toFacultyId, toFacultyName, lectureId, subject, day, date, startTime, endTime, room, notes, status, timestamp }
   batchAttendance: {}, // { [lecId_dateStr]: { [roll]: 'present' | 'absent' } }
   cancelledLectures: {}, // { [lecId_dateStr]: true }
+  notices: [
+    {
+      id: 'not-1',
+      category: 'exam',
+      tag: '🚨 Exam Alert',
+      title: 'Mid-Term Sessional Exams',
+      date: 'Starts Nov 18, 2026',
+      desc: 'Hall tickets & seating plans will be released on the portal this Friday. Review syllabus with respective faculty.'
+    },
+    {
+      id: 'not-2',
+      category: 'assignment',
+      tag: '📝 Lab Record',
+      title: 'Data Science Lab Record Submission',
+      date: 'Due Wednesday, Nov 11 • 5:00 PM',
+      desc: 'Submit Unit 3 & 4 experiments (Pandas, Scikit-learn models) verified by Dr. Neha Verma in Lab LV224.'
+    },
+    {
+      id: 'not-3',
+      category: 'holiday',
+      tag: '🏖️ Campus Holiday',
+      title: 'Guru Nanak Jayanti Holiday',
+      date: 'Friday, Nov 15, 2026',
+      desc: 'The institute will remain closed. Scheduled laboratory practicals will be compensated on the following Saturday.'
+    }
+  ],
   settings: {
     targetPercentage: 75,
     includeSaturday: false,
@@ -270,6 +311,7 @@ class AppState {
           substitutions: parsed.substitutions || [],
           batchAttendance: parsed.batchAttendance || {},
           cancelledLectures: parsed.cancelledLectures || {},
+          notices: (parsed.notices && parsed.notices.length) ? parsed.notices : DEFAULT_STATE.notices,
           settings: { ...DEFAULT_STATE.settings, ...parsed.settings },
           timetable: { ...DEFAULT_STATE.timetable, ...parsed.timetable },
           baseAttendance: { ...(parsed.baseAttendance || {}) },
@@ -1448,6 +1490,25 @@ function renderDashboard() {
       absSubText = diffAbs < 0 ? `${bunkPct.toFixed(1)}% (${diffAbs.toFixed(1)}%)` : `${bunkPct.toFixed(1)}%`;
     }
 
+    let recoveryHtml = '';
+    if (sub.hasRecords) {
+      if (sub.pct < target) {
+        recoveryHtml = `
+          <div class="recovery-strip recovery-danger">
+            <span>⚠️ Must attend next <strong>${sub.needAttend}</strong> consecutive class${sub.needAttend === 1 ? '' : 'es'} to reach ${target}%</span>
+            <span style="font-size: 0.68rem; opacity: 0.9;">Defaulter</span>
+          </div>
+        `;
+      } else {
+        recoveryHtml = `
+          <div class="recovery-strip recovery-safe">
+            <span>😎 Safe margin: Can miss up to <strong>${sub.canBunk}</strong> class${sub.canBunk === 1 ? '' : 'es'} (stays ≥ ${target}%)</span>
+            <span style="font-size: 0.68rem; opacity: 0.9;">Eligible</span>
+          </div>
+        `;
+      }
+    }
+
     card.innerHTML = `
       <div class="sub-header-row">
         <div style="flex: 1; min-width: 0;">
@@ -1465,6 +1526,8 @@ function renderDashboard() {
       <div class="progress-track" style="margin: 10px 0 6px 0;">
         <div class="progress-fill" style="width: ${progressPct}%; background: ${progressColor};"></div>
       </div>
+
+      ${recoveryHtml}
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.75rem;">
         <span style="color: ${bunkAdviceColor}; font-weight: 700;">${bunkAdviceText}</span>
@@ -1485,6 +1548,23 @@ function renderDashboard() {
     subContainer.appendChild(card);
   });
 
+  // Overall Defaulter Alert Banner
+  const defaulterSubs = subList.filter(s => s.hasRecords && s.pct < target);
+  const defBanner = document.getElementById('defaulterAlertBanner');
+  const defTitle = document.getElementById('defaulterAlertTitle');
+  const defSub = document.getElementById('defaulterAlertSub');
+  if (defBanner) {
+    if (defaulterSubs.length > 0) {
+      defBanner.style.display = 'flex';
+      if (defTitle) defTitle.textContent = `⚠️ Attendance Defaulter Alert (${defaulterSubs.length} Subject${defaulterSubs.length === 1 ? '' : 's'} < ${target}%)`;
+      if (defSub) defSub.textContent = `Immediate recovery needed in: ${defaulterSubs.map(s => s.subject).join(', ')}. Check required classes above.`;
+    } else {
+      defBanner.style.display = 'none';
+    }
+  }
+
+  updateDigitalIdCard();
+  renderNoticeboard();
   renderAssignedTeachers();
 }
 
@@ -3489,6 +3569,20 @@ function getAssignedFacultyForSubject(subjectName) {
   return faculties[0];
 }
 
+function escapeHtml(str) {
+  if (typeof str !== 'string') return String(str || '');
+  return str.replace(/[&<>"']/g, function(m) {
+    switch (m) {
+      case '&': return '&amp;';
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '"': return '&quot;';
+      case "'": return '&#39;';
+      default: return m;
+    }
+  });
+}
+
 function renderAssignedTeachers() {
   const container = document.getElementById('assignedTeachersList');
   if (!container) return;
@@ -3518,29 +3612,177 @@ function renderAssignedTeachers() {
     );
 
     html += `
-      <div class="teacher-card">
-        <div class="teacher-card-left">
-          <div class="teacher-avatar">👨‍🏫</div>
-          <div>
-            <div class="teacher-name">${fac.name}</div>
-            <div class="teacher-meta">${sub} • <span style="color: var(--accent-cyan); font-weight: 700;">${fac.dept}</span></div>
-            ${activeSub ? `
-              <div style="font-size: 0.68rem; color: #93c5fd; font-weight: 700; margin-top: 3px;">
-                🔄 Substitute Today: <strong>${activeSub.toFacultyName}</strong>
-              </div>
-            ` : ''}
+      <div class="teacher-card" style="display: flex; flex-direction: column; align-items: stretch; gap: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+          <div class="teacher-card-left" style="align-items: flex-start;">
+            <div class="teacher-avatar">👨‍🏫</div>
+            <div>
+              <div class="teacher-name">${escapeHtml(fac.name)}</div>
+              <div class="teacher-meta">${escapeHtml(sub)} • <span style="color: var(--accent-cyan); font-weight: 700;">${escapeHtml(fac.dept)}</span></div>
+            </div>
           </div>
-        </div>
-        <div>
-          <span class="slot-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-size: 0.68rem; padding: 3px 8px;">
-            ${fac.title.split(' ')[0] || 'Faculty'}
+          <span class="slot-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-size: 0.68rem; padding: 3px 8px; flex-shrink: 0;">
+            ${escapeHtml(fac.title.split(' ')[0] || 'Faculty')}
           </span>
+        </div>
+
+        ${activeSub ? `
+          <div style="background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px; padding: 6px 10px; font-size: 0.68rem; color: #93c5fd; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+            <span>🔄</span>
+            <span>Substitute Today: <strong>${escapeHtml(activeSub.toFacultyName)}</strong> (${escapeHtml(activeSub.room || 'Same Room')})</span>
+          </div>
+        ` : ''}
+
+        <div class="teacher-details-row">
+          <div>📍 <strong>Cabin:</strong> ${escapeHtml(fac.cabin || 'CS Block')}</div>
+          <div>🕒 <strong>Office Hours:</strong> ${escapeHtml(fac.officeHours || 'Mon–Fri 3:30–4:30 PM')}</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+            <span style="font-size: 0.68rem; color: #94a3b8;">📞 ${escapeHtml(fac.phone || 'Ext: Direct')}</span>
+            <a href="mailto:${escapeHtml(fac.email || 'faculty@college.edu')}" class="teacher-contact-btn">✉️ Email Faculty</a>
+          </div>
         </div>
       </div>
     `;
   });
 
   container.innerHTML = html;
+}
+
+function updateDigitalIdCard() {
+  const session = getAuthSession();
+  const cardName = document.getElementById('cardStudentName');
+  const cardRoll = document.getElementById('cardStudentRoll');
+  const cardPrn = document.getElementById('cardStudentPrn');
+  const cardDegree = document.getElementById('cardStudentDegree');
+  const cardSem = document.getElementById('cardStudentSem');
+  const cardBatch = document.getElementById('cardStudentBatch');
+  const cardAdvisor = document.getElementById('cardStudentAdvisor');
+
+  if (session && session.role === 'student') {
+    const rollNum = session.userId || '104';
+    if (cardName) cardName.textContent = session.name || 'Rishabh Patel';
+    if (cardRoll) cardRoll.textContent = rollNum;
+    if (cardPrn) cardPrn.textContent = `EN24CS${rollNum}08`;
+    if (cardDegree) cardDegree.textContent = 'B.Tech — Computer Science & Engineering';
+    if (cardSem) cardSem.textContent = '5th Semester';
+    if (cardBatch) cardBatch.textContent = (parseInt(rollNum, 10) % 2 === 0) ? 'Batch A1' : 'Batch A2';
+    if (cardAdvisor) cardAdvisor.textContent = 'Dr. Neha Verma';
+  }
+}
+
+function toggleIdCardCompact() {
+  const body = document.getElementById('idCardMainBody');
+  const btnText = document.getElementById('textToggleId');
+  if (!body) return;
+  if (body.style.display === 'none') {
+    body.style.display = 'flex';
+    if (btnText) btnText.innerHTML = 'Compact View 🔼';
+  } else {
+    body.style.display = 'none';
+    if (btnText) btnText.innerHTML = 'Expand Card 🔽';
+  }
+}
+
+function renderNoticeboard() {
+  const container = document.getElementById('noticeboardCardsList');
+  if (!container) return;
+
+  const notices = state.data.notices || [];
+  if (notices.length === 0) {
+    container.innerHTML = `
+      <div style="font-size: 0.75rem; color: var(--text-muted); padding: 12px 8px; text-align: center; width: 100%;">
+        No campus announcements or pending deadlines at this time.
+      </div>
+    `;
+    return;
+  }
+
+  let html = '';
+  notices.forEach(n => {
+    let catClass = 'notice-card-assignment';
+    let catColor = '#38bdf8';
+    if (n.category === 'exam') {
+      catClass = 'notice-card-exam';
+      catColor = '#f87171';
+    } else if (n.category === 'holiday') {
+      catClass = 'notice-card-holiday';
+      catColor = '#fbbf24';
+    }
+
+    html += `
+      <div class="notice-card ${catClass}">
+        <div>
+          <div class="notice-top-row">
+            <span class="notice-tag" style="color: ${catColor};">${escapeHtml(n.tag || 'Notice')}</span>
+            <button type="button" onclick="deleteNotice('${escapeHtml(n.id)}')" title="Dismiss Reminder" style="background: none; border: none; color: #71717a; font-size: 1rem; line-height: 1; cursor: pointer; padding: 0 4px;">&times;</button>
+          </div>
+          <div class="notice-title">${escapeHtml(n.title)}</div>
+          <div class="notice-date">📅 ${escapeHtml(n.date)}</div>
+          <div class="notice-desc">${escapeHtml(n.desc || '')}</div>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function openAddNoticeModal() {
+  const modal = document.getElementById('modalAddNotice');
+  if (modal) modal.classList.add('active');
+}
+
+function submitNewNotice(e) {
+  if (e) e.preventDefault();
+  const catEl = document.getElementById('noticeCategory');
+  const titleEl = document.getElementById('noticeTitle');
+  const dateEl = document.getElementById('noticeDate');
+  const descEl = document.getElementById('noticeDesc');
+
+  const category = catEl ? catEl.value : 'assignment';
+  const title = titleEl ? titleEl.value.trim() : '';
+  const date = dateEl ? dateEl.value.trim() : '';
+  const desc = descEl ? descEl.value.trim() : '';
+
+  if (!title) {
+    showToast('Please enter a title');
+    return;
+  }
+
+  const tagMap = {
+    exam: '🚨 Exam Alert',
+    assignment: '📝 Lab Record',
+    holiday: '🏖️ Campus Holiday',
+    general: '📌 Notice'
+  };
+
+  const newNotice = {
+    id: 'not-' + Date.now(),
+    category: category,
+    tag: tagMap[category] || '📌 Notice',
+    title: title,
+    date: date || 'Upcoming',
+    desc: desc
+  };
+
+  if (!state.data.notices) state.data.notices = [];
+  state.data.notices.unshift(newNotice);
+  state.save();
+
+  closeModal('modalAddNotice');
+  renderNoticeboard();
+  showToast('Academic reminder saved!');
+
+  const form = document.getElementById('formAddNotice');
+  if (form) form.reset();
+}
+
+function deleteNotice(id) {
+  if (!state.data.notices) return;
+  state.data.notices = state.data.notices.filter(n => n.id !== id);
+  state.save();
+  renderNoticeboard();
+  showToast('Reminder dismissed');
 }
 
 // ================= AUTHENTICATION & ROLE ISOLATION =================
@@ -5022,3 +5264,9 @@ window.logoutSession = logoutSession;
 window.applyAuthSession = applyAuthSession;
 window.renderAssignedTeachers = renderAssignedTeachers;
 window.getAssignedFacultyForSubject = getAssignedFacultyForSubject;
+window.updateDigitalIdCard = updateDigitalIdCard;
+window.toggleIdCardCompact = toggleIdCardCompact;
+window.renderNoticeboard = renderNoticeboard;
+window.openAddNoticeModal = openAddNoticeModal;
+window.submitNewNotice = submitNewNotice;
+window.deleteNotice = deleteNotice;

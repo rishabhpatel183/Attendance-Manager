@@ -217,6 +217,67 @@
         </div>
       </div>
 
+      <!-- Digital Student ID Card Widget -->
+      <div id="studentDigitalIdCard" class="student-id-card">
+        <div class="id-card-top-strip">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.15rem;">🏛️</span>
+            <div>
+              <div class="id-card-college">APEX INSTITUTE OF TECHNOLOGY</div>
+              <div class="id-card-dept">DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING</div>
+            </div>
+          </div>
+          <span class="id-card-badge-active"><span style="color: #4ade80; font-size: 0.7rem;">●</span> ACTIVE STUDENT</span>
+        </div>
+
+        <div class="id-card-body" id="idCardMainBody">
+          <div class="id-avatar-circle">🎓</div>
+          <div class="id-info-col">
+            <h2 class="id-student-name" id="cardStudentName">Rishabh Patel</h2>
+            <div class="id-meta-row">
+              <span class="id-meta-pill">Roll #<strong id="cardStudentRoll">104</strong></span>
+              <span class="id-meta-pill">PRN: <strong id="cardStudentPrn">EN24CS10408</strong></span>
+            </div>
+            <div class="id-degree-text" id="cardStudentDegree">B.Tech — Computer Science & Engineering</div>
+            <div class="id-sem-text">
+              <span id="cardStudentSem">5th Semester</span> • <span id="cardStudentBatch">Batch A1</span> • <span>AY 2026–27</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="id-card-footer">
+          <div style="display: flex; gap: 12px; font-size: 0.70rem; color: #cbd5e1;">
+            <span>🩸 Blood: <strong>O+</strong></span>
+            <span>👨‍🏫 Advisor: <strong id="cardStudentAdvisor">Dr. Neha Verma</strong></span>
+          </div>
+          <button type="button" class="btn-flip-id" onclick="toggleIdCardCompact()">
+            <span id="textToggleId">Compact View 🔼</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Defaulter Warning Banner (Dynamic) -->
+      <div id="defaulterAlertBanner" class="defaulter-alert-banner" style="display: none;">
+        <span style="font-size: 1.3rem;">⚠️</span>
+        <div style="flex: 1;">
+          <div class="defaulter-alert-title" id="defaulterAlertTitle">Attendance Alert (&lt; 75%)</div>
+          <div class="defaulter-alert-sub" id="defaulterAlertSub">You have subjects falling below target. Check recovery requirements below.</div>
+        </div>
+      </div>
+
+      <!-- Campus Noticeboard & Reminders -->
+      <div id="studentNoticeboardSection" class="noticeboard-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <h3 style="font-size: 0.90rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px; margin: 0;">
+            <span>📢</span> Class Noticeboard & Deadlines
+          </h3>
+          <button type="button" class="btn-chip btn-chip-blue" onclick="openAddNoticeModal()" style="font-size: 0.68rem; padding: 4px 8px;">+ Add Reminder</button>
+        </div>
+        <div id="noticeboardCardsList" class="noticeboard-cards-scroll">
+          <!-- Injected dynamically via renderNoticeboard() -->
+        </div>
+      </div>
+
       <!-- Dynamic Main Hero Focus Card -->
       <div id="heroFocusContainer">
         <!-- Rendered dynamically by app.js: Upcoming Lecture & Safe Bunk Predictor -->
@@ -1047,6 +1108,48 @@
       <button id="btnSubmitRollCall" type="button" class="btn-cta-primary" style="background: linear-gradient(135deg, #22c55e, #16a34a); color: #000; font-weight: 900; margin-top: auto;">
         💾 Submit & Sync Attendance
       </button>
+    </div>
+  </div>
+
+  <!-- Modal: Add Student Reminder / Notice -->
+  <div id="modalAddNotice" class="modal-overlay">
+    <div class="bottom-sheet" style="max-height: 85vh; overflow-y: auto;">
+      <div class="sheet-handle"></div>
+      <div class="modal-title-bar" style="margin-bottom: 12px;">
+        <h3 class="modal-heading">📝 Add Academic Reminder</h3>
+        <button class="btn-close-modal" onclick="closeModal('modalAddNotice')">&times;</button>
+      </div>
+
+      <form id="formAddNotice" onsubmit="submitNewNotice(event)">
+        <div class="form-field" style="margin-bottom: 12px;">
+          <label class="form-label-text" for="noticeCategory">Category:</label>
+          <select id="noticeCategory" class="form-input-box" required>
+            <option value="exam">🚨 Exam / Sessional Test</option>
+            <option value="assignment" selected>📝 Assignment / Lab Record</option>
+            <option value="holiday">🏖️ Holiday / Campus Event</option>
+            <option value="general">📌 General Reminder</option>
+          </select>
+        </div>
+
+        <div class="form-field" style="margin-bottom: 12px;">
+          <label class="form-label-text" for="noticeTitle">Title / Task:</label>
+          <input type="text" id="noticeTitle" class="form-input-box" placeholder="e.g. AI Unit 2 Assignment Submission" required>
+        </div>
+
+        <div class="form-field" style="margin-bottom: 12px;">
+          <label class="form-label-text" for="noticeDate">Date / Deadline:</label>
+          <input type="text" id="noticeDate" class="form-input-box" placeholder="e.g. Due Wednesday, Nov 11 • 5:00 PM" required>
+        </div>
+
+        <div class="form-field" style="margin-bottom: 16px;">
+          <label class="form-label-text" for="noticeDesc">Notes / Description:</label>
+          <textarea id="noticeDesc" class="form-input-box" rows="2" placeholder="e.g. Submit handwritten numericals to Dr. Neha Verma in Lab LV224"></textarea>
+        </div>
+
+        <button type="submit" class="btn-cta-primary" style="background: linear-gradient(135deg, #00d68f, #00ab72); color: #000; font-weight: 900;">
+          💾 Save Reminder
+        </button>
+      </form>
     </div>
   </div>
 
